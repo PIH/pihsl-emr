@@ -15,15 +15,23 @@
 <htmlform formUuid="25485cdd-5cb3-4d91-abc4-029718254954" formName="Maternal Death"
           formEncounterType="415b342e-9e4d-4496-bac4-7b6ffb8619f0" formVersion="1.0">
     <style>
-        #admissionInfo {
-            width: auto; /* Overrides width: 100% */
-            table-layout: auto; /* Ensures cells adjust to content */
-            margin-left: 0 !important;
-            margin-right: auto !important;
+        /* Target the parent p element */
+        #health-section-container > p {
+            display: flex;
+            flex-direction: row;
+            align-items: baseline; /* Aligns text baselines of label and span */
+            gap: 8px;              /* Adds some space between the label and span */
         }
 
-        #admissionInfo td {
-            white-space: nowrap; /* Prevents text from wrapping to a new line */
+        /* Ensure the label doesn't take up the full width */
+        #health-section-container > p label {
+            display: inline;
+            width: auto;
+        }
+
+        .highlight-facility {
+            font-weight: bold;
+            color: blue;
         }
     </style>
     <h2>
@@ -64,26 +72,37 @@
                     #set($admissionEncounter = $visitEncounter)
                 #end
             #end
+        #end
+        #if($admissionEncounter)
+            #set($admissionLocation = $admissionEncounter.location)
+            #foreach($i in [1..10])
+                #if($admissionLocation and $admissionLocation.parentLocation)
+                    #set($admissionLocation = $admissionLocation.parentLocation)
+                #end
+            #end
         #end"/>
 
-    <table id="admissionInfo">
-        <tr>
-            <td>Admitted to health facility: </td>
-            <td> <lookup complexExpression="#if($admissionEncounter) yes #else no #end"/></td>
-        </tr>
-        <tr>
-            <td>Health facility admitted to:</td>
-            <td><lookup complexExpression="#if($admissionEncounter) $admissionEncounter.location #end"/></td>
-        </tr>
-        <tr>
-            <td>Admission date/time:</td>
-            <td><lookup complexExpression="#if($admissionEncounter)$fn.formatDate($admissionEncounter.encounterDatetime, 'dd MMM yyyy HH:mm')#end"/></td>
-        </tr>
-        <tr>
-            <td>Death and time of death:</td>
-            <td><lookup complexExpression="$fn.formatDate($patient.deathDate, 'dd MMM yyyy HH:mm')"/></td>
-        </tr>
-    </table>
+    <section id="facilitySection" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Health Facility">
+        <div class="section-container" id="health-section-container">
+            <p>
+                <label><uimessage code="Health facility admitted to:" /></label>
+                <span class="highlight-facility"><lookup complexExpression="#if($admissionEncounter) yes #else no #end"/></span>
+            </p>
+            <p>
+                <label><uimessage code="Admitted to health facility:" /></label>
+                <span class="highlight-facility"><lookup complexExpression="#if($admissionLocation) $admissionLocation $admissionEncounter.location #end"/></span>
+            </p>
+            <p>
+                <label><uimessage code="Admission date/time:" /></label>
+                <span class="highlight-facility"><lookup complexExpression="#if($admissionEncounter)$fn.formatDate($admissionEncounter.encounterDatetime, 'dd MMM yyyy hh:mm a')#end"/></span>
+            </p>
+            <p>
+                <label><uimessage code="Death and time of death:" /></label>
+                <span class="highlight-facility"><lookup complexExpression="$fn.formatDate($patient.deathDate, 'dd MMM yyyy HH:mm a')"/></span>
+            </p>
+        </div>
+    </section>
 
     <section id="overview" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Overview">
