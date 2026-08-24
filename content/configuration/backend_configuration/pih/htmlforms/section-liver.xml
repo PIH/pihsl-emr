@@ -35,11 +35,6 @@
 
             <!-- this section is ONLY included for NCD intake encounter -->
             <includeIf velocityTest="$encounter.encounterType.uuid == 'ae06d311-1866-455b-8a64-126a9bd74171' || $encounter.encounterType.uuid == '43423212-6f70-4df8-a9f7-2aef88df1ee2' ">
-                <script type="text/javascript">
-                    jq( function() {
-                        updateLastCheckboxRequired("#liver-dx","#liver-required-msg",'<uimessage code="pihcore.required.Upper"/>');
-                    });
-                </script>
 
                 <strong>
                     <uimessage code="Diagnosis"/>
@@ -59,9 +54,6 @@
                                 <render diagId="CIEL:120557" name="Chronic Hepatitis B" />
                                 <render diagId="CIEL:145347" name="Chronic Hepatitis C" />
                             </repeat>
-                            <div>
-                                <span id='liver-required-msg' class='error field-error'></span>
-                            </div>
                         </p>
 
                         <label>
