@@ -203,9 +203,13 @@
 
     <section id="vitals" sectionTag="fieldset" headerTag="legend"
              headerStyle="title" headerCode="pihcore.vitalSigns">
+
         <div class="section-container">
+            <subform path="configuration/pih/subforms/prior-vital-signs-widget.xml"/>
+            <br/>
             <subform path="configuration/pih/subforms/vital-signs-widget.xml"/>
         </div>
+
     </section>
 
     <section id="lab-treatment" sectionTag="fieldset" headerTag="legend"
