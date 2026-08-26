@@ -101,6 +101,9 @@
       "width": "80px"
     }
   ],
+  "globalProperties": {
+    "edtriageapp.config": "sierraleone-kgh"
+  },
 
   "dispositionConfig": "file:configuration/pih/pih-dispositions-sierraLeone-mcoe.json"
 }

@@ -11,6 +11,8 @@
     "checkIn",
     "clinicianDashboard",
     "dataExports",
+    "edTriage",
+    "edTriageQueue",
     "idcardPrinting",
     "infantProgram",
     "labs",
@@ -75,5 +77,8 @@
       "label": "ui.i18n.PatientIdentifierType.name.c09a1d24-7162-11eb-8aa6-0242ac110002",
       "width": "80px"
     }
-  ]
+  ],
+  "globalProperties": {
+    "edtriageapp.config": "sierraleone-wellbody"
+  }
 }

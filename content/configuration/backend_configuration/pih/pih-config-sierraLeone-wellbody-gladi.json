@@ -5,6 +5,8 @@
     "checkIn",
     "clinicianDashboard",
     "dataExports",
+    "edTriage",
+    "edTriageQueue",
     "idcardPrinting",
     "infantProgram",
     "labs",
