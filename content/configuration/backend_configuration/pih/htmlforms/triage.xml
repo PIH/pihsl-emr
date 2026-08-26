@@ -247,7 +247,12 @@
                     })
                 }
 
-                if (isValid) {
+                // the vitals widget may require the "contact doctor" checkbox to be ticked before saving;
+                // honour that guard here, otherwise this document-level handler would just re-enable the button
+                let blockedByVitals = (typeof drContactRequiredAndMissing === "function")
+                        &amp;&amp; drContactRequiredAndMissing();
+
+                if (isValid &amp;&amp; !blockedByVitals) {
                   htmlForm.enableSubmitButton();
                 }
                 else {

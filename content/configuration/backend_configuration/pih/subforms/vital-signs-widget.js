@@ -200,16 +200,25 @@
         return priority;
     }
 
+    // Exposed globally so that form-level validation (eg. the document-wide validateForm() in triage.xml)
+    // can honour this guard instead of racing with it and re-enabling the submit button.
+    function drContactRequiredAndMissing() {
+        return evaluateVitals().value &gt;= 2
+            &amp;&amp; !jq('#contactDr input[type="checkbox"]').is(':checked');
+    }
+    window.drContactRequiredAndMissing = drContactRequiredAndMissing;
+
     function calculatePriority() {
         let globalPriority = evaluateVitals();
         if (globalPriority.value &gt;= 2) {
-            let drNotified = jq('#contactDr input[type="checkbox"]').is(':checked');
-            if ( !drNotified ) {
-                jq('.submitButton.confirm.right').attr('disabled', true);
+            if ( drContactRequiredAndMissing() ) {
+                htmlForm.disableSubmitButton();
+            } else {
+                htmlForm.enableSubmitButton();
             }
             jq("#confirmMsg").show();
         } else {
-            jq('.submitButton.confirm.right').attr('disabled', false);
+            htmlForm.enableSubmitButton();
             jq("#confirmMsg").hide();
         }
         if (typeof calculateTriagePriority === "function") {
@@ -233,12 +242,7 @@ jq(document).ready( function() {
     </ifMode>
 
     jq('#contactDr input[type="checkbox"]').on('change', function() {
-        if (jq(this).is(':checked')) {
-            // Checkbox is checked
-            jq('.submitButton.confirm.right').attr('disabled', false);
-        } else {
-            calculatePriority();
-        }
+        calculatePriority();
     });
 
     // the following calculations happen only in the view mode
