@@ -1,0 +1,15 @@
+name: Smoke tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  sierraLeone:
+    if: github.repository_owner == 'PIH'
+    uses: PIH/openmrs-contrib-distro-tools/.github/workflows/smoke-test.yml@main
+    with:
+      image_name: partnersinhealth/pihsl-emr
+      pih_config: sierraLeone
+      suite: sierraleone
+      admin_user_password: 'd@t45Aves!'
+    secrets: inherit
