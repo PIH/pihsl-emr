@@ -1,0 +1,16 @@
+name: Smoke tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  kgh-test:
+    if: github.repository_owner == 'PIH'
+    uses: PIH/openmrs-contrib-distro-tools/.github/workflows/execute-pihemr-smoke-tests.yml@main
+    with:
+      image_name: partnersinhealth/pihsl-emr
+      instance_name: kgh-test
+      pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-test
+      seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone
+      suite: sierraleone
+    secrets: inherit
