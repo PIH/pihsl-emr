@@ -4,12 +4,14 @@ on:
   workflow_dispatch:
 
 jobs:
-  sierraLeone:
+  kgh-test:
     if: github.repository_owner == 'PIH'
     uses: PIH/openmrs-contrib-distro-tools/.github/workflows/execute-pihemr-smoke-tests.yml@main
     with:
       image_name: partnersinhealth/pihsl-emr
-      pih_config: sierraLeone
+      instance_name: kgh-test
+      pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-test
+      seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone
       suite: sierraleone
       admin_user_password: 'd@t45Aves!'
     secrets: inherit
