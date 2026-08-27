@@ -13,5 +13,4 @@ jobs:
       pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-test
       seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone
       suite: sierraleone
-      admin_user_password: 'd@t45Aves!'
     secrets: inherit
