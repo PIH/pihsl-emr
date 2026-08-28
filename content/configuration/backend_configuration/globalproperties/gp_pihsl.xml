@@ -6,64 +6,59 @@
             <value>en</value>
         </globalProperty>
 
-    <globalProperty>
-        <property>locale.allowed.list</property>
-        <value>en</value>
-    </globalProperty>
+        <globalProperty>
+            <property>locale.allowed.list</property>
+            <value>en</value>
+        </globalProperty>
 
-    <globalProperty>
-        <property>emr.concept.diagnosisSetOfSets</property>
-        <!-- TODO: create a separate set for Sierra Leone separate from the HUM/ZL one -->
-        <!-- Concept: HUM Diagnosis Sets -->
-        <value>8fcd0b0c-f977-4a66-a1b5-ad7ce68e6770</value>
-    </globalProperty>
+        <globalProperty>
+            <property>emr.concept.diagnosisSetOfSets</property>
+            <!-- TODO: create a separate set for Sierra Leone separate from the HUM/ZL one -->
+            <!-- Concept: HUM Diagnosis Sets -->
+            <value>8fcd0b0c-f977-4a66-a1b5-ad7ce68e6770</value>
+        </globalProperty>
 
-    <!-- Core Apps Global Properties -->
-    <globalProperty>
-        <property>coreapps.defaultPatientIdentifierLocation</property>
-        <!-- TODO: should this be fixed/updated? -->
-        <!-- Location: Unknown Location -->
-        <value>8d6c993e-c2cc-11de-8d13-0010c6dffd0f</value>
-    </globalProperty>
+        <!-- Core Apps Global Properties -->
+        <globalProperty>
+            <property>coreapps.defaultPatientIdentifierLocation</property>
+            <!-- TODO: should this be fixed/updated? -->
+            <!-- Location: Unknown Location -->
+            <value>8d6c993e-c2cc-11de-8d13-0010c6dffd0f</value>
+        </globalProperty>
 
-    <!-- Order Entry OWA -->
-    <globalProperty>
-        <property>orderentryowa.labOrderablesConceptSet</property>
-        <!-- Concept: Sierra Leone laboratory categories -->
-        <value>880468f0-eec0-4d70-861a-fe12d4ba5099</value>
-    </globalProperty>
+        <!-- Order Entry OWA -->
+        <globalProperty>
+            <property>orderentryowa.labOrderablesConceptSet</property>
+            <!-- Concept: Sierra Leone laboratory categories -->
+            <value>880468f0-eec0-4d70-861a-fe12d4ba5099</value>
+        </globalProperty>
 
-    <!-- Lab Workflow OWA -->
-    <globalProperty>
-        <property>labworkflowowa.locationOfLaboratory</property>
-        <!-- Concept: Location of laboratory (Sierra Leone) -->
-        <value>449d5a8e-5da0-4e84-8eb7-819aaf67d824</value>
-    </globalProperty>
+        <!-- Lab Workflow OWA -->
+        <globalProperty>
+            <property>labworkflowowa.locationOfLaboratory</property>
+            <!-- Concept: Location of laboratory (Sierra Leone) -->
+            <value>449d5a8e-5da0-4e84-8eb7-819aaf67d824</value>
+        </globalProperty>
 
-    <!-- Check In -->
-    <globalProperty>
-        <property>mirebalais.checkIn.paymentAmounts</property>
-        <value>10.000,0</value>
-    </globalProperty>
+        <!-- Check In -->
+        <globalProperty>
+            <property>mirebalais.checkIn.paymentAmounts</property>
+            <value>10.000,0</value>
+        </globalProperty>
 
-    <globalProperty>
-        <property>mirebalais.checkIn.paymentAmountLabels</property>
-        <value>10.000,Free</value>
-    </globalProperty>
+        <globalProperty>
+            <property>mirebalais.checkIn.paymentAmountLabels</property>
+            <value>10.000,Free</value>
+        </globalProperty>
 
-    <globalProperty>
-        <property>mirebalais.checkIn.paymentAmountDefault</property>
-        <value>10.000</value>
-    </globalProperty>
+        <globalProperty>
+            <property>mirebalais.checkIn.paymentAmountDefault</property>
+            <value>10.000</value>
+        </globalProperty>
 
         <globalProperty>
             <property>haiti.checkIn.reasonsForVisit</property>
             <value>PIH:CLINICAL,PIH:ID card only,PIH:Lab only,PIH:Pharmacy only,PIH:Procedure only,PIH:Request scheduled appointment,PIH:Social assistance and psychosocial support,PIH:OTHER</value>
-        </globalProperty>
-
-        <globalProperty>
-            <property>edtriageapp.config</property>
-            <value>sierraleone</value>
         </globalProperty>
     </globalProperties>
 </config>
