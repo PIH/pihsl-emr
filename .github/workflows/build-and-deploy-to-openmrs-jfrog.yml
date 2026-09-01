@@ -31,37 +31,23 @@ jobs:
   deploy-to-kgh-test:
     if: github.repository_owner == 'PIH'
     needs: build-and-publish
-    runs-on: ubuntu-latest
     concurrency:
       group: deploy-to-kgh-test-${{ github.ref }}
       cancel-in-progress: true
-    steps:
-      - name: Deploy to KGH Test
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://bamboo-ci.pih-emr.org/rest/api/latest/queue/OMRS-DEPLOYKGHTEST'
-          method: 'POST'
-          bearerToken: ${{ secrets.PIH_BAMBOO_API_KEY }}
-          customHeaders: '{"Accept": "application/json"}'
-          retry: 60
-          retryWait: 60000
-          ignoreStatusCodes: 400
+    uses: PIH/openmrs-contrib-distro-tools/.github/workflows/deploy-via-runner.yml@main
+    with:
+      runner-label: kgh-test
+      notify_ci_dashboard: true
+    secrets: inherit
 
   deploy-to-gladi:
     if: github.repository_owner == 'PIH'
     needs: build-and-publish
-    runs-on: ubuntu-latest
     concurrency:
       group: deploy-to-gladi-${{ github.ref }}
       cancel-in-progress: true
-    steps:
-      - name: Deploy to Gladi
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://bamboo-ci.pih-emr.org/rest/api/latest/queue/OMRS-DEPLOYGLADI'
-          method: 'POST'
-          bearerToken: ${{ secrets.PIH_BAMBOO_API_KEY }}
-          customHeaders: '{"Accept": "application/json"}'
-          retry: 60
-          retryWait: 60000
-          ignoreStatusCodes: 400
+    uses: PIH/openmrs-contrib-distro-tools/.github/workflows/deploy-via-runner.yml@main
+    with:
+      runner-label: gladi
+      notify_ci_dashboard: true
+    secrets: inherit
