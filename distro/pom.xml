@@ -18,7 +18,7 @@
     <properties>
         <contentGroup>org.pih.openmrs</contentGroup>
         <contentArtifact>pihsl-content</contentArtifact>
-        <contentVersion>${project.version}</contentVersion>
+        <contentVersion>${project.parent.version}</contentVersion>
         <contentType>zip</contentType>
         <frontendGroup>org.pih.openmrs</frontendGroup>
         <frontendArtifact>openmrs-frontend-pihemr</frontendArtifact>
