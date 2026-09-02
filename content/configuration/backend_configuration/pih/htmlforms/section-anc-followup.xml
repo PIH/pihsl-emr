@@ -322,6 +322,11 @@
         </div>
     </section>
 
+    <section id="mh-phq2" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Mental Health">
+        <subform path="configuration/pih/subforms/mental-health-phq2.xml"/>
+    </section>
+
     <section id="counselling" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Counselling">
         <div class="section-container">

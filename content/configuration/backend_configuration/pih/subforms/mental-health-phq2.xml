@@ -1,0 +1,44 @@
+
+    <div class="section-container">
+
+        <ifMode mode="VIEW" include="false">
+            <h2>
+                Depression screening:  Patient Health Questionnaire 2 (PHQ-2)
+            </h2>
+            <br/>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Over the past 2 weeks, how often have you been bothered by any of the following problems?</th>
+                        <th>Not at all</th>
+                        <th>Several days</th>
+                        <th>More than half the days</th>
+                        <th>Nearly every day</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Little interest or pleasure in doing things</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>Feeling down, depressed or hopeless</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </ifMode>
+
+        <p>
+            <br/>
+            <obs conceptId="PIH:PHQ-2" labelText="Total PHQ-2 score (0-6)" placeholder="(0-6)"/>
+        </p>
+
+    </div>
