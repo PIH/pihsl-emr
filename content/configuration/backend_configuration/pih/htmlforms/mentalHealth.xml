@@ -214,6 +214,16 @@
                     </repeat>
                     <obs conceptId="PIH:Type of referral role" answerConceptId="PIH:OTHER"
                          style="checkbox" commentFieldLabel=" " />
+                    <br/>
+
+                    <label>
+                        <uimessage code="If referred within facility, which department referred the patient?" />:
+                    </label>
+
+                    <repeat with="['PIH:2235'],['PIH:1651'],['PIH:9358'],['PIH:14907'],[PIH:14905']">
+                        <obs conceptId="PIH:14973" answerConceptId="{0}"
+                             style="checkbox"/>
+                    </repeat>
                 </div>
             </div>
         </div>
@@ -801,6 +811,11 @@
             </p>
 
         </div>
+    </section>
+
+    <section id="depression-scores" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Depression screening">
+        <subform path="configuration/pih/subforms/mental-health-phq9-gad7-scores.xml"/>
     </section>
 
     <section id="mh-interventions" sectionTag="fieldset" headerTag="legend" headerStyle="title"

@@ -578,6 +578,12 @@
         </div>
     </section>
 
+
+    <section id="depression-scores" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Depression screening">
+        <subform path="configuration/pih/subforms/mental-health-phq9-gad7-scores.xml"/>
+    </section>
+
     <section id="mh-interventions" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="pihcore.mentalhealth.interventions">
         <div class="section-container">

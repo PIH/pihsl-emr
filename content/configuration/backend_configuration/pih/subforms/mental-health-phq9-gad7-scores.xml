@@ -1,0 +1,166 @@
+
+    <div class="section-container">
+
+        <ifMode mode="VIEW" include="false">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="5" style="text-align: center;">Patient Health Questionnaire (PHQ-9)</th>
+                    </tr>
+                    <tr>
+                        <th>Over the <u>last 2 weeks</u>, how often have you been bothered by any of the following problems?</th>
+                        <th>Not at all<br/>score=0</th>
+                        <th>Several days<br/>score=1</th>
+                        <th>More than half the days<br/>score=2</th>
+                        <th>Nearly every day<br/>score=3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Little interest or pleasure in doing things</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>2. Feeling down, depressed, or hopeless</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>3. Trouble falling or staying asleep, or sleeping too much</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>4. Feeling tired or having little energy</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>5. Poor appetite or overeating</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>6. Feeling bad about yourself - or that you are a failure, or have let yourself or your family down</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>7. Trouble concentrating on things, such as reading the newspaper or watching television</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>8. Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around more than usual</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>9. Thoughts that you would be better off dead or of hurting yourself in some way</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                </tbody>
+            </table>
+        </ifMode>
+
+        <p>
+            <br/>
+            <obs conceptId="CIEL:165137" labelText="Total PHQ-9 score (0-27)" placeholder="(0-27)"/>
+        </p>
+
+        <ifMode mode="VIEW" include="false">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="5" style="text-align: center;">Generalized Anxiety Disorder 7-Item (GAD-7)</th>
+                    </tr>
+                    <tr>
+                        <th>Over the <u>last 2 weeks</u>, how often have you been bothered by any of the following problems?</th>
+                        <th>Not at all<br/>score=0</th>
+                        <th>Several days<br/>score=1</th>
+                        <th>More than half the days<br/>score=2</th>
+                        <th>Nearly every day<br/>score=3)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1. Feeling nervous, anxious, or on edge</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>2. Not being able to stop or control worrying</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>3. Worrying too much about different things</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>4. Trouble relaxing</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>5. Being so restless that it's hard to sit still</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>6. Becoming easily annoyed or irritable</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                    <tr>
+                        <td>7. Feeling afraid as if something awful might happen</td>
+                        <td>0</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>3</td>
+                    </tr>
+                </tbody>
+            </table>
+
+
+        </ifMode>
+
+        <p>
+            <br/>
+            <obs conceptId="CIEL:165137" labelText="Total GAD-7 score (0-21)" placeholder="(0-21)"/>
+        </p>
+
+    </div>
