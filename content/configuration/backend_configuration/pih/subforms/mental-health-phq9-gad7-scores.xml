@@ -1,6 +1,7 @@
 
-    <div class="section-container">
+    <div class="section-container two-columns">
 
+        <!-- Don't show the PHQ-9 table
         <ifMode mode="VIEW" include="false">
             <table>
                 <thead>
@@ -81,13 +82,13 @@
                     </tr>
                 </tbody>
             </table>
-        </ifMode>
+        </ifMode> -->
 
-        <p>
-            <br/>
+        <div>
             <obs conceptId="CIEL:165137" labelText="Total PHQ-9 score (0-27)" placeholder="(0-27)"/>
-        </p>
+        </div>
 
+        <!-- Don't show the PHQ-9 table
         <ifMode mode="VIEW" include="false">
             <table>
                 <thead>
@@ -155,12 +156,10 @@
                 </tbody>
             </table>
 
+        </ifMode>  -->
 
-        </ifMode>
-
-        <p>
-            <br/>
+        <div>
             <obs conceptId="CIEL:165137" labelText="Total GAD-7 score (0-21)" placeholder="(0-21)"/>
-        </p>
+        </div>
 
     </div>
