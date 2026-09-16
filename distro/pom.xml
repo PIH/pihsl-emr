@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.pih.openmrs</groupId>
         <artifactId>pihsl-emr</artifactId>
-        <version>1.58.0</version>
+        <version>1.58.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>pihsl-distro</artifactId>
@@ -21,7 +21,7 @@
         <contentType>zip</contentType>
         <frontendGroup>org.pih.openmrs</frontendGroup>
         <frontendArtifact>openmrs-frontend-pihemr</frontendArtifact>
-        <frontendVersion>1.42.0</frontendVersion>
+        <frontendVersion>1.43.0</frontendVersion>
         <frontendType>zip</frontendType>
         <parentGroup>org.pih.openmrs</parentGroup>
         <parentArtifact>pihemr-distro</parentArtifact>
