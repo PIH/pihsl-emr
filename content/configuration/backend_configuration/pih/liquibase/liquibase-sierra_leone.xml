@@ -476,4 +476,10 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/migrate-dual-hiv-syphilis-positive-tests.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20260828-cascade-void-patients-update" author="PIH">
+        <comment>
+            SL-1397, Ensure voided data does not have non-voided child data
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/cascade_void_patients_update.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>
