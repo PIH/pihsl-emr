@@ -176,6 +176,16 @@
 
     </section>
 
+    <section id="tb-screen" sectionTag="fieldset" headerTag="legend"
+             headerStyle="title" headerCode="pihcore.tbscreen.title">
+        <div class="section-container">
+            <div>
+                <subform path="configuration/pih/subforms/tb-symptom-screening-widget.js"/>
+                <subform path="configuration/pih/subforms/tb-symptom-screening-widget.xml"/>
+            </div>
+        </div>
+    </section>
+
     <section id="lab-treatment" sectionTag="fieldset" headerTag="legend"
              headerStyle="title" headerCode="Lab and Treatment">
         <div class="section-container side-button">

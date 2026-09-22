@@ -21,96 +21,11 @@
 
     <style type="text/css">
 
-        form fieldset {
-            min-width: 90%
-        }
-
         .side-button input[type="radio"] {
             float: none;
             display: inline-block;
         }
 
-        .gestationalAge {
-            white-space: nowrap;
-            display:    inline-flex;
-         }
-
-        .gestationalAge span{
-            margin-left: 10px;
-            margin-top: 10px;
-        }
-
-        .gestationalAge input[type="text"]{
-            min-width: 2%;
-            width: 80px;
-            white-space: nowrap;
-        }
-
-    </style>
-
-    <style type="text/css">
-        <ifMode mode="VIEW" include="true">
-
-            #section-anc-intake legend {
-                display: none;
-            }
-
-            #section-anc-intake fieldset {
-                margin: 0px;
-                border: 0px;
-                padding: 0px;
-            }
-
-            #section-anc-intake fieldset h3 {
-                font-size: 1em;
-                width: 200px;
-                display: inline-block;
-                margin: 0px;
-                margin-right: 10px;
-                color: #3E3E3E;
-                vertical-align: top;
-            }
-
-            #section-anc-intake fieldset p {
-                vertical-align: top;
-                float: none;
-            }
-
-            #section-anc-intake fieldset .left {
-                vertical-align: top;
-                display: inline-block;
-                float: none;
-            }
-
-            #section-anc-intake .title {
-                display: none;
-            }
-
-            #section-anc-intake .encounter-date {
-                display: none;
-            }
-
-            #section-anc-intake .encounter-provider {
-                display: none;
-            }
-
-            #section-anc-intake .encounter-location {
-                display: none;
-            }
-
-            #section-anc-intake .comment-label {
-                display: none;
-            }
-
-            #section-anc-intake .comment-field {
-                display: block;
-                margin-left: 215px;
-            }
-
-            #section-anc-intake br {
-                display: none;
-            }
-        </ifMode>
     </style>
 
     <ifMode mode="VIEW" include="false" >
@@ -346,6 +261,16 @@
             <subform path="configuration/pih/subforms/prior-vital-signs-widget.xml"/>
             <br/>
             <subform path="configuration/pih/subforms/vital-signs-anc-widget.xml"/>
+        </div>
+    </section>
+
+    <section id="tb-screen" sectionTag="fieldset" headerTag="legend"
+             headerStyle="title" headerCode="pihcore.tbscreen.title">
+        <div class="section-container">
+            <div>
+                <subform path="configuration/pih/subforms/tb-symptom-screening-widget.js"/>
+                <subform path="configuration/pih/subforms/tb-symptom-screening-widget.xml"/>
+            </div>
         </div>
     </section>
 

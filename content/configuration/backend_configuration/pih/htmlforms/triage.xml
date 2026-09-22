@@ -22,12 +22,6 @@
             background-color: white;
         }
 
-        .field-error {
-            color: #ff6666;
-            font-size: 1.1em;
-            display: block;
-        }
-
         fieldset#lab-results {
             display: block;
             width: auto;
@@ -57,31 +51,6 @@
             margin-top: 20px;
         }
 
-        .five-columns-tb, .three-plus-one {
-            display: table;
-            height: 100%;
-            width: 100%;
-        }
-
-        .five-columns-tb > div {
-            display: table-cell;
-            width: 20%;
-        }
-
-        .three-plus-one > div {
-            width: 29%;
-            margin-top: 20px;
-            display: table-cell;
-        }
-
-        .three-plus-one > div:first-child {
-            width: 13%;
-        }
-
-        .three-plus-one {
-            margin-bottom: 20px;
-        }
-
         .boundary {
             margin-bottom: 6px;
             border-bottom: 1px solid #ccc;
@@ -98,10 +67,6 @@
 
         #disposition span {
             padding-left: 15px;
-        }
-
-        .side-by-side span {
-            display: inline-block;
         }
 
         p.radio > * {
@@ -186,7 +151,6 @@
         <script type="text/javascript">
             const tbSymptomPresent = '<lookup expression="fn.getConcept('PIH:11563').id"/>';
 
-            
             function evaluateSymptoms() {
                     let priority = priorities.GREEN;
                     jq('.redObs').each(function(index, element) {
@@ -604,27 +568,14 @@
         <obs conceptId="PIH:14679" id="other-complain" style="text"/>
     </p>
 
-    <label>
-        <uimessage code="pihcore.tbscreen.title"/>
-    </label>
-    <div class="tbScreen" style="padding-bottom: 15px;">
-        <repeat with="['Cough > 2 weeks','11567'], ['Fever','5945'], ['Night sweat','6029'],['Weight loss','6477']">
-            <div style="white-space: nowrap;" class="indented">
-                <p class="list-inline indented" style="margin-bottom: 5px;">
-                    <!-- TB symptom -->
-                    <label><uimessage code="{0}"/>:&amp;nbsp;&amp;nbsp;</label>
-                    <obs conceptIds="PIH:11563,PIH:11564"
-                         style="radio"
-                         answerConceptId="PIH:{1}"
-                         conceptLabels="yes,no"
-                         labelText=""/>
-                </p>
-            </div>
-        </repeat>
+    <div>
+        <label>
+            <uimessage code="pihcore.tbscreen.title"/>
+        </label>
+        <subform path="configuration/pih/subforms/tb-symptom-screening-widget.js"/>
+        <subform path="configuration/pih/subforms/tb-symptom-screening-widget.xml"/>
     </div>
-    <div id="isolationMsg">
-        Patient needs isolation and urgent review by infectious disease team.
-    </div>
+
     <div>
         <subform path="configuration/pih/subforms/lab-results-section.xml"/>
     </div>
