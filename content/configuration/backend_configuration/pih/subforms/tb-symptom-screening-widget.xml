@@ -1,11 +1,11 @@
 <div id="tb-symptom-screening-widget">
 
-    <div class="tbScreen" style="padding-bottom: 15px;">
+    <div class="tbScreen">
         <repeat with="['Cough > 2 weeks','11567'], ['Fever','5945'], ['Night sweat','6029'],['Weight loss','6477']">
-            <div style="white-space: nowrap;" class="indented">
-                <p class="list-inline indented" style="margin-bottom: 5px;">
+            <div>
+                <p class="list-inline" style="margin-bottom: 5px;">
                     <!-- TB symptom -->
-                    <label><uimessage code="{0}"/>:&amp;nbsp;&amp;nbsp;</label>
+                    <label><uimessage code="{0}"/>&amp;nbsp;&amp;nbsp;</label>
                     <obs conceptIds="PIH:11563,PIH:11564"
                          style="radio"
                          answerConceptId="PIH:{1}"
@@ -16,9 +16,11 @@
         </repeat>
     </div>
 
-    <div id="isolationMsg">
-        <strong>
-        Isolation and urgent review by infectious disease team
-        </strong>
-    </div>
+    <ifMode mode="VIEW" include="false">
+        <div id="isolationMsg">
+            <strong>
+            Isolation and urgent review by infectious disease team
+            </strong>
+        </div>
+    </ifMode>
 </div>

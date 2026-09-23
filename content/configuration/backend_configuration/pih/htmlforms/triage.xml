@@ -572,8 +572,11 @@
         <label>
             <uimessage code="pihcore.tbscreen.title"/>
         </label>
-        <subform path="configuration/pih/subforms/tb-symptom-screening-widget.js"/>
-        <subform path="configuration/pih/subforms/tb-symptom-screening-widget.xml"/>
+        <div class="indented">
+            <subform path="configuration/pih/subforms/tb-symptom-screening-widget.js"/>
+            <subform path="configuration/pih/subforms/tb-symptom-screening-widget.xml"/>
+        </div>
+        <br/>
     </div>
 
     <div>
