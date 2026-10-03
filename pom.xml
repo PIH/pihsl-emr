@@ -6,7 +6,7 @@
     <name>PIH Sierra Leone EMR</name>
     <description>PIH Sierra Leone EMR</description>
     <url>https://github.com/PIH/openmrs-config-pihsl</url>
-    <version>1.57.0-SNAPSHOT</version>
+    <version>1.59.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <organization>
