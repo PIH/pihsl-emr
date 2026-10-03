@@ -1,8 +1,14 @@
 -- ============================================================
--- SL-1397: Report for cascade_void_patients_update.sql
+-- Cascade void report
 -- ============================================================
+-- Counts, per table, of non-voided rows that have a voided parent, along
+-- the foreign keys followed by ../sql/cascade_void_patients_update.sql.
+-- Created for SL-1397.
+--
 -- Reference script, not run by liquibase.  Read-only, and only outputs
--- counts per table.  To test the cascade void script on a backup or test
+-- counts per table.  It can be run at any time to check whether data has
+-- gotten out of sync, and whether the cascade void script should be re-run.
+-- To test the cascade void script on a backup or test
 -- server, run this report, then ../sql/cascade_void_patients_update.sql,
 -- then this report again.  For the time taken by each statement, run the
 -- cascade void script with a client that reports it, eg. mysql -vvv.

@@ -1,6 +1,11 @@
 -- ============================================================
--- SL-1397: Ensure voided data does not have non-voided child data
+-- Cascade void: ensure voided data does not have non-voided child data
 -- ============================================================
+-- Created for SL-1397.  Can be re-run whenever data gets out of sync
+-- (see "Re-running" below).  ../scripts/cascade_void_patients_report.sql
+-- reports, per table, the non-voided rows with a voided parent that this
+-- addresses, and the rows changed by each run.
+--
 -- Works top-down, one level at a time.  At each level, voided rows
 -- of the parent table are collected into a temp table (_void_xxx),
 -- and non-voided rows of its child tables are voided from it.
