@@ -36,106 +36,10 @@
             min-width: 90%
         }
 
-        #encounterDate input {
-            min-width: 15%
-        }
-
-        textarea {
-            overflow-y: hidden; /* fixes scrollbar flash - kudos to @brettjonesdev */
-            padding-top: 1.1em; /* fixes text jump on Enter keypress */
-        }
-
-        @media print {
-            .print-form-datestamps { display: block !important }
-            button.cancel, button.submit { display: none }
-            label { font-weight: bold }
-            label[for] { font-weight: normal } /* refers to the radio set label */
-        }
-
-        .section-container {
-            background: #F2F2F2;
-            box-shadow: 3px 3px 3px 1px rgba(0, 0, 0, 0.2);
-            padding: 10px 5px 10px 15px;
-            line-height: 1.5em; /*add this for vertical spacing between elements*/
-        }
-
-        .section-container input[type="checkbox"] {
-            margin: 0px 5px; /*changed values to vertical, horizontal*/
-            top:5px; /*added to offset the checkbox position to line up*/
-        }
-
-        .section-container label { /*new definition to override labels inside section-containers*/
-            margin: 0px;
-        }
-
-        - .section {
-            width: 100%;
-        }
-
-        .side-by-side label {
-            display: inline-block;
-        }
-
         form input[type="radio"], .form input[type="radio"] {
             float: none;
             display: inline-block;
         }
-
-        .five-columns, .four-columns, .three-columns, .two-columns {
-            display: table;
-            height: 100%;
-            width: 100%;
-        }
-
-        .two-columns > div {
-            display: table-cell;
-            width: 50%;
-        }
-
-        .three-columns > div {
-            display: table-cell;
-            width: 33%;
-        }
-
-        .four-columns > div {
-            display: table-cell;
-            width: 25%;
-        }
-
-        .five-columns > div {
-            display: table-cell;
-            width: 20%;
-        }
-
-        .narrow {
-            width: 100px;
-        }
-
-        <ifMode mode="VIEW" include="false">
-            .date-one-line {
-                display: flex;
-            }
-
-            .date-one-line label {
-                align-self: center;
-                margin-right: 1em;
-            }
-
-            .date-one-line span {
-                display: flex;
-            }
-
-            .hasDatepicker {
-                min-width: 120px;
-                margin-top: 0px;
-            }
-
-            .hfe-hours, .hfe-minutes, .hfe-seconds {
-                width: 70px;
-                min-width: 70px;
-                margin: 0px 10px 0px 10px;
-            }
-        </ifMode>
     </style>
 
     <ifMode mode="VIEW" include="false">
@@ -283,6 +187,28 @@
                     <uimessage code="Admission date/time"/>
                 </label>
                 <obs conceptId="CIEL:1640" allowFutureDates="false" allowFutureTimes="true"/>
+            </p>
+
+            <!-- Pregnancy group -->
+            <p class="side-by-side">
+                <label position="left">
+                    <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
+                </label>
+                <obs conceptId="PIH:21747" style="radio"
+                     answerConceptIds="PIH:21748,PIH:21753,PIH:21754"
+                     answerCodes="A,B,C"/>
+
+
+                <lookup complexExpression="#set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
+                <includeIf velocityTest="($pregGroup) ">
+                    <br/>
+                    <span style="color:grey; font-style: italic;">
+                        <label>
+                            <uimessage code="pihcore.previousPregnancyProgramCohortGroup"/>:
+                        </label>
+                        <lookup complexExpression="$pregGroup.valueCoded.name"/>
+                    </span>
+                </includeIf>
             </p>
 
             <div class="two-columns">

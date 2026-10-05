@@ -71,6 +71,16 @@
                              answerSeparator="&lt;br /&gt;"/>
                     </p>
 
+                    <!-- Pregnancy group -->
+                    <p class="side-by-side">
+                        <label position="left">
+                            <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
+                        </label>
+                        <obs conceptId="PIH:21747" style="radio"
+                             answerConceptIds="PIH:21748,PIH:21753,PIH:21754"
+                             answerCodes="A,B,C"/>
+                    </p>
+
                     <!-- Number of ANC visits -->
                     <p>
                         <label>
