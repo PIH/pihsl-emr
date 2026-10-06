@@ -135,6 +135,7 @@
                             <!-- ToDo:  Show date AND time -->
                             <lookup expression="fn.latestObsBeforeCurrentEncounter('CIEL:1640', true).valueDatetime" format="dd MMM yyyy h:mm aa"/>
                     </p>
+
                 </div>
             </section>
         </includeIf>
@@ -177,6 +178,9 @@
              headerCode="Clinical History">
         <div class="section-container">
             <obs conceptId="CIEL:160221" style="textarea" />
+
+            <!-- Pregnancy group -->
+            <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
         </div>
     </section>
 

@@ -190,26 +190,7 @@
             </p>
 
             <!-- Pregnancy group -->
-            <p class="side-by-side">
-                <label position="left">
-                    <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
-                </label>
-                <obs conceptId="PIH:21747" style="radio"
-                     answerConceptIds="PIH:21748,PIH:21753,PIH:21754"
-                     answerCodes="A,B,C"/>
-
-
-                <lookup complexExpression="#set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
-                <includeIf velocityTest="($pregGroup) ">
-                    <br/>
-                    <span style="color:grey; font-style: italic;">
-                        <label>
-                            <uimessage code="pihcore.previousPregnancyProgramCohortGroup"/>:
-                        </label>
-                        <lookup complexExpression="$pregGroup.valueCoded.name"/>
-                    </span>
-                </includeIf>
-            </p>
+            <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
 
             <div class="two-columns">
                 <div>

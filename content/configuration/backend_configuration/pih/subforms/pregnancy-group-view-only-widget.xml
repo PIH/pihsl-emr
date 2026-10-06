@@ -1,0 +1,15 @@
+<!-- Pregnancy group -->
+<p class="side-by-side">
+    <ifMode mode="VIEW" include="false">
+        <lookup complexExpression="#set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
+        <includeIf velocityTest="($pregGroup) ">
+            <br/>
+            <span style="color:grey; font-style: italic;">
+                <label>
+                    <uimessage code="pihcore.previousPregnancyProgramCohortGroup"/>:
+                </label>
+                <lookup complexExpression="$pregGroup.valueCoded.name"/>
+            </span>
+        </includeIf>
+    </ifMode>
+</p>

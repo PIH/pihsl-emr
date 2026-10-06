@@ -88,12 +88,19 @@
 
     <section id="intake" sectionTag="fieldset" headerTag="legend" headerStyle="title" headerCode="Intake">
         <div class="section-container">
-            <p class="date-one-line">
-                <label>
-                    <uimessage code="Admission date/time"/>
-                </label>
-                <obs conceptId="CIEL:1640" allowFutureDates="false" allowFutureTimes="true"/>
-            </p>
+            <div class="two-columns">
+                <div>
+                    <p class="date-one-line">
+                        <label>
+                            <uimessage code="Admission date/time"/>
+                        </label>
+                        <obs conceptId="CIEL:1640" allowFutureDates="false" allowFutureTimes="true"/>
+                    </p>
+                </div>
+                <div>
+                    <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+                </div>
+            </div>
 
             <div class="two-columns">
                 <div>

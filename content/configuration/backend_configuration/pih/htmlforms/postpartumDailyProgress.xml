@@ -235,6 +235,9 @@
         <section id="Overview" sectionTag="fieldset" headerTag="legend" headerStyle="title"
                  headerCode="Overview">
             <div class="section-container">
+                <!-- Pregnancy group -->
+                <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+
                 <div id="deliveryDateAndMethod">
                     <p id="when" class="date-one-line">
                         <label>

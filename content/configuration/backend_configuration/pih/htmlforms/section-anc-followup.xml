@@ -14,18 +14,6 @@
             display: inline-block;
         }
 
-        #vitals fieldset p {
-            vertical-align: top;
-            display: inline-block;
-            float: none;
-        }
-
-        #vitals fieldset .left {
-            vertical-align: top;
-            display: inline-block;
-            float: none;
-        }
-
     </style>
 
     <style type="text/css">
@@ -86,6 +74,9 @@
     <section id="anc-followup" sectionTag="fieldset" headerTag="legend"
              headerStyle="title" headerCode="pihcore.ancFollowup.title">
         <div class="section-container">
+            <!-- Pregnancy group -->
+            <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+
             <div class="two-columns">
                 <div>
                     <label>

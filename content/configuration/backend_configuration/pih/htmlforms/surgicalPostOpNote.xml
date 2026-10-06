@@ -360,6 +360,9 @@
                          answerSeparator=""/>
                 </p>
 
+                <!-- Pregnancy group -->
+                <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+
                 <p class="list-inline">
                     <label>
                         <uimessage code="emergency"/>

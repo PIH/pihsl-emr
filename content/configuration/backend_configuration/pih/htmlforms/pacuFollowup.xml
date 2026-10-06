@@ -210,6 +210,10 @@
                 <obs id="admissionDate" conceptId="PIH:12240" showTime="true" default="now"
                      allowFutureDates="false" allowFutureTimes="true"/>
             </p>
+
+            <!-- Pregnancy group -->
+            <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+
         </div>
     </section>
 
