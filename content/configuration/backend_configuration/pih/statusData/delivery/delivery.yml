@@ -6,8 +6,7 @@
   formatExpression: ""
 
 - id: "deliveryDate"
-  labelCode: "Delivery d
-  ate"
+  labelCode: "Delivery date"
   statusDataQuery: "deliveryDate.sql"
   valueExpression: "#if($wereThereDeliveries == 0)none#{else}$!deliveryDate#if($numberBabies == 1) $!deliveryTime#end#end"
   formatExpression: ""
