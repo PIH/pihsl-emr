@@ -1,13 +1,19 @@
 # These status data definitions are what define the Delivery widget on the Pregnancy Program Dashboard
+- id: "pregnancyGroup"
+  labelCode: "pihcore.pregnancyProgramCohortGroup"
+  statusDataQuery: "pregnancyGroup.sql"
+  valueExpression: "$!pregnancyGroup"
+  formatExpression: ""
 
 - id: "deliveryDate"
-  labelCode: "Delivery Date"
+  labelCode: "Delivery d
+  ate"
   statusDataQuery: "deliveryDate.sql"
   valueExpression: "#if($wereThereDeliveries == 0)none#{else}$!deliveryDate#if($numberBabies == 1) $!deliveryTime#end#end"
   formatExpression: ""
 
 - id: "deliveryType"
-  labelCode: "Delivery Type"
+  labelCode: "Delivery type"
   statusDataQuery: "deliveryType.sql"
   valueExpression: "$!deliveryType"
   formatExpression: ""
