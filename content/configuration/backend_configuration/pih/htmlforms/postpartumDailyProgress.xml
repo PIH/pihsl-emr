@@ -601,8 +601,9 @@
                                              answerConceptId="{acID}"
                                              answerCode="{csName}">
                                             <controls>
+                                                <when value="CIEL:190"  thenDisplay="#condom-count"/>
                                                 <when value="CIEL:1873" thenDisplay="#implant-date"/>
-                                                <when value="CIEL:5275" thenDisplay="#implant-date"/>
+                                                <when value="CIEL:5275" thenDisplay="#iud-date"/>
                                             </controls>
                                         </obs>
                                     </obsgroup>
@@ -621,7 +622,42 @@
                         </p>
                     </div>
 
+                    <div id="condom-count">
+                        <p>
+                            <label>
+                                <uimessage code="pihcore.numFCondoms"/>:
+                            </label>
+                            <obs conceptId="PIH:21758" showUnits="condoms" />
+                        </p>
+
+                        <p>
+                            <label>
+                                <uimessage code="pihcore.numMCondoms"/>:
+                            </label>
+                            <obs conceptId="PIH:21757" showUnits="condoms" />
+                        </p>
+                    </div>
+
+                    <div id="iud-date">
+                        <br/><br/><br/>
+                        <label>
+                            <uimessage code="pihcore.dateImplant"/>:
+                        </label>
+                        <obs conceptId="PIH:3203" />
+                    </div>
+
                     <div id="implant-date">
+                        <br/><br/><br/><br/>
+
+                        <p class="side-by-side">
+                            <label>
+                                <uimessage code="Type of implant"/>
+                            </label>
+                            <obs conceptId="CIEL:163401" style="radio"
+                            answerConceptIds="CIEL:1873,PIH:21756"
+                            answerCodes="Jadelle,Levoplant"/>
+                        </p>
+
                         <label>
                             <uimessage code="pihcore.dateImplant"/>:
                         </label>
