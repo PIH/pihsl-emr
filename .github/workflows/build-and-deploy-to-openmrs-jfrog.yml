@@ -43,11 +43,10 @@ jobs:
   deploy-to-gladi:
     if: github.repository_owner == 'PIH'
     needs: build-and-publish
-    concurrency:
-      group: deploy-to-gladi-${{ github.ref }}
-      cancel-in-progress: true
     uses: PIH/openmrs-contrib-distro-tools/.github/workflows/deploy-via-runner.yml@main
     with:
-      runner-label: gladi
+      runner-label: appclstr-01
+      instances: gladi
+      host: false
       notify_ci_dashboard: true
     secrets: inherit
