@@ -601,23 +601,21 @@
                                              answerConceptId="{acID}"
                                              answerCode="{csName}">
                                             <controls>
-                                                <when value="CIEL:190"  thenDisplay="#condom-count"/>
-                                                <when value="CIEL:1873" thenDisplay="#implant-date"/>
-                                                <when value="CIEL:5275" thenDisplay="#iud-date"/>
+                                                <when value="{acID}" thenDisplay="{thenDisplay}"/>
                                             </controls>
                                         </obs>
                                     </obsgroup>
                                 </template>
-                                <render acID="CIEL:159783" dID="159783" csName="Combined oral contraceptive (COC)" />
-                                <render acID="CIEL:80784"  dID="80784" csName="Progestin-only pill (POP)" />
-                                <render acID="CIEL:5277"   dID="5277" csName="pihcore.fp.rhythm" />
-                                <render acID="CIEL:190"    dID="190" csName="Condoms" />
-                                <render acID="CIEL:907"    dID="907" csName="Depo-provera" />
-                                <render acID="PIH:21450"   dID="21450" csName="Sayana press" />
-                                <render acID="CIEL:5275"   dID="5275" csName="pihcore.fp.iud" />
-                                <render acID="CIEL:1873"   dID="1873" csName="Implant" />
-                                <render acID="CIEL:1472"   dID="1472" csName="pihcore.fp.tubalLig" />
-                                <render acID="CIEL:136163" dID="136163" csName="Exclusive breastfeeding (requires a secondary method)" />
+                                <render acID="CIEL:159783" dID="159783" csName="Combined oral contraceptive (COC)" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:80784"  dID="80784" csName="Progestin-only pill (POP)" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:5277"   dID="5277" csName="pihcore.fp.rhythm" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:190"    dID="190" csName="Condoms" thenDisplay="#condom-count" />
+                                <render acID="CIEL:907"    dID="907" csName="Depo-provera" thenDisplay="#fp-method-noop" />
+                                <render acID="PIH:21450"   dID="21450" csName="Sayana press" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:5275"   dID="5275" csName="pihcore.fp.iud" thenDisplay="#iud-date" />
+                                <render acID="CIEL:1873"   dID="1873" csName="Implant" thenDisplay="#implant-date" />
+                                <render acID="CIEL:1472"   dID="1472" csName="pihcore.fp.tubalLig" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:136163" dID="136163" csName="Exclusive breastfeeding (requires a secondary method)" thenDisplay="#fp-method-noop" />
                             </repeat>
                         </p>
                     </div>
@@ -640,15 +638,15 @@
                         </div>
 
                         <div id="iud-date">
-                            <br/><br/><br/>
+                            <br/>
                             <label>
-                                <uimessage code="pihcore.dateImplant"/>:
+                                <uimessage code="pihcore.dateIudInsert"/>:
                             </label>
-                            <obs conceptId="PIH:3203" />
+                            <obs conceptId="PIH:21759" />
                         </div>
 
                         <div id="implant-date">
-                            <br/><br/><br/><br/>
+                            <br/><br/>
 
                             <p class="side-by-side">
                                 <label>
