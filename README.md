@@ -29,7 +29,7 @@ Component versions are defined in `distro/pom.xml` and resolved into `distro/ope
 | `kgh` | `sierraLeone,sierraLeone-kgh` |
 | `wellbody` | `sierraLeone,sierraLeone-wellbody` |
 | `kgh-test` | `sierraLeone,sierraLeone-kgh,sierraLeone-kgh-test` |
-| `gladi` | `sierraLeone,sierraLeone-wellbody,sierraLeone-wellbody-gladi` |
+| `wellbody-ci` | `sierraLeone,sierraLeone-wellbody,sierraLeone-wellbody-ci` |
 
 ## Using the OpenMRS SDK
 
@@ -126,7 +126,7 @@ openmrs-docker kgh logs
 openmrs-docker kgh destroy
 ```
 
-The same pattern applies to `wellbody.env`, `kgh-test.env`, and `gladi.env` — substitute the instance name accordingly.
+The same pattern applies to `wellbody.env`, `kgh-test.env`, and `wellbody-ci.env` — substitute the instance name accordingly.
 
 ## CI and Publishing
 
@@ -134,7 +134,7 @@ CI is handled by GitHub Actions. On every push to `master`, the [Build and deplo
 
 1. Builds and publishes the Maven artifact to [Maven Central](https://central.sonatype.com/artifact/org.pih.openmrs/pihsl-distro) as `org.pih.openmrs:pihsl-distro`.
 2. Builds and pushes a multi-platform Docker image (amd64 + arm64) to Docker Hub at [`partnersinhealth/pihsl-emr`](https://hub.docker.com/r/partnersinhealth/pihsl-emr), tagged with both `latest` and the Maven project version.
-3. Fires the existing Bamboo `kgh-test` and `gladi` deploy triggers, exactly as the legacy `deploy.yml` workflow did.
+3. Deploys to `kgh-test` (on its own runner) and to the `wellbody-ci` instance on `appclstr-01` (`deploy-via-runner`).
 
 A separate [Build seeded images](.github/workflows/build-seeded-images.yml) workflow runs nightly and publishes a pre-initialized seed image to Docker Hub for the Sierra Leone country configuration (`partnersinhealth/pihsl-emr-seed-sierraLeone`).
 
