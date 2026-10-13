@@ -28,6 +28,7 @@ jobs:
     uses: ./.github/workflows/smoke-tests.yml
     secrets: inherit
 
+  # legacy kgh-test server, until kgh-ci.pih-emr.org replaces it (TASKS-555)
   deploy-to-kgh-test:
     if: github.repository_owner == 'PIH'
     needs: build-and-publish
@@ -37,6 +38,17 @@ jobs:
     uses: PIH/openmrs-contrib-distro-tools/.github/workflows/deploy-via-runner.yml@main
     with:
       runner-label: kgh-test
+      notify_ci_dashboard: true
+    secrets: inherit
+
+  deploy-to-kgh-ci:
+    if: github.repository_owner == 'PIH'
+    needs: build-and-publish
+    uses: PIH/openmrs-contrib-distro-tools/.github/workflows/deploy-via-runner.yml@main
+    with:
+      runner-label: appclstr-01
+      instances: kgh-ci
+      host: false
       notify_ci_dashboard: true
     secrets: inherit
 
