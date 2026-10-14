@@ -2,7 +2,8 @@
 <p class="side-by-side">
     <ifMode mode="VIEW" include="false">
         <lookup complexExpression="#set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
-        <includeIf velocityTest="($pregGroup) ">
+        <lookup complexExpression="#set( $pregProgramState = $fn.currentProgramWorkflowStatus('9a3f8252-1588-4f7b-b02c-9e99c437d4ef') )"/>
+        <includeIf velocityTest="($pregGroup) &amp;&amp; ($pregProgramState) &amp;&amp; (!$pregProgramState.patientProgram.dateCompleted) &amp;&amp; ($pregProgramState.state.uuid.equals('a83896bf-9094-4a3c-b843-e75509a52b32'))">
             <br/>
             <span style="color:grey; font-style: italic;">
                 <label>
