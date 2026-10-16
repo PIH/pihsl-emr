@@ -596,6 +596,36 @@
         </div>
     </section>
 
+    <section id="scores" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Scores">
+        <div class="section-container three-columns">
+            <div>
+                <label>
+                    <uimessage code="Downes (0-10)"/>
+                </label>
+                <p class="small">
+                    <obs conceptId="PIH:21776" />
+                </p>
+            </div>
+            <div>
+                <label>
+                    <uimessage code="Silverman-Andersen retraction (0-10)"/>
+                </label>
+                <p class="small">
+                    <obs conceptId="PIH:21777" />
+                </p>
+            </div>
+            <div>
+                <label>
+                    <uimessage code="Thompson HIE (0-22)"/>
+                </label>
+                <p class="small">
+                    <obs conceptId="PIH:21779" />
+                </p>
+            </div>
+        </div>
+    </section>
+
     <section id="dx" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Diagnoses">
         <div class="section-container">
