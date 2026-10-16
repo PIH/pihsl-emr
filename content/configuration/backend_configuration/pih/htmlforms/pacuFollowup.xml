@@ -212,7 +212,8 @@
             </p>
 
             <!-- Pregnancy group -->
-            <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+            <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+            <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
 
         </div>
     </section>

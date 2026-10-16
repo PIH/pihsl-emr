@@ -1,21 +1,60 @@
-<!-- Pregnancy group -->
+<!-- Pregnancy group
+     By default the group can be entered. To only show the previous group, set the flag right before including this subform:
+     <lookup complexExpression="#set( $pregGroupViewOnly = true )"/> -->
 <p class="side-by-side">
-    <label position="left">
-        <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
-    </label>
-    <obs conceptId="PIH:21747" style="radio"
-         answerConceptIds="PIH:21748,PIH:21753,PIH:21754"
-         answerCodes="A,B,C"/>
+    <includeIf velocityTest="!$pregGroupViewOnly">
+        <label position="left">
+            <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
+        </label>
+        <obs conceptId="PIH:21747" style="radio"
+             answerConceptIds="PIH:21748,PIH:21753,PIH:21754"
+             answerCodes="A,B,C"/>
+    </includeIf>
 
     <ifMode mode="VIEW" include="false">
-        <lookup complexExpression="#set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
+        <!-- only show the previous group if it was recorded during the pregnancy program enrollment active at this encounter/visit -->
+        <lookup complexExpression="
+            #set( $pregGroup = false )
+            #set( $pregState = false )
+            #if( $encounter )
+                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}', $encounter.encounterDatetime) )
+            #elseif( $visit )
+                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}', $visit.startDatetime) )
+            #else
+                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}') )
+            #end
+            #if( $pregState )
+                #set( $latestPregGroup = false )
+                #set( $latestPregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )
+                #if( $latestPregGroup )
+                    #if( !$latestPregGroup.obsDatetime.before($pregState.patientProgram.dateEnrolled) )
+                        #set( $pregGroup = $latestPregGroup )
+                    #end
+                #end
+            #end"/>
         <includeIf velocityTest="($pregGroup) ">
             <br/>
             <span style="color:grey; font-style: italic;">
                 <label>
                     <uimessage code="pihcore.previousPregnancyProgramCohortGroup"/>:
                 </label>
-                <lookup complexExpression="$pregGroup.valueCoded.name"/>
+                <span class="value"><lookup complexExpression="$pregGroup.valueCoded.name"/></span>
+                (<uimessage code="pihcore.previousPregnancyProgramCohortGroup.assignedOn"/>:
+                <!-- Resolve the encounter name from the message properties (ui.i18n.EncounterType.name.<encounter type uuid>),
+                     falling back to the form's own name when that uuid has no message configured. -->
+                <lookup complexExpression="
+                    #set( $pregGroupFormName = false )
+                    #if( $pregGroup.encounter )
+                        #set( $pregGroupFormNameCode = &quot;ui.i18n.EncounterType.name.$pregGroup.encounter.encounterType.uuid&quot; )
+                        #set( $pregGroupFormName = $fn.message($pregGroupFormNameCode) )
+                        #if( $pregGroupFormName == $pregGroupFormNameCode )
+                            #set( $pregGroupFormName = false )
+                            #set( $pregGroupFormName = $pregGroup.encounter.form.name )
+                        #end
+                    #end"/>
+                <lookup complexExpression="$fn.formatDate($pregGroup.obsDatetime, 'dd MMM yyyy')"/><includeIf velocityTest="($pregGroupFormName) ">,
+                <uimessage code="pihcore.previousPregnancyProgramCohortGroup.from"/>:
+                <lookup complexExpression="$pregGroupFormName"/></includeIf>)
             </span>
         </includeIf>
     </ifMode>
