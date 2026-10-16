@@ -236,7 +236,8 @@
                  headerCode="Overview">
             <div class="section-container">
                 <!-- Pregnancy group -->
-                <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+                <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+                <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
 
                 <div id="deliveryDateAndMethod">
                     <p id="when" class="date-one-line">

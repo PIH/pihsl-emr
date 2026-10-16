@@ -75,7 +75,8 @@
              headerStyle="title" headerCode="pihcore.ancFollowup.title">
         <div class="section-container">
             <!-- Pregnancy group -->
-            <subform path="configuration/pih/subforms/pregnancy-group-view-only-widget.xml"/>
+            <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+            <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
 
             <div class="two-columns">
                 <div>
