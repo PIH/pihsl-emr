@@ -53,6 +53,7 @@
 --   - references between independent patient data, where voiding the
 --     parent does not invalidate the child:
 --     obs.order_id (results of an order are owned by the encounter),
+--     medication_dispense.drug_order_id (medication was still dispensed),
 --     patient_state.encounter_id (would leave a gap in program history),
 --     patient_identifier.patient_program_id (identifier may still be in use),
 --     appointmentscheduling_appointment.visit_id (appointment predates visit),
