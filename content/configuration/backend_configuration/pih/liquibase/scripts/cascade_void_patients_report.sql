@@ -337,6 +337,10 @@ UNION ALL
 SELECT 22 AS seq, 'encounter_diagnosis' AS table_name, 'condition_id -> conditions (not followed)' AS via, COUNT(*) AS num_rows
 FROM   encounter_diagnosis c INNER JOIN conditions p ON c.condition_id = p.condition_id
 WHERE  p.voided = 1 AND c.voided = 0
+UNION ALL
+SELECT 23 AS seq, 'medication_dispense' AS table_name, 'drug_order_id -> orders (not followed)' AS via, COUNT(*) AS num_rows
+FROM   medication_dispense c INNER JOIN orders p ON c.drug_order_id = p.order_id
+WHERE  p.voided = 1 AND c.voided = 0
 ) x ORDER BY seq;
 
 -- 3. Rows changed by each run of the cascade void script
