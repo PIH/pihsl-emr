@@ -121,6 +121,21 @@
                 jq("#maturityRatingTotalScore").find("input").val(total);
             }
 
+            function updateGestationalAgeByMaturity() {
+                // Gestational age by maturity = (2 * Maturity rating total score + 120) / 5, rounded to the nearest week
+                // the calculated value can still be manually overridden by the user
+                const neuroScore = jq("#total-neuro-score").find("input").val();
+                const matScore = jq("#total-mat-score").find("input").val();
+                if ( neuroScore.length &lt; 1 &amp;&amp; matScore.length &lt; 1 ) {
+                    jq("#gestationalAgeByMaturity").find("input").val("");
+                    return;
+                }
+                const total = Number(jq("#maturityRatingTotalScore").find("input").val());
+                if (Number.isFinite(total)) {
+                    jq("#gestationalAgeByMaturity").find("input").val(Math.round((2 * total + 120) / 5));
+                }
+            }
+
             function updateTotalScore(individualScore, totalScore) {
                 let total = 0;
                 let hasScore = false;
@@ -162,6 +177,7 @@
                 if (parentTable) {
                     const tableId = jq(parentTable).attr("id");
                     updateTotalScore(tableId + "-input" , "total-" + tableId);
+                    updateGestationalAgeByMaturity();
                 }
             }
 
@@ -886,7 +902,7 @@
                                         <uimessage code="pihcore.gestational.age.by.maturity"/>
                                     </label>
                                     <span class="gestationByDateSpan">
-                                        <obs conceptId="PIH:21414" id="maturityRatingTotalScore"  size="80"/><span class="append-to-value">weeks</span>
+                                        <obs conceptId="PIH:21414" id="gestationalAgeByMaturity"  size="80"/><span class="append-to-value">weeks</span>
                                     </span>
                                 </p>
                             </td>
