@@ -191,11 +191,7 @@ sexually in any way that you did not want in the past year?" />
                 <template>
                         <obs id="vr-{tID}" conceptId="CIEL:167788" style="checkbox"
                              answerConceptId="{acID}"
-                             answerCode="{csName}">
-                            <controls>
-                                <when value="CIEL:5622" thenDisplay="#other-visit-reason" />
-                            </controls>
-                        </obs>
+                             answerCode="{csName}" />
                 </template>
                 <render acID="PIH:FAMILY PLANNING" tID="fp" csName="Family planning" />
                 <render acID="PIH:ANTENATAL CLINIC" tID="anc" csName="ANC" />
@@ -203,8 +199,16 @@ sexually in any way that you did not want in the past year?" />
                 <render acID="CIEL:159940" tID="vct" csName="HIV test and counseling" />
                 <render acID="PIH:21701" tID="tomi" csName="Treatment of minor illness" />
                 <render acID="PIH:21700" tID="ghe" csName="General health education" />
-                <render acID="CIEL:5622" tID="other"  csName="other" />
             </repeat>
+
+            <!-- Only the "other" checkbox controls the specify box: a <when> on every checkbox hid the box (and dropped its text) when another reason was ticked -->
+            <obs id="vr-other" conceptId="CIEL:167788" style="checkbox"
+                 answerConceptId="CIEL:5622"
+                 answerCode="other">
+                <controls>
+                    <when value="CIEL:5622" thenDisplay="#other-visit-reason" />
+                </controls>
+            </obs>
 
             <div id="other-visit-reason">
                 <obs conceptId="CIEL:160430" style="textarea" labelCode="if other, specify reason for the visit" />
@@ -501,7 +505,7 @@ sexually in any way that you did not want in the past year?" />
                         <uimessage code="Symptoms/problems around the genitalia?" />
                     </label>
                     <obs conceptId="CIEL:1126" style="radio"
-                         answerConceptIds="CIEL:1115,CIEL:1116"
+                         answerConceptIds="CIEL:1116,CIEL:1115"
                          answerCodes="yes,no" />
                 </p>
             </div>

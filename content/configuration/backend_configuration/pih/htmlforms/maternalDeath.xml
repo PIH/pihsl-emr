@@ -185,7 +185,7 @@
                                 <obs conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="primeCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" defaultValue="PIH:primary" controlId="primary"/>
+                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:primary" style="checkbox" controlId="primary"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -200,7 +200,7 @@
                                 <obs conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="secondCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" defaultValue="PIH:secondary" controlId="secondary"/>
+                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:secondary" style="checkbox" controlId="secondary"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -241,7 +241,7 @@
                                 <td>
                                     {0}
                                     <span class="small hidden">
-                                        <obs id="action-order-{0}" conceptId="CIEL:165416" defaultValue="{0}" controlId="order-{0}"/>
+                                        <obs id="action-order-{0}" conceptId="CIEL:165416" controlId="order-{0}"/>
                                     </span>
                                 </td>
                                 <td>
@@ -267,6 +267,28 @@
     <br/>
 
     <ifMode mode="VIEW" include="false">
+        <script type="text/javascript">
+            // The primary/secondary marker and the action-point row number are hidden obs. They used to carry a
+            // defaultValue, which made every obsgroup non-empty, so junk groups were saved on every review (SL-1463).
+            // Now they are filled in on submit, and only for rows that have an entry.
+            function maternalDeathHasEntry(fieldIds) {
+                return fieldIds.some(function(fieldId) {
+                    const value = getValue(fieldId + '.value');
+                    // getValue returns null when the field is unknown: keep the marker rather than lose it
+                    return value === null || (value !== undefined &amp;&amp; String(value).trim() !== '');
+                });
+            }
+
+            beforeSubmit.push(function() {
+                jq('#primaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathHasEntry(['primeCause']));
+                jq('#secondaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathHasEntry(['secondCause']));
+                ['1', '2', '3'].forEach(function(n) {
+                    const rowHasEntry = maternalDeathHasEntry(['action-desc-' + n, 'action-person-' + n, 's-date-' + n, 'e-date-' + n]);
+                    setValue('order-' + n + '.value', rowHasEntry ? n : '');
+                });
+                return true;
+            });
+        </script>
         <div id="buttons">
             <submit submitClass="confirm right" submitCode="mirebalais.save"/>
             <button type="button" class="cancel"><uimessage code="emr.cancel"/></button>
