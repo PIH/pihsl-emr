@@ -30,9 +30,9 @@ python3 parse_hfe.py /path/to/htmlforms /path/to/csv_output
 
 The concept mappings CSV (`full_concept_mappings.csv`) has columns: `name, concept_id, source, code`. The lookup key is `source:code` (e.g. `CIEL:1721`).
 
-## Source repository
+## Source repository (example: Sierra Leone)
 
-PIH Sierra Leone config: https://github.com/PIH/openmrs-config-pihsl  
+This skill is used across PIH sites (Sierra Leone, Haiti/ZL, Liberia, Malawi, ...). Substitute the site's config repo. Example, PIH Sierra Leone config: https://github.com/PIH/openmrs-config-pihsl  
 XML forms are under: `configuration/pih/htmlforms/`  
 Access via sparse clone over HTTPS (GitHub API is blocked from cloud):
 ```bash
@@ -102,3 +102,7 @@ git sparse-checkout set configuration/pih/htmlforms
 - `full_concept_mappings.csv` — concept ID → label lookup (user has a copy; 17,487 entries, columns: name, concept_id, source, code)
 
 Upload both at the start of the session. Place the concept mappings at `/root/full_concept_mappings.csv` so the parser finds it automatically.
+
+## Related skill
+
+For writing Playwright E2E specs for these forms (conditional display, JavaScript, form availability, verify findings), see `hfe-e2e-specs.skill.md` in this directory. That skill starts from the CSVs this skill produces and never changes their schema.

@@ -1,0 +1,108 @@
+import type { APIRequestContext, Page } from '@playwright/test';
+import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
+import { getEncounterObs, getPatientEncounters } from '../../commands';
+import { EntryFormPage } from '../../pages';
+
+// gainMaternalRegister.xml: "Maternity and Delivery Register" (GAIN): one page with admission, labour, delivery, newborn
+// condition, diagnoses, family planning, maternal outcome (disposition) and "Delivery conducted by". A top-level form: the
+// specs open enterHtmlFormWithStandardUi inside a visit they create for a 25-year-old woman, so availability
+// (documentation/_availability.e2e.md: enableMCHGainMaternal, enterMCH, "Maternal and Child Location" session tag, female
+// >= 10) is not exercised. Note that availability lists it as NOT offered: no site lists mchGAINMaternal, so the form is
+// only reachable by URL. The session location (MCH OPD) carries the form's location tag (:44), so the location select
+// defaults to it.
+//
+// Conditions in the form, from documentation inventory (gainMaternalRegister.inv.md):
+//   ifMode VIEW include=false  :35, :330  heading and #buttons exist in ENTER/EDIT only
+//   when CIEL:1573 = CIEL:5622 :316  "HCW Cadre" = Other shows #other-role (PIH:14415 free text)
+// Sub-form (documentation/_shared.e2e.md): encounter-provider-location-date, with its date widget replaced by an empty span
+// (:46-48) because the date is collected in "Maternal outcome" (:291).
+//
+// Scripts: none of its own.
+// Side effects on save: postSubmissionAction ApplyDispositionAction (:21) with the encounterDisposition widget (:296); left
+// on its default here (transfer / death dispositions are not exercised).
+// Not covered here: the disposition actions, diagnosis autocomplete (:231, :251), VIEW and EDIT modes.
+//
+// Findings: only duplicate id="when" :286 (_shared V10).
+
+const FORM = 'gainMaternalRegister.xml';
+const MATERNAL_REGISTER_ENCOUNTER_TYPE_UUID = '9cc89b83-e32f-410a-947d-aeb3bda37571';
+
+// The form uses the HFE <submit> tag: there is no #submit.
+const save = async (page: Page) => {
+  await page.locator('#buttons input.submitButton').click();
+};
+
+// "<concept>=<value>" for each obs of the encounter (coded values by their name).
+const obsSummary = async (api: APIRequestContext, encounterUuid: string): Promise<string[]> =>
+  (await getEncounterObs(api, encounterUuid)).map((o) => {
+    const v = o.value as { display?: string } | string | number;
+    return `${o.concept.display}=${typeof v === 'object' && v !== null ? v.display : v}`;
+  });
+
+test.describe('gainMaternalRegister', () => {
+  let context: EntryContext;
+
+  const open = async (page: Page) => {
+    await EntryFormPage.open(page, FORM, context);
+    await expect(page.locator('#buttons input.submitButton')).toBeVisible();
+  };
+
+  test.beforeEach(async ({ createEntryContext }) => {
+    context = await createEntryContext({
+      givenName: 'AutoGainMat',
+      familyName: 'Tester',
+      gender: 'F',
+      birthdate: birthdateYearsAgo(25),
+    });
+  });
+
+  test('"HCW Cadre" = Other shows the free-text role, any other cadre hides it', async ({ page }) => {
+    // when :316 (CIEL:1573 = CIEL:5622 -> #other-role)
+    await open(page);
+    await expect(page.locator('#other-role')).toBeHidden();
+    await page.locator('#hcw-cadre').getByLabel('Other', { exact: true }).check();
+    await expect(page.locator('#other-role')).toBeVisible();
+    await page.locator('#hcw-cadre').getByLabel('Midwife', { exact: true }).check();
+    await expect(page.locator('#other-role')).toBeHidden();
+  });
+
+  test('the date widget of the shared sub-form is replaced: only "Maternal outcome" has an encounter date', async ({ page }) => {
+    // :46-48 blanks encounter-date-widget; :291 is the only date input of the encounter
+    await open(page);
+    await expect(page.locator('span#encounterDate')).toHaveCount(1);
+    await expect(page.locator('#adt span#encounterDate')).toHaveCount(1);
+  });
+
+  test('the location defaults to the session location and is required', async ({ page, api }) => {
+    await open(page);
+    await expect(page.locator('#encounterLocation select')).not.toHaveValue('');
+    await page.locator('#encounterLocation select').selectOption({ index: 0 });
+    await save(page);
+    await expect(page.locator('#encounterLocation span.field-error')).toHaveText('required');
+    await expect(page).toHaveURL(/enterHtmlFormWithStandardUi/);
+    expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
+  });
+
+  test('saving fills the register encounter with the entered obs', async ({ page, api }) => {
+    await open(page);
+    await page.locator('#delivery-section').getByLabel('Normal', { exact: true }).check();
+    await page.locator('#newborn').getByLabel('F', { exact: true }).check();
+    await page.locator('#newborn p', { hasText: '(Birth) Weight' }).locator('input[type=text]').fill('3.2');
+    await page.locator('#hcw input[type=text]').first().fill('Auto Midwife');
+    await page.locator('#hcw-cadre').getByLabel('Midwife', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const encounters = await getPatientEncounters(api, context.patient.uuid);
+    expect(encounters.map((e) => e.encounterType.uuid)).toEqual([MATERNAL_REGISTER_ENCOUNTER_TYPE_UUID]);
+    expect(await obsSummary(api, encounters[0].uuid)).toEqual(
+      expect.arrayContaining([
+        'Type of delivery=Spontaneous vaginal delivery',
+        'Child gender=Female',
+        'Birth weight (kg)=3.2',
+        'Name of clinician (text)=Auto Midwife',
+        'Delivery assistant=Midwife',
+      ]),
+    );
+  });
+});
