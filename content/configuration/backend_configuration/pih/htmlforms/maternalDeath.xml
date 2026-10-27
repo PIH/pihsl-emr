@@ -185,7 +185,7 @@
                                 <obs conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="primeCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:primary" style="checkbox" controlId="primary"/>
+                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:primary" style="checkbox"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -200,7 +200,7 @@
                                 <obs conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="secondCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:secondary" style="checkbox" controlId="secondary"/>
+                                    <obs conceptId="CIEL:159946" answerConceptId="PIH:secondary" style="checkbox"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -241,20 +241,20 @@
                                 <td>
                                     {0}
                                     <span class="small hidden">
-                                        <obs id="action-order-{0}" conceptId="CIEL:165416" controlId="order-{0}"/>
+                                        <obs id="action-order-{0}" conceptId="CIEL:165416"/>
                                     </span>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:21672" controlId="action-desc-{0}" style="text"/>
+                                    <obs id="action-desc-{0}" conceptId="PIH:21672" controlId="action-desc-{0}" style="text"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:6592" controlId="action-person-{0}" style="text"/>
+                                    <obs id="action-person-{0}" conceptId="PIH:6592" controlId="action-person-{0}" style="text"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:11131" controlId="s-date-{0}" allowFutureDates="true"/>
+                                    <obs id="s-date-{0}" conceptId="PIH:11131" controlId="s-date-{0}" allowFutureDates="true"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:12748" controlId="e-date-{0}" allowFutureDates="true"/>
+                                    <obs id="e-date-{0}" conceptId="PIH:12748" controlId="e-date-{0}" allowFutureDates="true"/>
                                 </td>
                             </tr>
                         </obsgroup>
@@ -271,6 +271,7 @@
             // The primary/secondary marker and the action-point row number are hidden obs. They used to carry a
             // defaultValue, which made every obsgroup non-empty, so junk groups were saved on every review (SL-1463).
             // Now they are filled in on submit, and only for rows that have an entry.
+            // getValue/setValue only know obs that have an id (not a controlId).
             function maternalDeathHasEntry(fieldIds) {
                 return fieldIds.some(function(fieldId) {
                     const value = getValue(fieldId + '.value');
@@ -279,12 +280,20 @@
                 });
             }
 
+            // the autocomplete widgets have no id, so look at their inputs
+            function maternalDeathCauseEntered(containerId) {
+                return jq('#' + containerId + ' input.autoCompleteText, #' + containerId + ' input.autoCompleteHidden')
+                    .toArray().some(function(input) {
+                        return jq.trim(input.value) !== '';
+                    });
+            }
+
             beforeSubmit.push(function() {
-                jq('#primaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathHasEntry(['primeCause']));
-                jq('#secondaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathHasEntry(['secondCause']));
+                jq('#primaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathCauseEntered('primaryCause'));
+                jq('#secondaryCause .hidden input[type=checkbox]').prop('checked', maternalDeathCauseEntered('secondaryCause'));
                 ['1', '2', '3'].forEach(function(n) {
                     const rowHasEntry = maternalDeathHasEntry(['action-desc-' + n, 'action-person-' + n, 's-date-' + n, 'e-date-' + n]);
-                    setValue('order-' + n + '.value', rowHasEntry ? n : '');
+                    setValue('action-order-' + n + '.value', rowHasEntry ? n : '');
                 });
                 return true;
             });
