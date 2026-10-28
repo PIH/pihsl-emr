@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-ncd-plan.xml: treatment plan, lab test orders, radiology/EKG/echo findings, medication orders, new clinical
 // impressions (NCD categories) and disposition of the NCD encounter. The specs use an NCD followup encounter
@@ -21,7 +21,8 @@ import { SectionFormPage } from '../../pages';
 // Not covered here: saving a lab order (it works, but an encounter with an order cannot be purged over REST, so the
 //   fixture teardown fails and leaves the patient behind), medication orders (drug-order widget needs a drug and
 //   dosing), SetOrderAutoExpireDateAction, saving a disposition
-//   (Admission/Transfer/Death have real effects on the visit and patient), VIEW mode, order revise/discontinue.
+//   (Admission/Transfer/Death have real effects on the visit and patient), order revise/discontinue.
+// EDIT is covered by the save test (saved values reopened), VIEW by the same test (the saved values only, the date format, no buttons).
 //
 // Findings:
 //   V1 Low  :33, :287  two <section id="drug-orders">: the first one is the Treatment plan, the second the medications.
@@ -141,5 +142,27 @@ test.describe('section-ncd-plan', () => {
     await expect(page.locator('#treatment-plan textarea')).toHaveValue('Start amlodipine and review in a month');
     await expect(page.locator('#diabetes-onset-q').getByLabel('Diabetes', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Medication prescribed', { exact: true })).toBeChecked();
+
+    // VIEW: the plan, the chest X-ray finding, the new clinical impression, the medication tick and the return visit date (dd MMM yyyy);
+    // the lab tests and the disposition were not touched, so they show no value. The hidden "Radiology procedure performed" obs of the
+    // X-ray group is set by the form, not shown.
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const apptText = `${String(nextYear.getDate()).padStart(2, '0')} ${months[nextYear.getMonth()]} ${nextYear.getFullYear()}`;
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Radiology procedure performed: Chest (X-ray)': '',
+      'Medication prescribed at consult end: Yes': '[X] Medication prescribed',
+      [`Return visit date: ${nextYear.getFullYear()}-${String(nextYear.getMonth() + 1).padStart(2, '0')}-${String(nextYear.getDate()).padStart(2, '0')}`]: apptText, // a date-only value: the helper compares only text, number and coded values
+    });
+    expect(await view.valueTexts()).toEqual([
+      'Start amlodipine and review in a month',
+      '[X] Normal',
+      '[X] Diabetes',
+      'Poorly controlled diabetes',
+      '[X] Medication prescribed',
+      apptText,
+    ]);
+    await expect(view.page.locator('#apptDate .value')).toHaveText(apptText);
+    await expect(view.page.locator('#test-orders .value, #encounter-disposition .value')).toHaveCount(0);
+    await expect(view.page.locator('input.submitButton, button.cancel')).toHaveCount(0); // ifMode :400
   });
 });

@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // surgicalPostOpNote.xml: "Surgical Note" (service team, description of the operation, ins/outs, plan). A top-level form: the specs
 // open enterHtmlFormWithStandardUi inside a visit they create for a 30-year-old female (documentation/_availability.e2e.md:
@@ -19,7 +19,8 @@ import { EntryFormPage } from '../../pages';
 //
 // Scripts: :217-227 auto-sizes the textareas on keyup ("avoid scrollbars and facilitate printing"): it listens on #post-op-surgical-note (V1).
 // Side effects on save: none (no postSubmissionAction, program, disposition or order).
-// Not covered here: VIEW/EDIT, the pregnancy-group line, the autocomplete diagnoses and procedures, the ivf/antibiotic volumes beyond one.
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test (and the save test): the obs groups (IVF, transfusion), the dates and
+// the provider/location. Not covered here: EDIT, the pregnancy-group line, the ivf/antibiotic volumes beyond one.
 //
 // Findings:
 //   V1 Low  :220,:225  jq('#post-op-surgical-note') matches nothing (the root is id="surgical-note", no such element): the textareas never grow, the long
@@ -28,6 +29,8 @@ import { EntryFormPage } from '../../pages';
 //                      Fix: drop one (:482 probably meant another fluid).
 //   V3 Low  :563       "Surgery antibiotics" offers CIEL:81951 = Phenobarbital (an anticonvulsant, not an antibiotic); intended concept
 //                      unconfirmed. Fix: the intended antibiotic.
+//   see V2/V3 in VIEW: with Dextran saved once, the VIEW shows it once (the second row is an empty group, hidden); "Phenobarbital" is listed as an
+//                      antibiotic in the VIEW too (tested below).
 
 const FORM = 'surgicalPostOpNote.xml';
 const SAVE = '#buttons input.submitButton';
@@ -148,5 +151,94 @@ test.describe('surgicalPostOpNote', () => {
         'Volume of transfusion=2',
       ]),
     );
+    await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid);
+  });
+
+  // VIEW: every saved value is a span.value, the obs groups (IVF, transfusion) only show when they have data, and the dates print as dd MMM yyyy.
+  test('VIEW: shows the team, the description, the fluids and the plan that were saved, and nothing for the rest', async ({ page, api }) => {
+    await page.locator('#encounterLocation select').selectOption({ index: 1 });
+    const locationName = (await page.locator('#encounterLocation select option:checked').innerText()).trim();
+    await pickAttending(page);
+    const attendingName = (await attending(page).inputValue()).replace(/\s*\(.*\)\s*$/, '').trim(); // the field reads "Name (identifier)", the VIEW the name
+    await page.locator('#service-team select').nth(1).selectOption({ index: 1 });
+    const service = (await page.locator('#service-team select').nth(1).locator('option:checked').innerText()).trim();
+    await page.getByLabel('Hospitalized', { exact: true }).check();
+    await row(page, 'Emergency/Urgent').getByLabel('yes').check();
+    await row(page, 'Planned return').getByLabel('no', { exact: true }).check();
+    await page.getByLabel('General anesthesia', { exact: true }).check();
+    await page.getByLabel('Clean', { exact: true }).check();
+    const dextran = row(page, 'Dextran').first(); // V2: the form lists Dextran twice
+    await dextran.locator('input[type=checkbox]').check();
+    await dextran.locator('input[type=text]').fill('250');
+    await row(page, 'Dextrose 10% in water').locator('input[type=checkbox]').check();
+    await row(page, 'Dextrose 10% in water').locator('input[type=text]').fill('500');
+    await page.locator('#transfusion').getByLabel('yes').check();
+    await row(page, 'Whole blood').locator('input[type=checkbox]').check();
+    await row(page, 'Whole blood').locator('input[type=text]').fill('2');
+    await page.locator('#pre-op-antibiotic').getByLabel('yes').check();
+    await page.getByLabel('Cefazolin', { exact: true }).check();
+    await page.getByLabel('Phenobarbital', { exact: true }).check(); // V3
+    await page.locator('#additional-comments textarea').fill('Uncomplicated');
+    await page.locator('#instructions textarea').fill('Remove stitches in 7 days');
+    await row(page, 'Drainage removal date').locator('input.hasDatepicker').evaluate((el) => {
+      const jq = (window as any).jQuery;
+      jq(el).datepicker('setDate', new Date(2030, 0, 10));
+      jq(el).closest('span').find('input[type=hidden]').change();
+    });
+    await page.locator(SAVE).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, { 'Date to remove drainage: 2030-01-10': '10 Jan 2030' }); // a date-only value
+    const shown = await view.valueTexts();
+    const today = new Date();
+    const date = `${String(today.getDate()).padStart(2, '0')} ${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][today.getMonth()]} ${today.getFullYear()}`;
+    for (const expected of [
+      date, // the date of surgery
+      locationName,
+      service,
+      attendingName,
+      '[X] Hospitalized',
+      '[X] yes', // emergency, transfusion, pre-operative antibiotic
+      '[X] no', // planned return
+      '[X] General anesthesia',
+      '[X] Clean',
+      '[X] Dextran',
+      '250',
+      '[X] Dextrose 10% in water',
+      '500',
+      '[X] Whole blood',
+      '2',
+      '[X] Cefazolin',
+      '[X] Phenobarbital', // V3: listed as an antibiotic
+      'Uncomplicated',
+      'Remove stitches in 7 days',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the obs groups only show when they have data: one Dextran (V2: the second row of the form is an empty group), no other fluid, one transfusion type
+    expect(shown.filter((t) => t === '[X] Dextran')).toHaveLength(1);
+    await expect(page.locator('.emptyValue', { hasText: 'Dextran' })).toHaveCount(0);
+    await expect(page.locator('#ins-outs .value')).toHaveText([
+      '[X] Dextran',
+      '250',
+      '[X] Dextrose 10% in water',
+      '500',
+      '[X] yes',
+      '[X] Whole blood',
+      '2',
+      '[X] yes',
+      '[X] Cefazolin',
+      '[X] Phenobarbital',
+    ]);
+    await expect(page.locator('.emptyValue', { hasText: 'Plasma' })).toHaveCount(0);
+    // the drainage removal date is printed as dd MMM yyyy, the stitches removal date stays empty
+    await expect(row(page, 'Drainage removal date').locator('.value')).toHaveText('10 Jan 2030');
+    await expect(row(page, 'Stitches removal date').locator('.value')).toHaveCount(0);
+    // what was not answered shows no value
+    await expect(row(page, 'Scheduled/Elective').locator('.value')).toHaveCount(0);
+    await expect(row(page, 'Complications from anaesthesia').locator('.value')).toHaveCount(0);
+    expect(shown).not.toContain('[X] Ambulatory');
+    await expect(page.locator('#buttons, h2, textarea, select, input[type=text], input[type=radio], input[type=checkbox]')).toHaveCount(0); // read-only
   });
 });

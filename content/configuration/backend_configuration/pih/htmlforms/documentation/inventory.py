@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Inventory + mechanical Verify-A checks for HFE forms.
 
-For each current form (versioned *_v1.0 / *_Version3 copies are skipped) writes <out>/<form>.inv.md with:
+For each current form (versioned *_v1.0 / *_Version3 copies are skipped unless named with --include) writes <out>/<form>.inv.md with:
   header facts, includes, macros, mechanical Verify-A findings (leads, not verdicts),
   a conditional-display table and a JavaScript table (the input for the form's e2e spec: its conditions and scripts),
   `triviality` (whether the form itself has no conditions/scripts/findings).
@@ -25,6 +25,7 @@ ap.add_argument('--out', required=True)
 ap.add_argument('--specs-dir', default=os.path.abspath(os.path.join(HERE, *(['..'] * 6), 'e2e', 'specs')), help='e2e specs directory (specs/<form>/<form>.spec.ts)')
 ap.add_argument('--only-changed', action='store_true', help='skip forms whose XML is unchanged since their e2e spec was last committed (git; uncommitted spec: XML not newer than it)')
 ap.add_argument('--availability-file', default='_availability.e2e.md')
+ap.add_argument('--include', action='append', default=[], help='versioned form to inventory anyway (e.g. checkin_v3.5.xml); repeatable')
 ARGS = ap.parse_args()
 
 FORMS = ARGS.forms_dir
@@ -221,7 +222,7 @@ def main():
     # forms in subdirectories (e.g. hiv/) are included with their relative path; the output is flat, by base name
     forms = sorted(os.path.relpath(os.path.join(d, f), FORMS)
                    for d, subdirs, files in os.walk(FORMS) if os.path.basename(d) != 'documentation'
-                   for f in files if f.endswith('.xml') and not re.search(r'_v\d|_Version\d', f))
+                   for f in files if f.endswith('.xml') and (f in ARGS.include or not re.search(r'_v\d|_Version\d', f)))
     summary = {}
     allroots = {}
     for f in forms:

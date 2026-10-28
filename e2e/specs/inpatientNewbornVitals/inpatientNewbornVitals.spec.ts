@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // inpatientNewbornVitals.xml: "Vital Signs Newborn Inpatient" (infant vitals, oxygen and fluids, a newborn exam of six yes/no
 // signs, feeding and hematocrit). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an infant born 3 days
@@ -10,14 +10,14 @@ import { EntryFormPage } from '../../pages';
 //
 // Conditions in the form, from documentation inventory (inpatientNewbornVitals.inv.md):
 //   ifMode VIEW include=false :96 (heading), :110 (CSS for the oxygen inputs), :201 (Save/Cancel buttons); ENTER renders them.
-//   (VIEW cannot be tested: an encounter created over REST has no form.)
 // Scripts: none in this file. The infant scoring (shared vital-signs-infant-widget.js: _shared V2, V4) is exercised by one
 //   table-driven test: a summed score >= 2 shows #confirmMsg and disables Save until #contactDr is ticked; BP is not scored.
 // Exam (:148-:176): six obsgroups (PIH:14858) with radios yes/no: yes saves PIH:SYMPTOM PRESENT = <sign>, no saves
 //   PIH:SYMPTOM ABSENT = <sign>; feeding radios (PIH:21125); hematocrit CIEL:1015.
 // Side effects on save: none (no program, order or disposition). Encounter type 6b1c3929-... (Vital Signs Inpatient, shared
 //   with inpatientVitals.xml).
-// Not covered here: EDIT and VIEW modes, the retro-entry privilege.
+// VIEW is covered by the save test: every saved value is shown in its field, the exam answers and feeding with the form's own labels, and the four
+// signs left unanswered are not rendered. Not covered here: EDIT mode, the retro-entry privilege.
 
 const FORM = 'inpatientNewbornVitals.xml';
 const INPATIENT_VITALS_ENCOUNTER_TYPE_UUID = '6b1c3929-f23c-423f-8cad-64b17cf10b99';
@@ -143,5 +143,24 @@ test.describe('inpatientNewbornVitals', () => {
       ]),
     );
     expect(obs).toHaveLength(16); // 12 values + the 2 signs, each inside its own obs group (2 group obs)
+
+    // VIEW: the coded answers carry the form's own labels (yes/no radios, feeding answerLabels), and the four signs that were not answered
+    // are not shown at all (their obsgroups are showIfEmpty="false": no label, no empty radios)
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Symptom present: Seizure': '[X] yes',
+      'Symptom absent: Floppy infant syndrome': '[X] no',
+      'Infant feeding observed: Normal': '[X] feeding well',
+    });
+    const texts = await view.valueTexts();
+    for (const [id, value] of Object.entries({ bp_systolic: '70', bp_diastolic: '40', heart_rate: '130', respiratory_rate: '45', temperature_c: '37', o2_sat: '98', glucose: '4', hematocrit: '45' })) {
+      await expect(view.page.locator(`#${id} .value`), id).toHaveText(value);
+    }
+    expect(texts).toEqual(['70', '40', '130', '45', '37', '98', '4', '1', '60', '30', '[X] yes', '[X] no', '[X] feeding well', '45']);
+    const exam = (await view.page.locator('#examDiv').innerText()).replace(/\s+/g, ' ').replace(/\[\s*\]/g, '[ ]'); // nbsp, "[  ]" for an empty radio
+    expect(exam).toContain('Seizures [X] yes [ ] no');
+    expect(exam).toContain('Floppy [ ] yes [X] no');
+    expect(exam).toContain('Feeding [ ] not feeding [ ] feeding reluctantly [X] feeding well');
+    expect(exam).not.toMatch(/lethargy|irritable|unarousable|tone/i);
+    await expect(view.page.locator('#examDiv input, #buttons')).toHaveCount(0);
   });
 });

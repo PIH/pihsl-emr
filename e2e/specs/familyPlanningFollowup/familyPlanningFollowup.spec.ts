@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // familyPlanningFollowup.xml: family planning followup visit (disability, service type, vitals, method chosen today,
 // appointment, referral out). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit they create, so
@@ -23,7 +23,10 @@ import { EntryFormPage } from '../../pages';
 // Scripts: :22-27 setUpNextAndSubmitButtons() only; there are no #next / .nextSection buttons, so Save posts the form.
 // Side effects on save: ReopenVisitAction (:20, reopens a closed visit; the visit here is open). No program, order or
 // disposition. No required field apart from the provider (preselected).
-// Not covered here: EDIT and VIEW modes, a closed visit being reopened, the Next/Save navigation script.
+// VIEW (end of the save test, and the last test): every saved value is shown in its own checkbox/radio or field (expectViewShowsSavedObs, with the
+// labels of the visit type and the return date as "dd MMM yyyy"), the unticked methods are shown as unselected, and a male patient's VIEW has
+// Vasectomy and none of the female-only methods (includeIf :275-:315).
+// Not covered here: EDIT mode, a closed visit being reopened, the Next/Save navigation script.
 //
 // Findings (familyPlanningIntake.xml has the same V1, V2, the 160693 one and the male-branch one, at its own lines):
 //   V1 Medium :223-224  the second <when> value is CIEL:5275 (intrauterine device) but the repeat renders Jadelle (CIEL:1873)
@@ -208,5 +211,47 @@ test.describe('familyPlanningFollowup', () => {
         'Patient referred or escorted=Yes',
       ]),
     );
+
+    // VIEW: every saved value is shown (the visit type and the return date under the form's labels), the others are not
+    const apptYear = new Date().getFullYear() + 1;
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Visit type: Post-abortion treatment': 'Post abortion',
+      [`Return visit date: ${apptYear}-03-05`]: `05 Mar ${apptYear}`,
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] Hearing disorder',
+      '[X] Post abortion',
+      '110',
+      '70',
+      '58',
+      '158',
+      '[X] no', // family planning counselling
+      '[X] Sayana press',
+      '[X] Emergency contraceptive pills', // saved as "Method of contraception failure" (V4), still shown in its own checkbox
+      `05 Mar ${apptYear}`,
+      '[X] yes', // referred out
+    ]);
+    await expect(view.page.locator('#weight .value')).toHaveText('58');
+    await expect(view.page.locator('#weight .append-to-value')).toHaveText('kg');
+    await expect(view.page.locator('#fp-method .value')).toHaveCount(3);
+    await expect(view.page.locator('#fp-method .emptyValue').first()).toBeVisible(); // the unticked methods are shown as unselected
+  });
+
+  // VIEW of the gender-specific methods (includeIf gender M / F): a male patient's VIEW has Vasectomy and none of the female-only methods.
+  test('VIEW: a male patient is shown Vasectomy and none of the female-only methods', async ({ page, api, createEntryContext }) => {
+    context = await createEntryContext({ givenName: 'AutoFpMale', familyName: 'Tester', gender: 'M', birthdate: birthdateYearsAgo(25) });
+    await open(page);
+    await page.locator('#fp-method').getByLabel('Vasectomy', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['[X] Vasectomy']);
+    const methods = await view.page.locator('#fp-method').innerText();
+    expect(methods).toContain('Vasectomy');
+    for (const femaleOnly of ['Emergency contraceptive pills', 'Tubal ligation', 'Lactation amenorrhea method']) {
+      expect(methods, femaleOnly).not.toContain(femaleOnly);
+    }
   });
 });

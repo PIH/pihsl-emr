@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, viewMismatches } from '../../pages';
 
 // maternalDischarge.xml: "Maternal Discharge" (admission date line, diagnoses, clinical history, pregnancy group (read-only), test and hospital
 // summaries, discharge medications, disposition, discharge recommendation, next appointment, Save / Save&Print). The specs open
@@ -22,9 +22,9 @@ import { EntryFormPage } from '../../pages';
 // Side effects on save: ApplyDispositionAction (:21) runs the disposition's actions: Home / Mother's dorm / LAMA / Absconded / Transfer out close the
 // visit (closeCurrentVisit), Death marks the patient dead; PregnancyProgramPostpartumTransitionAction (:22): Antenatal -> Delivered, or enrols the
 // patient in the Delivered state when there is no active enrolment (both tested). Save&Print adds printForm=true to the return URL (tested).
-// Not covered here (cannot be purged or would change the patient for good): saving a drug order (an order blocks purging the encounter), a booked
+// VIEW is covered by the Save&Print test (Home) and by a Transfer-out test, see VW1. Not covered here (cannot be purged or would change the patient for good): saving a drug order (an order blocks purging the encounter), a booked
 // appointment (appointment = yes), and the Death disposition (it marks the patient dead through core death handling, which may leave patient-level
-// data the harness does not purge); VIEW/EDIT; the print dialog on the visit page (see maternalDischarge-print.spec.ts).
+// data the harness does not purge); EDIT; the print dialog on the visit page (see maternalDischarge-print.spec.ts).
 //
 // Findings:
 //   V1 Medium :194,:204      "Summary of investigation done and results" and "Summary of management in the hospital" are both CIEL:165399
@@ -32,6 +32,13 @@ import { EntryFormPage } from '../../pages';
 //        of its own. Fix: give the management summary its own concept. (TESTED below with test.fail)
 //   V2 Info :238  scheduleAppointment optional="true" renders a "schedule an appointment?" choice that is "yes" by default in ENTER (HFE
 //        ScheduleAppointmentElement): Save is blocked by six appointment errors until the user picks "No" or books one.
+//   VW1 Low :32,:63,:180  the VIEW styling hides every section legend (`#maternal-discharge legend` and `.title { display: none }`, deliberate) but the
+//        Clinical History obs (CIEL:160221) has no label of its own, unlike the test and hospital summaries (:192, :202; the print form shows
+//        "Clinical History:"), so in VIEW the history text appears with no heading at all. Fix: give the history obs a label. (TESTED with test.fail)
+//   VW2 Medium :194,:204  the VIEW consequence of V1: the two CIEL:165399 obs are bound to the two fields in an order HFE does not guarantee
+//        (it varies from encounter to encounter), so the investigation and the management summaries are sometimes shown swapped (seen in the VIEW
+//        and in maternalDischarge-print, e.g. "Summary of investigation" showing "Oxytocin given"). Fix: V1 (own concept). Not tested as a
+//        failing test because it is random; the VIEW checks above compare the two summaries order-insensitively.
 
 const FORM = 'maternalDischarge.xml';
 const SAVE = '#buttons input.submitButton';
@@ -81,6 +88,15 @@ const pregnancyStates = async (api: APIRequestContext, ctx: EntryContext) => {
     program: { name: string };
     states: Array<{ state: { concept: { display: string } }; endDate: string | null }>;
   }>;
+};
+
+// The VIEW of the saved encounter, checked against its obs. The encounter diagnoses (order, certainty, diagnosis) are rendered by
+// encounterDiagnosesByObs as plain text "(Presumed) Malaria [B54]", not in a span.value, so they are left out of the generic check.
+const openView = async (page: Page, api: APIRequestContext, encounterUuid: string) => {
+  const view = await ViewFormPage.open(page, FORM, encounterUuid);
+  const missing = (await viewMismatches(api, view, encounterUuid)).filter((m) => !m.startsWith('Diagnosis'));
+  expect(missing, 'saved obs missing from the VIEW').toEqual([]);
+  return view;
 };
 
 test.describe('maternalDischarge', () => {
@@ -182,6 +198,22 @@ test.describe('maternalDischarge', () => {
     }
     expect(displays.some((d) => d.includes('Review at 6 weeks'))).toBeTruthy();
 
+    // VIEW: the saved text, the disposition and the diagnosis; no destination or death date for Home; the appointment block says none
+    const view = await openView(page, api, (await dischargeEncounter(api, ctx)).uuid);
+    // (:194 and :204 are two obs of one concept (V1): HFE hands them to the two fields in no fixed order, so the VIEW may show the two summaries
+    // swapped (VW2): compare them sorted)
+    const texts = await view.valueTexts();
+    expect(texts.slice(1, 3).sort()).toEqual(['Hb 11', 'Oxytocin, observation']);
+    expect([texts[0], ...texts.slice(3)]).toEqual(['Normal delivery, uneventful stay', 'Home', 'Review at 6 weeks']);
+    await expect(view.page.locator('#test-summary .value, #hospital-mgmt .value')).toHaveCount(2);
+    await expect(view.page.locator('#encounter-disposition .value')).toHaveText('Home');
+    await expect(view.page.locator('#transferExternalLocation .value, #dateOfDeath .value')).toHaveCount(0);
+    await expect(view.page.locator('#disposition-emrapi-transferoutofhospital-sites')).toBeHidden();
+    await expect(view.page.locator('#disposition-emrapi-death-deathdate')).toBeHidden();
+    await expect(view.page.locator('#diagnosis')).toContainText(/Primary Diagnosis.*\(Presumed\) Malaria/);
+    await expect(view.page.locator('.schedule-appointment-none')).toHaveText('No appointment scheduled');
+    await expect(view.page.locator('#buttons, #diagnosis-search, textarea')).toHaveCount(0); // ifMode VIEW include=false :251
+
     // ApplyDispositionAction: Home closes the visit
     const visits = (await (await api.get(`visit?patient=${ctx.patient.uuid}&includeInactive=true&v=custom:(stopDatetime)`)).json()).results;
     expect(visits[0].stopDatetime).not.toBeNull();
@@ -212,6 +244,39 @@ test.describe('maternalDischarge', () => {
     // "Mother's dorm" also closes the visit
     const visits = (await (await api.get(`visit?patient=${ctx.patient.uuid}&includeInactive=true&v=custom:(stopDatetime)`)).json()).results;
     expect(visits[0].stopDatetime).not.toBeNull();
+  });
+
+  test('VIEW: Transfer out of hospital shows its destination, and the admission overview and the Death date stay out', async ({ page, api }) => {
+    await createAdmissionDate(api, ctx); // :127 shows the admission date in ENTER only (ifMode VIEW include=false :106)
+    await openForm(page, ctx);
+    await fillDischarge(page, 'Transfer out of hospital');
+    await page.locator('#transferExternalLocation select').selectOption({ label: 'Koidu Government Hospital' });
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const view = await openView(page, api, (await dischargeEncounter(api, ctx)).uuid);
+    expect(await view.valueTexts()).toEqual(['Transfer out of hospital', 'Koidu Government Hospital']);
+    await expect(view.page.locator('#transferExternalLocation .value')).toHaveText('Koidu Government Hospital');
+    await expect(view.page.locator('#disposition-emrapi-transferoutofhospital-sites')).toBeVisible();
+    await expect(view.page.locator('#disposition-emrapi-death-deathdate')).toBeHidden();
+    await expect(view.page.locator('#dateOfDeath .value')).toHaveCount(0);
+    await expect(view.page.locator('#Overview')).toHaveCount(0);
+    for (const empty of ['#history', '#test-summary', '#hospital-mgmt']) {
+      await expect(view.page.locator(`${empty} .value`), empty).toHaveCount(0); // nothing was typed in these sections
+    }
+  });
+
+  // VW1 (Low): VIEW hides the section legends (CSS :32, :63) and the Clinical History obs has no label of its own, so its text is shown with no
+  // heading. Intended: the text is introduced by a visible "history" label. Remove test.fail() when the obs gets a label.
+  test('VIEW: the Clinical History text has its heading (VW1)', async ({ page, api }) => {
+    test.fail();
+    await openForm(page, ctx);
+    await fillDischarge(page, 'Home');
+    await page.locator('#history textarea').fill('Normal delivery');
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const view = await openView(page, api, (await dischargeEncounter(api, ctx)).uuid);
+    await expect(view.page.locator('#history').getByText(/history/i).filter({ visible: true })).not.toHaveCount(0); // a legend or a label
   });
 
   // V1: remove test.fail() when the management summary has its own concept.

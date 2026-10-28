@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { OUTPATIENT_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-chief-complaint.xml: one free-text "Chief complaint" of the outpatient followup encounter (it replaces
 // section-history there). The specs open the form URL directly on an outpatient followup encounter; the visit-page
@@ -13,7 +13,8 @@ import { SectionFormPage } from '../../pages';
 // Scripts: setUpNextAndSubmitButtons() on document ready (:17-22): #next saves and opens the next section, #submit saves
 //   and returns (shared nextAndSubmitButtons.js, see _shared.e2e.md). No validation, message or default.
 // Side effects on save: none. The only field (CIEL:160531) is optional.
-// Not covered here: VIEW mode (a REST-created encounter has no form, so viewEncounterWithHtmlForm.page fails).
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the save tests: the saved text shows in the form's one span.value, and a blank save
+// shows no value; the heading and the buttons are not rendered (ifMode VIEW include=false :12, :33).
 // No findings.
 
 const FORM = 'section-chief-complaint.xml';
@@ -48,6 +49,12 @@ test.describe('section-chief-complaint', () => {
 
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#chief-complaint textarea')).toHaveValue('Headache since Monday');
+
+    // VIEW: the text as saved, in the form's own field, with no heading and no buttons
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['Headache since Monday']);
+    await expect(page.locator('#chief-complaint .value')).toHaveText('Headache since Monday');
+    await expect(page.locator('h1, #buttons, textarea')).toHaveCount(0);
   });
 
   test('the field is optional: saving it blank saves no obs', async ({ page, api }) => {
@@ -55,5 +62,10 @@ test.describe('section-chief-complaint', () => {
     await form.save();
     await form.expectSaved();
     expect(await getEncounterObs(api, section.encounter.uuid)).toHaveLength(0);
+
+    // VIEW: the unanswered field is shown as empty, not as a value
+    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    await expect(view.values).toHaveCount(0);
+    await expect(page.locator('#chief-complaint .emptyValue')).toHaveCount(1);
   });
 });

@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-hypertension.xml: hypertension section of the NCD initial (type, stage, complications) and followup
@@ -18,7 +18,8 @@ import type { Page } from '@playwright/test';
 // Scripts: only setUpNextAndSubmitButtons() (see _shared); no validation, message, formula or default.
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19); the form writes no diagnosis obs,
 //   so nothing observable (not asserted).
-// Not covered here: VIEW mode; the Next / other-section buttons (navigation, _shared).
+// EDIT is covered by the followup round-trip (saved "missed doses = yes"), VIEW by the two save tests (exactly the saved answers).
+// Not covered here: the Next / other-section buttons (navigation, _shared).
 //
 // Findings:
 //   V1 Low  :169,:204 four of five thenDisplay targets (#htn-fui-aware-details, -understand-, -adher-, -improved-)
@@ -72,6 +73,14 @@ test.describe('section-hypertension: NCD initial', () => {
     expect(displays.some((d) => /Poorly controlled/.test(d))).toBeTruthy();
     expect(displays.some((d) => /cerebrovascular|stroke/i.test(d))).toBeTruthy();
     expect(displays.some((d) => /heart failure/i.test(d))).toBeTruthy();
+
+    // VIEW: exactly the saved answers, each by the label the form gives it; Essential and the other stages / complications are not shown
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Type of hypertension diagnosis: Secondary hypertension': '[X] Secondary',
+      'Hypertension stage: Moderate hypertension': '[X] 2 (Moderate)',
+      'Complications related to hypertension: Cerebrovascular accident': '[X] Stroke',
+    });
+    expect(await view.valueTexts()).toEqual(['[X] Secondary', '[X] 2 (Moderate)', 'Poorly controlled', '[X] Stroke', '[X] Heart failure']);
   });
 });
 
@@ -135,5 +144,19 @@ test.describe('section-hypertension: NCD followup', () => {
     await expect(radio(page, 'htn-fui-missed', 'yes')).toBeChecked();
     await expect(page.locator('#htn-fui-missed-details')).toBeVisible();
     await expect(page.locator('#htn-fui-missed-details input[type=text]')).toHaveValue('2');
+
+    // VIEW: each indicator shows its own saved answer (the form labels them yes / no / unknown / uncontrolled), the missed-doses count
+    // is shown, and the five wrappers keep the answers apart
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'NCD clinical status: Not controlled': '[X] uncontrolled',
+    });
+    const v = view.page;
+    await expect(v.locator('#htn-fui-aware .value')).toHaveText('[X] yes');
+    await expect(v.locator('#htn-fui-understand .value')).toHaveText('[X] no');
+    await expect(v.locator('#htn-fui-adher .value')).toHaveText('[X] unknown');
+    await expect(v.locator('#htn-fui-missed .value')).toHaveText('[X] yes');
+    await expect(v.locator('#htn-fui-missed-details .value')).toHaveText('2');
+    await expect(v.locator('#htn-fui-improved .value')).toHaveText('[X] yes');
+    await expect(v.getByText('Essential')).toHaveCount(0); // initial-only question is not rendered for a followup
   });
 });

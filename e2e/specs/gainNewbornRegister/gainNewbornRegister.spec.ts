@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // gainNewbornRegister.xml: "SCBU Newborn Register" (GAIN): baby and caregiver, referral, delivery, management commenced,
 // APGAR, and the discharge/outcome of the SCBU stay, all on one page. A top-level form: the specs open
@@ -18,7 +18,7 @@ import { EntryFormPage } from '../../pages';
 //   when PIH:8620 = CIEL:159   :456  "Outcome of admission" = Death shows #scbu-death (death obs group)
 // Sub-form (documentation/_shared.e2e.md): encounter-provider-location-date (provider, location, and its own date widget).
 // Scripts: none of its own. Side effects on save: none (no program, disposition or order).
-// Not covered here: VIEW and EDIT modes; the death group is not saved.
+// VIEW is covered by a test that fills most of the form (incl. the death group) and one with the Discharged outcome (VW1). Not covered here: EDIT mode.
 //
 // Findings (duplicate id="when" :87 is _shared V10; id="treatment" is on six sections :48, :99, :191, :206, :242, :446):
 //   V1 Low  :41-46, :92  two encounter date widgets: the sub-form's own date (its date-widget parameter is not blanked, unlike
@@ -28,6 +28,10 @@ import { EntryFormPage } from '../../pages';
 //                        and saves APGAR score at 5 minutes = CIEL:159604 (TESTED in the save test). Fix: remove the space.
 //   V3 Info :478         CIEL:114100 is listed twice in answerConceptIds of "Cause of death"; the widget shows it once.
 //   V4 Info :14          htmlform id="gain-maternal-register" is copied from the maternal form (cosmetic).
+//   VW1 Low :176,:251,:271,:456  VIEW does not run the <when>/thenDisplay controls, so a baby who was Discharged still shows the "Death Outcome"
+//                        block (#scbu-death, empty fields), and every "if other, specify" block (#other-referrer, #other-delivery-place,
+//                        #other-facility) with a blank ____ line when the answer is not Other. Fix: wrap the conditional blocks in
+//                        <includeIf> on the obs value (or hide them with a VIEW-only CSS rule). TESTED (VIEW, test.fail).
 
 const FORM = 'gainNewbornRegister.xml';
 const SCBU_REGISTER_ENCOUNTER_TYPE_UUID = '3790ecc6-bc63-48f8-9104-f81dc90ee21c';
@@ -116,5 +120,84 @@ test.describe('gainNewbornRegister', () => {
     expect(await obsSummary(api, encounters[0].uuid)).toEqual(
       expect.arrayContaining(['Type of referral role=Nurse', 'APGAR score at 5 minutes=7']),
     );
+  });
+
+  // The label's input: the first input after the label (the label and its obs are siblings in the form).
+  const after = (page: Page, label: string) => page.locator(`xpath=(//label[contains(normalize-space(.), ${JSON.stringify(label)})]/following::input[@type='text'])[1]`);
+
+  test('VIEW: shows every saved value, the form\'s own answer labels and the death outcome group, and nothing that was not filled', async ({ page, api }) => {
+    await open(page);
+    await page.locator('p', { hasText: 'Name of baby' }).locator('input[type=text]').nth(0).fill('AutoBaby');
+    await page.locator('p', { hasText: 'Name of baby' }).locator('input[type=text]').nth(1).fill('SCBU-0042');
+    const caregiver = page.locator('.two-columns').first().locator('input[type=text]');
+    await caregiver.nth(0).fill('Aunt Mary');
+    await caregiver.nth(1).fill('076123456');
+    await page.getByLabel('Maternity ward', { exact: true }).check();
+    await page.locator('#referrer-role').getByLabel('Other', { exact: true }).check();
+    await page.locator('#other-referrer input').fill('Community volunteer');
+    await after(page, 'Name of the provider').fill('Dr Kamara');
+    await page.locator('p', { hasText: 'Age at admission (days)' }).locator('input[type=text]').nth(0).fill('2');
+    await page.locator('p', { hasText: 'Age at admission (days)' }).locator('input[type=text]').nth(1).fill('5');
+    await page.locator('p', { hasText: 'Sex' }).getByLabel('F', { exact: true }).check();
+    await after(page, 'Weight at admission (kg)').fill('2.4');
+    await page.locator('#delivery-place').getByLabel('Other', { exact: true }).check();
+    await page.locator('#other-delivery-place input').fill('At home');
+    await page.locator('#which-facility').getByLabel('Wellbody', { exact: true }).check();
+    await after(page, 'Number of ANCs').fill('4');
+    await page.locator('p', { hasText: 'Mode of delivery' }).getByLabel('Normal', { exact: true }).check();
+    await page.locator('p', { hasText: 'Diagnosis at delivery unit' }).locator('input[type=checkbox]').first().check();
+    await page.locator('p', { hasText: 'Treatment provided at delivery unit' }).locator('input[type=checkbox]').first().check();
+    const apgar = page.locator('p', { hasText: '5 minutes after birth' }).locator('input[type=text]');
+    await apgar.nth(0).fill('8');
+    await apgar.nth(1).fill('7');
+    await page.locator('p', { hasText: 'Assisted ventilation' }).getByLabel('No', { exact: true }).check();
+    await after(page, 'Birth weight (kg)').fill('2.5');
+    await after(page, 'Gestation age').fill('37.4');
+    await page.locator('p', { hasText: 'Diagnosis at admission' }).locator('input[type=checkbox]').first().check();
+    await page.locator('p', { hasText: 'Management' }).locator('input[type=checkbox]').first().check();
+    await page.locator('#outcome-admission').getByLabel('Death', { exact: true }).check();
+    await page.locator('#scbu-death input[type=radio]').first().check();
+    await after(page, 'Age at death (days)').fill('3');
+    await after(page, 'Weight at time of death').fill('2.1');
+    await after(page, 'Name of staff').fill('Nurse Sesay');
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Type of delivery: Spontaneous vaginal delivery': '[X] Normal', // answerCodes
+      'Child gender: Female': '[X] F',
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    await expect(view.page.locator('.two-columns').first()).toContainText('Tester, AutoGainNb');
+    await expect(at('#encounterDate')).toHaveText(/^\d{2} [A-Z][a-z]{2} \d{4} \d{1,2}:\d{2} (AM|PM)$/);
+    await expect(at('#referrer-role')).toHaveText('[X] Other');
+    await expect(at('#other-referrer')).toHaveText('Community volunteer');
+    await expect(at('#delivery-place')).toHaveText('[X] Other');
+    await expect(at('#other-delivery-place')).toHaveText('At home');
+    await expect(at('#which-facility')).toHaveText('[X] Wellbody');
+    await expect(at('#other-facility')).toHaveCount(0); // not "Other"
+    await expect(at('#outcome-admission')).toHaveText('[X] Death');
+    expect((await at('#scbu-death').allInnerTexts()).map((t) => t.replace(/\s+/g, ' '))).toEqual(['[X] Respiratory distress syndrome in the newborn', '3', '2.1']); // obs group
+    const shown = await view.valueTexts();
+    for (const expected of ['AutoBaby', 'SCBU-0042', 'Aunt Mary', '076123456', '[X] Maternity ward', '[X] F', '[X] Normal', '37.4', 'Nurse Sesay', '[X] No']) {
+      expect(shown, expected).toContain(expected);
+    }
+    // not filled: no admission date, no "unknown" APGAR, no other answer ticked
+    await expect(view.page.locator('p', { hasText: 'Admission date/time' }).locator('.value')).toHaveCount(0);
+    expect(shown.filter((t) => /^\[X\] (unknown|Hospital|Home|M|Yes|Discharged|Referral)$/.test(t))).toEqual([]);
+  });
+
+  // VW1 (Low): when/thenDisplay is not applied in VIEW, so a Discharged baby's page still carries the "Death Outcome" block with blank
+  // fields. Intended: no death block unless the outcome is Death. Remove test.fail() when the block is hidden in VIEW.
+  test('VIEW: a discharged baby has no Death Outcome block (VW1)', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#outcome-admission').getByLabel('Discharged', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    await expect(view.page.locator('#scbu-death')).toBeHidden();
   });
 });

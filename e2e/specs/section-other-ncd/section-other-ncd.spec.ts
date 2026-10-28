@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-other-ncd.xml: two "other NCD" diagnoses as checkboxes (Parkinson's disease, Thyroid disease), each in a
 // Visit Diagnoses obsgroup, plus a comment. The specs use an NCD followup encounter (the section hangs under NCD
@@ -13,7 +13,8 @@ import { SectionFormPage } from '../../pages';
 // Scripts: setUpNextAndSubmitButtons() (:22-29, navigation only: no rule, message or default).
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19); its effect on the saved
 //   Visit Diagnoses groups is not asserted here (pihcore code). No required fields.
-// Not covered here: the jump buttons and Next (need the visit-page section wiring), VIEW mode.
+// EDIT is covered by the save test (saved diagnosis reopened), VIEW by the same test (ifMode :62: no buttons).
+// Not covered here: the jump buttons and Next (need the visit-page section wiring).
 //
 // Findings:
 //   V1 Low  :40  answerCodeXX="{message}" misspells answerCode in the repeat template (the attribute is
@@ -61,5 +62,12 @@ test.describe('section-other-ncd', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.getByLabel("Parkinson's disease", { exact: true })).toBeChecked();
     await expect(page.getByLabel('Thyroid disease', { exact: true })).not.toBeChecked();
+
+    // VIEW: the saved diagnosis and the comment are shown, Thyroid disease is not, and the EDIT-only buttons are absent (ifMode :62).
+    // ("Diagnosis order: Secondary" is written by CleanDiagnosisConstructAction, not by a field of the form.)
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, { 'Diagnosis order: Secondary': '' });
+    expect(await view.valueTexts()).toEqual(["[X] Parkinson's disease", 'Tremor for two years']);
+    await expect(view.page.locator('#other-ncd-dx .value').nth(1)).toHaveText('Tremor for two years');
+    await expect(view.page.locator('#buttonsTopRow, #buttons, #next, #submit')).toHaveCount(0);
   });
 });

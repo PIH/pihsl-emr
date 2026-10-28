@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-plan-medication.xml: HIV counselling, medication orders and remarks of an MCH delivery encounter (it is
 // the "Plan medication" section of the SL delivery visit; also used for ANC 1.1/2.0, documentation/_availability.e2e.md).
@@ -17,6 +17,8 @@ import { SectionFormPage } from '../../pages';
 // order in an earlier encounter).
 // The order test purges its own order: the fixture's purge (commands/encounter-operations.ts) cannot delete an
 // encounter that still has an order, so a spec that saves an order has to remove it itself.
+// VIEW is covered for the counselling answer and the remarks. The drug-order widget draws its orders in VIEW with JavaScript (it reads
+// them over REST from the page), which the VIEW harness (setContent, no page scripts) does not run, so a saved order is not checked in VIEW.
 // Findings: none.
 
 const FORM = 'section-plan-medication.xml';
@@ -48,6 +50,13 @@ test.describe('section-plan-medication', () => {
     const displays = (await getEncounterObs(api, section.encounter.uuid)).map((o) => o.display.toLowerCase());
     expect(displays.some((d) => d.includes('yes'))).toBeTruthy();
     expect(displays.some((d) => d.includes('take with food'))).toBeTruthy();
+
+    // VIEW: the counselling answer and the remarks are shown, and the Save / Cancel buttons are not (ifMode :60)
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['[X] yes', 'Take with food']);
+    await expect(view.page.locator('#hiv-counselling .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#drug-orders .value')).toHaveText('Take with food');
+    await expect(view.page.locator('#buttons')).toHaveCount(0);
   });
 
   test('saves a new medication order', async ({ page, api }) => {

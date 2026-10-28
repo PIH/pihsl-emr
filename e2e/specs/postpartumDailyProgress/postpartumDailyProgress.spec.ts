@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // postpartumDailyProgress.xml: "Postpartum Daily Progress" (vitals, delivery overview, postpartum exam, mood/bowel/urine checklist,
 // PHQ-2, family planning, health education, summary). The specs open enterHtmlFormWithStandardUi inside a visit they create with a
@@ -30,7 +30,9 @@ import { EntryFormPage } from '../../pages';
 //            the delivery was by caesarean (tested). In EDIT it also shows #csWoundStatus when one of its boxes is ticked.
 // Side effects on save: PregnancyProgramPostpartumTransitionAction (:21): the open Antenatal state of the Pregnancy program ends and Delivered
 // starts (tested); with no enrolment it enrols the patient in Delivered (observed).
-// Not covered here: VIEW/EDIT, vitals scoring and PHQ-2 (shared), the pregnancy-group, FHR hiding by session location.
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test and the save test: saved values in span.value, the obs groups, the
+// form's own answer labels, no Overview section (ifMode VIEW include=false :207); the page scripts do not run in it (the C/S wound block is only shown by the
+// VIEW script :67). Not covered here: EDIT, vitals scoring and PHQ-2 (shared), the pregnancy-group, FHR hiding by session location.
 //
 // Findings:
 //   V1 Low :610-619    seven family-planning <when>s target #fp-method-noop, which is not in the form (no-op, harmless).
@@ -55,6 +57,12 @@ const openForm = async (page: Page, context: EntryContext) => {
 const fillText = async (page: Page, selector: string, value: string) => {
   await page.locator(selector).fill(value);
   await page.keyboard.press('Tab');
+};
+
+// The date-only value of the implant date obs, as saved ("yyyy-MM-dd"): the helper cannot map a date-only obs without it.
+const savedIso = async (api: APIRequestContext, encounterUuid: string): Promise<string> => {
+  const obs = await getEncounterObs(api, encounterUuid);
+  return String(obs.find((o) => o.concept.display === 'Date of implant placement')?.value).slice(0, 10);
 };
 
 const conceptUuid = async (api: APIRequestContext, ref: string): Promise<string> => {
@@ -227,6 +235,9 @@ test.describe('postpartumDailyProgress', () => {
     ]) {
       expect(displays.some((d) => d.includes(expected)), expected).toBeTruthy();
     }
+    await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Maternal postpartum complication from most recent pregnancy: Postpartum hemorrhage': '[X] Postpartum haemorrhage',
+    });
 
     // PregnancyProgramPostpartumTransitionAction (:21)
     const res = await api.get(`programenrollment?patient=${ctx.patient.uuid}&v=custom:(states:(state:(concept:(display)),endDate))`);
@@ -235,5 +246,96 @@ test.describe('postpartumDailyProgress', () => {
     const states = Object.fromEntries(enrollments[0].states.map((s) => [s.state.concept.display, s.endDate]));
     expect(states['Delivered']).toBeNull();
     expect(states['Antenatal']).not.toBeNull();
+  });
+
+  // VIEW: the form's own labels (the lochia "+ / ++ / +++", normal/abnormal, "Depressed", "Jadelle"), the obs groups (pads, leg pain, family planning
+  // construct) and the dates, with the unselected options listed empty.
+  test('VIEW: shows the saved exam, checklist, family planning and summary under the form\'s own labels, and nothing for what was not answered', async ({
+    page,
+    api,
+  }) => {
+    await openForm(page, ctx);
+    await page.locator('#bp_systolic input').fill('118');
+    await page.locator('#bp_diastolic input').fill('76');
+    await page.getByLabel('Lochia rubra', { exact: true }).check();
+    await page.locator('p', { hasText: 'Lochia quantity' }).getByLabel('++', { exact: true }).check();
+    await page.locator('p', { hasText: 'Number of pads used' }).locator('input[type=text]').fill('4');
+    await page.locator('p', { hasText: 'Number of pads used' }).getByLabel('per day').check();
+    await page.locator('#involution input').nth(1).check(); // abnormal
+    await fillText(page, '#abnormal-involution input', '3');
+    await page.locator('#compl-230 input[type=checkbox]').check();
+    await page.locator('#postpart-treatments').getByLabel('Oxytocin', { exact: true }).check();
+    await page.locator('#postpart-treatments').getByLabel('Tranexamic acid', { exact: true }).check();
+    await page.locator('#compl-other input[type=checkbox]').check();
+    await page.locator('#otherPostpartComp input').fill('Wound pain');
+    await page.locator('p.side-by-side', { hasText: 'Intact perineum' }).getByLabel('no', { exact: true }).first().check(); // intact perineum: no
+    await page.getByLabel('Depressed', { exact: true }).check();
+    await page.locator('p', { hasText: 'Bowels' }).getByLabel('normal', { exact: true }).check();
+    await page.locator('#leg-pain input[type=radio]').first().check(); // yes
+    await page.locator('#accepts-fp input').nth(0).check();
+    await page.locator('#family-method').getByLabel('Condoms', { exact: true }).check();
+    await fillText(page, '#condom-count input >> nth=0', '5');
+    await page.locator('#family-method').getByLabel('Implant', { exact: true }).check();
+    await page.locator('#implant-date').getByLabel('Jadelle').check();
+    await page.locator('#implant-date').locator('input.hasDatepicker').click();
+    await page.locator('#ui-datepicker-div a.ui-state-default').first().click(); // a past day (the first cell of the calendar)
+    const implantDate = await page.locator('#implant-date input.hasDatepicker').inputValue(); // "dd MMM yyyy"
+    await page.locator('#outcome-condition input').nth(0).check();
+    await page.locator('textarea').last().fill('Recovering well');
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page\?encounterId=/);
+    const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Maternal postpartum complication from most recent pregnancy: Postpartum hemorrhage': '[X] Postpartum haemorrhage',
+      'Mood: Depression': '[X] Depressed',
+      'Method of family planning: Jadelle (implantable contraceptive)': '[X] Implant', // CIEL:1873 is Jadelle: the form's checkbox says "Implant"
+      'Type of implantable contraceptive: Jadelle (implantable contraceptive)': '[X] Jadelle',
+      'Time units: Days': '[X] per day',
+      'Symptom present: Leg pain': '[X] yes', // the leg-pain radio is a pair of concepts labelled yes / no
+      [`Date of implant placement: ${await savedIso(api, encounter.uuid)}`]: implantDate,
+    });
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '118',
+      '76',
+      '[X] Lochia rubra',
+      '[X] ++', // the form labels the quantity "+ / ++ / +++"
+      '4',
+      '[X] per day',
+      '[X] abnormal', // uterus involution, and the bowels are "normal"
+      '3',
+      '[X] Postpartum haemorrhage',
+      '[X] Other',
+      'Wound pain',
+      '[X] Oxytocin',
+      '[X] Tranexamic acid',
+      '[X] no', // intact perineum
+      '[X] Depressed',
+      '[X] normal', // bowels
+      '[X] yes', // leg pain, accepts family planning
+      '[X] Condoms',
+      '[X] Implant',
+      '5',
+      '[X] Jadelle',
+      implantDate,
+      '[X] Satisfactory',
+      'Recovering well',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the three answers of "lochia quantity" are listed, only "++" is selected
+    await expect(page.locator('.emptyValue').filter({ hasText: /^\[\s*\]\s*\+\s*$/ })).toHaveCount(1);
+    await expect(page.locator('.emptyValue').filter({ hasText: /^\[\s*\]\s*\+\+\+\s*$/ })).toHaveCount(1);
+    // the construct of every method is rendered (no showIfEmpty): the ticked ones are values, the others listed
+    await expect(page.locator('#family-method .value').filter({ hasText: /^\[X\]\s*(Condoms|Implant)$/ })).toHaveCount(2);
+    await expect(page.locator('#family-method .emptyValue').filter({ hasText: 'IUD' })).toHaveCount(1);
+    // not answered: the male condoms, the IUD date, the PHQ-2, the mental-health and education questions, the C/S wound
+    for (const empty of ['# of male condoms', 'Date of IUD insertion', 'Total PHQ-2 score', 'Pain level', 'Breastfeeding education', 'Family planning counselling']) {
+      await expect(page.locator('p', { hasText: empty }).locator('.value'), empty).toHaveCount(0);
+    }
+    await expect(page.locator('#csWoundStatus .value')).toHaveCount(0);
+    // the Overview section (days since delivery, delivery date and type) is ENTER/EDIT only (:207)
+    await expect(page.locator('#Overview, #deliveryDateAndMethod, #buttons, h2')).toHaveCount(0);
   });
 });

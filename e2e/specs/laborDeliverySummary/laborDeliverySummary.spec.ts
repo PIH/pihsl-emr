@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // laborDeliverySummary.xml: "Labour and Delivery Summary" (labour onset, up to three infants, third stage, placenta, cord,
 // breastfeeding, uterotonics, HCW cadre, perineum, rapid tests, PHQ-2). The specs open enterHtmlFormWithStandardUi inside a visit
@@ -29,8 +29,10 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //   :465-490 placenta abnormality = Yes with an empty description blocks the save; #placentaAbDesc shows "Required" on click.
 //   :681-733 twins/triplets: #fetus-2/#fetus-3 hidden unless filled or #twins ticked; show more/less buttons.
 // Side effects on save: CleanDiagnosisConstructAction, RegisterBabyAction (:22), PregnancyProgramPostpartumTransitionAction (:23): tested.
+// VIEW is covered by the save test (the delivery with a stillbirth: labels, the date/time pair, totals, empty infants and sections) and by a
+// twins test (two stillbirths: each infant keeps its own values).
 // Not covered here: an Alive infant saved (RegisterBabyAction would create a baby patient that the cleanup cannot find), twins/triplets
-// saved, VIEW mode, the pregnancy-group, lab-results (rapid tests) and PHQ-2 sub-forms (_shared.e2e.md), the partogram upload.
+// saved, EDIT mode, the pregnancy-group, lab-results (rapid tests) and PHQ-2 sub-forms (_shared.e2e.md), the partogram upload.
 //
 // Findings:
 //   V1 Medium :904,:908   <when value=Other thenDisplay="#other-presentation"> but the divs are id="other-presentation-{0}": the "if other,
@@ -44,6 +46,8 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //   V5 Low    :486        "Required" on #placentaAbDesc is shown on every Yes click and never cleared when the description is typed.
 //   V6 Low    :807,:808,:834,:848  id="inputFieldsDiv", "birthFieldsDiv", "preFhrDiv", "apgarDiv" repeated for each infant (not templated with {0}).
 //   V7 Info   :22         a successful save redirects to /pihcore/children/children.page?patientId=..., ignoring the returnUrl.
+//   VW1 Info :648,:904,:1017,:1051,:1084,:1146  VIEW does not run the <when>/thenDisplay controls (the generated script is ENTER/EDIT only), so the conditional blocks
+//                   (#induced-details, #other-presentation-N, #placentaAbDesc, #breastDate, #uteroDate, #other-ba) are always rendered in VIEW, blank when not applicable (same as gainNewbornRegister VW1; not tested).
 
 const FORM = 'laborDeliverySummary.xml';
 const LD_ENCOUNTER_TYPE = 'fec2cc56-e35f-42e1-8ae3-017142c1ca59';
@@ -408,5 +412,83 @@ test.describe('laborDeliverySummary', () => {
     // the stillborn infant is not registered (RegisterBabyAction): the mother has no relationship
     const rel = await api.get(`relationship?person=${ctx.patient.person.uuid}&v=custom:(uuid)`);
     expect((await rel.json()).results).toHaveLength(0);
+    // VIEW: every saved value is shown, the coded answers with the form's own labels (answerLabels)
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Delivery order number: 1': '', // hidden birth-order marker
+      'Antenatal and postnatal care team: Team B': '[X] B',
+      'Method of labor induction: Administration of oxytocin': '[X] Oxytocin',
+      'Child gender: Female': '[X] F',
+      'Qualitative birth outcome: Fresh stillbirth': '[X] FSB',
+      'Perineal tear: Perineal laceration, second degree': '[X] 2nd degree',
+      'Patient referred or escorted: Patient escorted': '[X] Companion present',
+      'Patient exists in EMR: Not applicable': '[X] Do not register', // the radio the script set (:52) and beforeSubmit saved
+      'Visual examination of placenta completeness: Complete placenta at delivery': '[X] Complete',
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    await expect(at('#group')).toHaveText('[X] B');
+    await expect(at('#induced')).toHaveText('[X] yes');
+    await expect(at('#methodOfInduction')).toHaveText('[X] Oxytocin');
+    await expect(at('.labor_stage_hours').first()).toHaveText('2');
+    await expect(at('.labor_stage_minutes').first()).toHaveText('30');
+    await expect(at('#totalDuration_hours')).toHaveText('2'); // the total is a saved obs, not recomputed in VIEW
+    await expect(at('#totalDuration_minutes')).toHaveText('30');
+    await expect(at('#dead-or-alive-1')).toHaveText('[X] FSB');
+    await expect(at('#fetus-1 .fetusDeliveryTime')).toHaveText([/^\d{2} [A-Z][a-z]{2} \d{4}$/, /^\d{1,2}:\d{2} (AM|PM)$/]); // date and time shown apart
+    await expect(at('#fetus-1 .fetusGender')).toHaveText('[X] F');
+    await expect(at('#fetus-1 .deliveryMethod')).toHaveText('[X] Spontaneous vaginal delivery');
+    await expect(at('#fetus-1 .inputField')).toHaveText(['2', '2', '2']); // weight, length, head circumference (FSB: no APGAR)
+    await expect(at('#fetus-1 #apgarDiv')).toHaveCount(0);
+    await expect(at('#register-baby-1')).toHaveText('[X] Do not register');
+    await expect(at('#placentaAbQ')).toHaveText('[X] no');
+    await expect(at('#placentaAbDesc')).toHaveCount(0);
+    await expect(at('#breast')).toHaveText('[X] yes');
+    await expect(at('#other-ba')).toHaveText('Traditional birth attendant');
+    await expect(at('[id="perineal tear"]')).toHaveText('[X] 2nd degree');
+    // not filled: the other two infants, uterotonic and the breastfeeding/uterotonic times, the rapid tests, PHQ-2, perineum comments
+    await expect(view.page.locator('#fetus-2 .value, #fetus-3 .value')).toHaveCount(0);
+    await expect(view.page.locator('#uterotonic .value, #breastDate .value, #uteroDate .value')).toHaveCount(0);
+    await expect(view.page.locator('#rapid-tests-widget .value, #mh-phq2 .value, #perineum .value, #labourStartDateTime .value')).toHaveCount(0);
+    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :1226
+  });
+
+  // Twins, both fresh stillbirths (an Alive infant would register a baby patient): infant 1 is a girl with 2 in every measurement, infant 2 a boy with 3.
+  const fillFetus = async (page: Page, n: number, genderIndex: number, size: string) => {
+    await page.locator(`#dead-or-alive-${n} input`).nth(1).check(); // FSB
+    await setDate(page, `#fetus-${n} .fetusDeliveryTime`, new Date());
+    await page.locator(`#fetus-${n} .fetusGender input`).nth(genderIndex).check();
+    await page.locator(`#fetus-${n} .deliveryMethod input`).nth(0).check();
+    const inputs = page.locator(`#fetus-${n} .inputField input`);
+    for (let i = 0; i < (await inputs.count()); i++) {
+      if (await inputs.nth(i).isVisible()) {
+        await fillText(page, `#fetus-${n} .inputField >> nth=${i} >> input`, size);
+      }
+    }
+  };
+
+  test('VIEW: twins show infant 1 and infant 2 each with their own values', async ({ page, api }) => {
+    await openForm(page, ctx);
+    await page.locator('#group input[type=radio]').nth(1).check();
+    await page.locator('#show-more-fetus-button').click();
+    await fillFetus(page, 1, 1, '2');
+    await fillFetus(page, 2, 0, '3');
+    await answerPlacenta(page);
+    expect(await trySave(page)).toBe(true);
+
+    const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Delivery order number: 1': '', // hidden birth-order marker
+      'Antenatal and postnatal care team: Team B': '[X] B',
+      'Child gender: Female': '[X] F',
+      'Child gender: Male': '[X] M',
+      'Qualitative birth outcome: Fresh stillbirth': '[X] FSB',
+      'Patient exists in EMR: Not applicable': '[X] Do not register',
+      'Visual examination of placenta completeness: Complete placenta at delivery': '[X] Complete',
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    await expect(at('#fetus-1 .fetusGender')).toHaveText('[X] F');
+    await expect(at('#fetus-1 .inputField')).toHaveText(['2', '2', '2']);
+    await expect(at('#fetus-2 .fetusGender')).toHaveText('[X] M');
+    await expect(at('#fetus-2 .inputField')).toHaveText(['3', '3', '3']);
+    await expect(view.page.locator('#fetus-3 .value')).toHaveCount(0);
   });
 });

@@ -1,6 +1,6 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-hospital.xml: hospitalizations since the last visit (followup) or in the previous 12 months
 // (initial), up to three blocks. The specs use an NCD followup encounter, so the "since last visit"
@@ -16,6 +16,8 @@ import { SectionFormPage } from '../../pages';
 
 // Structure: <repeat with="['1'],['2'],['3']"> renders three hospitalization blocks (#hospitalization-1..3,
 // obsgroups with showIfEmpty="false", so empty blocks are not rendered in VIEW); {0} becomes 1/2/3 in every id.
+// EDIT is covered by the save tests, VIEW by 'VIEW: ...' (the filled hospitalization 1 is shown, blocks 2 and 3 are not).
+//
 // Script: setUpNextAndSubmitButtons() (#next saves and opens the next section, each .nextSection button saves and
 // opens the section whose id it carries, #submit saves and returns); no validation, message or default.
 //
@@ -26,7 +28,8 @@ import { SectionFormPage } from '../../pages';
 //                      every disease row is always visible. Fix: ids <nick>-plus-{0}. TESTED below (test.fail).
 //   V2 Low    :137-145 each checkbox lists all 8 <when> values but only its own can match: 168 of 192 are dead.
 //   V3 Low    :258,:470  PIH:14921 answer CIEL:111103 (Stroke) is a checkbox in both the Hypertension and Sickle-cell
-//                      rows of the same obsgroup (unconfirmed how HFE binds the saved obs). Fix: offer it in one row.
+//                      rows of the same obsgroup (unconfirmed how HFE binds the saved obs; probed: Stroke ticked in the Hypertension
+//                      row is saved once and shows ticked once, in that row, in EDIT and VIEW). Fix: offer it in one row.
 //   V4 Low    :519     "Other" row has id="other-htn-t-{0}", naming hypertension. Fix: other-t-{0}.
 //   V5 Low    :124,194-196  hard-coded English instead of uimessage (not translated).
 
@@ -78,7 +81,35 @@ test.describe('section-hospital', () => {
     await page.locator('#w2_0').check();
     const diseaseRow = page.locator('#dm-plus-t-1');
     await expect(diseaseRow).toBeHidden();
-    await page.locator('#dm-q-1').check(); // Diabetes mellitus (DM), hospitalization 1
+    await page.locator('#dm-q-1 input[type=checkbox]').check(); // Diabetes mellitus (DM), hospitalization 1
     await expect(diseaseRow).toBeVisible();
+  });
+
+  // VIEW: hospitalization 1 is filled, blocks 2 and 3 are left empty (obsgroup showIfEmpty="false": not rendered).
+  test('VIEW: shows the saved hospitalization, and no block for the empty ones', async ({ page, api }) => {
+    await page.locator('#w2_0').check(); // Yes
+    await page.locator('#hospital-details .narrow input').nth(0).fill('2'); // since last visit
+    await page.locator('#hospital-details .narrow input').nth(1).fill('1'); // for NCDs
+    await page.locator('#dm-q-1 input[type=checkbox]').check();
+    await page.locator('#hospitalization-1 .narrow input').fill('5'); // days
+    await page
+      .locator('#hospitalization-1 input.hasDatepicker')
+      .first()
+      .evaluate((el) => (window as any).jQuery(el).datepicker('setDate', new Date(2026, 0, 15)));
+    await page.locator('#hosp-outcome-1 input[type=radio]').first().check();
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    const shown = await view.valueTexts();
+    for (const expected of ['[X] Yes', '2', '1', '5', '[X] Diabetes mellitus (DM)', '15 Jan 2026', '[X] Discharge']) {
+      expect(shown, expected).toContain(expected);
+    }
+    await expect(view.page.locator('#hospital-stay .value').first()).toHaveText('[X] Yes');
+    await expect(view.page.locator('#hospitalization-1 .value').first()).toBeVisible();
+    await expect(view.page.locator('#hospitalization-2 .value, #hospitalization-3 .value')).toHaveCount(0);
+    await expect(view.page.locator('#hospitalization-2')).toHaveText(/^\s*$/);
+    await expect(view.page.locator('#hospitalization-1')).toContainText('Hospitalization 1');
   });
 });

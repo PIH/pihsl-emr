@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // ballardScore.xml: Ballard score of a newborn: six neuromuscular and six (male) / six (female) physical maturity signs,
 // each scored by clicking a cell of the score table, with totals, the maturity rating total and the gestational age by
@@ -27,7 +27,10 @@ import { EntryFormPage } from '../../pages';
 //     under it and the save is blocked; the message is removed once a score is chosen.
 // Side effects on save: none (no program, no order). The save button is a plain <button onclick="submitHtmlForm()">:
 // there is no #submit (use #buttons button.submitButton).
-// Not covered here: VIEW highlighting (VIEW cannot be tested over REST), EDIT re-highlighting.
+// VIEW (:72-104, last test and the end of the save test): every saved score and total is shown, the unscored rows are blank, only the genitals row of the
+// patient's sex is rendered, and the highlight script marks the saved cell of each scored row. The script needs jq, which the VIEW test page (the HTML
+// loaded with setContent) does not have: the test loads the server's jQuery and runs highlightSavedScores itself.
+// Not covered here: EDIT re-highlighting.
 //
 // Findings (the duplicate id="encounterDate" in the inventory is not real: the parameter replaces the shared widget):
 //   V1 Medium :161-170  selectScore clears the row whenever a score exists, whichever cell is clicked: changing a score
@@ -197,5 +200,63 @@ test.describe('ballardScore', () => {
         'Estimated gestational age (weeks)=36', // gestation by dates, typed
       ]),
     );
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid);
+    // (the scores are short numbers: check them in the order of the form too)
+    expect(await view.valueTexts()).toEqual(['4', '3', '2', '1', '4', '2', '16', '3', '3', '36', '19', '32']);
+  });
+
+  // VIEW: the saved scores (script :72-104 marks the saved cell in each row, :755 / :791 render the genitals row of the patient's sex).
+  test('VIEW: shows the saved scores and totals, highlights the saved cells, and leaves the unscored rows blank', async ({ page, api, createEntryContext }) => {
+    await open(page, createEntryContext, 'F');
+    await chooseLocation(page);
+    for (const [sign, score] of [['posture', 4], ['square-window', 3], ['arm-recoil', 2], ['pop', 1], ['scarf-sign', 4], ['heel-to-ear', 2], ['mat-skin', 3], ['mat-genitals-female', 1]] as const) {
+      await pick(page, sign, score);
+    }
+    await page.locator('#buttons button.submitButton').click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    // scores and totals (neuromuscular 16, physical 3 + 1, maturity rating 20, gestational age round((2 * 20 + 120) / 5) = 32)
+    for (const [id, expected] of [
+      ['posture-score', '4'],
+      ['square-window-score', '3'],
+      ['arm-recoil-score', '2'],
+      ['pop-score', '1'],
+      ['scarf-sign-score', '4'],
+      ['heel-to-ear-score', '2'],
+      ['total-neuro-score', '16'],
+      ['mat-skin-score', '3'],
+      ['mat-genitals-female-score', '1'],
+      ['total-mat-score', '4'],
+      ['maturityRatingTotalScore', '20'],
+      ['gestationalAgeByMaturity', '32'],
+    ]) {
+      await expect(view.page.locator(`#${id} .value`), id).toHaveText(expected);
+    }
+    // rows that were not scored, and the gestation by dates that was not typed, are blank
+    for (const id of ['mat-lanugo-score', 'mat-plantar-score', 'mat-breast-score', 'mat-eye-ear-score']) {
+      await expect(view.page.locator(`#${id} .value`), id).toHaveCount(0);
+      await expect(view.page.locator(`#${id} .emptyValue`), id).toHaveCount(1);
+    }
+    expect(await view.valueTexts()).toHaveLength(12);
+    // the genitals row of the other sex is not rendered at all
+    await expect(view.page.locator('#mat-genitals-male-score')).toHaveCount(0);
+
+    // the highlight script: it needs jq (not loaded in this page), so load the server's jQuery and run its row highlighter
+    await view.page.addScriptTag({ url: `${process.env.E2E_BASE_URL}/ms/uiframework/resource/uicommons/scripts/jquery-1.12.4.min.js` });
+    await view.page.evaluate(() => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const w = window as any;
+      w.jq = w.jQuery;
+      w.highlightSavedScores('neuro-score', 'neuro-score-input');
+      w.highlightSavedScores('mat-score', 'mat-score-input');
+    });
+    const cell = (sign: string, score: number) => view.page.locator(`td.clickable-td[onclick="selectScore('${sign}', ${score}, this);"]`);
+    for (const [sign, score] of [['posture', 4], ['square-window', 3], ['mat-skin', 3], ['mat-genitals-female', 1]] as const) {
+      await expect(cell(sign, score), `${sign} ${score}`).toHaveCSS('background-color', 'rgb(255, 243, 224)');
+    }
+    await expect(cell('posture', 3)).not.toHaveCSS('background-color', 'rgb(255, 243, 224)'); // another cell of a scored row
+    await expect(cell('mat-lanugo', 2)).not.toHaveCSS('background-color', 'rgb(255, 243, 224)'); // an unscored row
   });
 });

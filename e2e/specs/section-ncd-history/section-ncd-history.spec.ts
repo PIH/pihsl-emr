@@ -7,7 +7,7 @@ import {
   NCD_INITIAL_ENCOUNTER_TYPE_UUID,
 } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-ncd-history.xml: "NCD Patient Card" of the NCD initial encounter (patient details, NCD categories with
 // onset dates, vitals, risk factors, comorbidity, reason for visit, clinical notes). The specs use an NCD initial
@@ -35,7 +35,9 @@ import { SectionFormPage } from '../../pages';
 //   navigation: setUpNextAndSubmitButtons(). Not covered here: Next / section jump buttons (need the visit-page
 //     section wiring).
 // Side effects on save: <enrollInProgram programId="NCD"> (:421), tested below. Not covered here: the MUAC last-vitals
-//     cell (needs a child with a vitals encounter), VIEW mode (the specs only open the edit form).
+//     cell (needs a child with a vitals encounter). EDIT is covered by the save test (the saved values reopened); VIEW by the last
+//     test (a fuller save: every saved value shown and nothing for what was not answered). The scripts do not run in the VIEW harness
+//     (setContent, no page jQuery).
 //
 // Findings:
 //   V1 Low  :175-224  validateFamHistoryText and its beforeSubmit/change handlers select .medicalHistoryText, a class
@@ -273,5 +275,76 @@ test.describe('section-ncd-history', () => {
     await expect(page.locator('#days-missed-a')).toBeVisible();
     await expect(page.locator('#diabetes-onset-date')).toBeVisible();
     await expect(page.locator('#specify-support')).toBeHidden();
+  });
+
+  // VIEW: a fuller save. Patient details with their detail blocks (days missed, other referral), the category with its onset date
+  // (dd MMM yyyy), blood pressure, risk-factor radios and checkboxes, comorbidity, reason for visit and clinical notes; the
+  // answers that were not given (social-support details, the other categories) show no value.
+  test('VIEW: shows the saved patient details, onset date, risk factors, comorbidity and notes, and nothing for what was not answered', async ({ page, api }) => {
+    await fillRequired(page, { missedSchool: 'Yes' });
+    await page.locator('#days-missed-a input').fill('4');
+    await pick(page, '#referral-type', 'other');
+    await page.locator('#other-referral-text input').fill('Community health worker');
+    await page.locator('#diabetes-onset-q').getByLabel('Diabetes', { exact: true }).check();
+    await setDate(page, '#diabetes-onset-date', 2024, 2, 15);
+    await page.locator('#bp_systolic input').fill('150');
+    await page.locator('#bp_diastolic input').fill('95');
+    await page.locator('p.list-inline').filter({ hasText: 'Alcohol' }).getByLabel('yes', { exact: true }).check();
+    await page.locator('p.list-inline').filter({ hasText: 'Smoking' }).getByLabel('no', { exact: true }).check();
+    await page.locator('p.list-inline').filter({ hasText: 'Pregnancy' }).getByLabel('unknown', { exact: true }).check();
+    await page.getByLabel('Herbal traditional medicines', { exact: true }).check();
+    await page.getByLabel('Blood transfusion', { exact: true }).check();
+    await page.locator('p').filter({ hasText: 'Other risk factors' }).locator('textarea').fill('Lives near a smelter');
+    await pick(page, '#underlying-comorbidity', 'Yes');
+    await page.locator('#comorbitity-details textarea').fill('Chronic anaemia');
+    await page.locator('#reason-for-visit textarea').fill('Raised BP at a screening');
+    await page.locator('textarea').last().fill('Counselled on diet');
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Reason for visit: Scheduled visit': '[X] Scheduled',
+      'Risk factors for liver disease: Herbal traditional medications': '[X] Herbal traditional medicines',
+      'Diagnosis date: 2024-03-15': '15 Mar 2024', // a date-only value: the helper compares only text, number and coded values
+    });
+    const v = view.page;
+    expect(await view.valueTexts()).toEqual([
+      '[X] Scheduled',
+      '[X] No', // care household
+      '[X] No', // vulnerable
+      '[X] Primary school',
+      '[X] Able to read and write',
+      '[X] Yes', // missed school
+      '4',
+      '[X] Employed',
+      '5', // distance
+      '[X] No', // food insecurity
+      '[X] No', // social support
+      '[X] other',
+      'Community health worker',
+      '[X] Diabetes',
+      '15 Mar 2024',
+      '150',
+      '95',
+      '[X] yes', // alcohol
+      '[X] no', // smoking
+      '[X] unknown', // pregnancy
+      '[X] Herbal traditional medicines',
+      '[X] Blood transfusion',
+      'Lives near a smelter',
+      '[X] Yes', // comorbidity
+      'Chronic anaemia',
+      'Raised BP at a screening',
+      'Counselled on diet',
+    ]);
+    await expect(v.locator('#days-missed-a .value')).toHaveText('4');
+    await expect(v.locator('#other-referral-text .value')).toHaveText('Community health worker');
+    await expect(v.locator('#diabetes-onset-q .value')).toHaveText('[X] Diabetes');
+    await expect(v.locator('#diabetes-onset-date .value')).toHaveText('15 Mar 2024');
+    await expect(v.locator('[id$="-onset-q"] .value')).toHaveCount(1); // only Diabetes was ticked
+    await expect(v.locator('#specify-support .value')).toHaveCount(0); // social support was "No"
+    await expect(v.locator('#comorbitity-details .value')).toHaveText('Chronic anaemia');
+    await expect(v.locator('#reason-for-visit .value')).toHaveText('Raised BP at a screening');
+    await expect(v.locator('#buttons')).toHaveCount(0);
   });
 });

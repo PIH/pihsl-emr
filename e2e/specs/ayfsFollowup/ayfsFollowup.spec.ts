@@ -1,7 +1,7 @@
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
-import type { APIRequestContext, Page } from '@playwright/test';
+import { EntryFormPage, SectionFormPage, ViewFormPage, expectViewShowsSavedObs, viewMismatches } from '../../pages';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
 // ayfsFollowup.xml: "AYFS Followup", the follow-up visit of ayfsIntake.xml without its referral and family planning
 // history sections (GBV screening, reason for visit, family planning method, STI screening, rapid tests, diagnosis,
@@ -17,7 +17,11 @@ import type { APIRequestContext, Page } from '@playwright/test';
 // Scripts: setUpNextAndSubmitButtons() (:23): only wires #submit; nothing observable. Shared widgets: see _shared.
 // Side effects on save: ApplyDispositionAction and CleanDiagnosisConstructAction (:20-21); no enrolment.
 // Not covered here: lab and drug orders (:373, :468; a saved order cannot be purged), the disposition, the diagnosis
-// search, rapid tests (see _shared), VIEW/EDIT.
+// search, rapid tests (see _shared). EDIT: one save, reopen, change, save round-trip (SL-1458, SL-1467). VIEW: every saved value is shown
+// (expectViewShowsSavedObs, with the labels the form gives to the genitalia and Jadelle answers) after the save tests and the EDIT round-trip, plus
+// the dates ("dd MMM yyyy") and the diagnoses. The diagnosis widget (#data-collection) comes before the checkbox lists, consumes the saved diagnosis groups
+// and shows them as "(Presumed) Malaria [B54]" under "Secondary Diagnosis", so the lists stay blank in VIEW: widget behaviour, not a finding (see ayfsIntake);
+// the helper's "Diagnosis" mismatches are filtered for that reason.
 //
 // Findings (same shapes as ayfsIntake.xml; ids are the same):
 //   V1 High (FIXED, SL-1458) :358-360 "Symptoms/problems around the genitalia?" answers CIEL:1115,CIEL:1116 (Normal, Abnormal) but is labelled
@@ -42,6 +46,24 @@ const answerGbvNo = async (page: Page) => {
   for (const q of GBV_QUESTIONS) {
     await radioOf(page, q).nth(1).check();
   }
+};
+
+// The date widgets are read-only jQuery UI datepickers; setDate also updates the hidden field that is submitted.
+const setDate = (display: Locator, year: number, monthIndex: number, day: number) =>
+  display.evaluate(
+    (el, [y, m, d]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).jq(el).datepicker('setDate', new Date(y, m, d));
+    },
+    [year, monthIndex, day],
+  );
+
+// Coded answers the form labels differently from the concept name (obs display -> text shown in VIEW): the yes/no answerCodes
+// of the genitalia question (Abnormal is "yes") and the Jadelle label.
+const VIEW_LABELS: Record<string, string> = {
+  'Urogenital exam findings: Abnormal': 'yes',
+  'Urogenital exam findings: Normal': 'no',
+  'Method of family planning: Jadelle (implantable contraceptive)': 'Jadelle',
 };
 
 // "<concept>=<value>" for each obs of the encounter (coded values by their name).
@@ -177,5 +199,116 @@ test.describe('ayfsFollowup', () => {
       ]),
     );
     expect(obs.some((o) => o.endsWith('=Walk-in for advice'))).toBeTruthy();
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, VIEW_LABELS);
+    // (some labels are short: check them as whole selected options too)
+    const shown = await view.valueTexts();
+    for (const expected of ['[X] no', '[X] other', 'Walk-in for advice', '[X] Jadelle']) {
+      expect(shown, expected).toContain(expected);
+    }
+  });
+
+  // VIEW: every saved value is shown under the form's own label, the "Other" specify box appears, and what was not filled is not shown.
+  test('VIEW: shows the saved answers by their form labels, the implant date and the diagnoses', async ({ page, api, createEntryContext }) => {
+    const context = await open(page, createEntryContext);
+    await answerGbvNo(page);
+    await radioOf(page, 'Has anyone hit').nth(0).check(); // yes: overrides the No above
+    await checkboxOf(page, 'vr-fp').check();
+    await checkboxOf(page, 'vr-other').check();
+    await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
+    await checkboxOf(page, 'fp-meth-1873').check(); // Jadelle: implant date
+    await setDate(page.locator('#implant-date input.hasDatepicker'), 2025, 2, 10);
+    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Abnormal
+    await page.locator('#ayfs-dx input[type=checkbox]').nth(1).check(); // Malaria
+    await page.locator('#sti-dx input[type=checkbox]').nth(0).check(); // Syphilis
+    await setDate(page.locator('#apptDate input.hasDatepicker'), new Date().getFullYear() + 1, 5, 20);
+    await page.locator('#outcome-section p input[type=checkbox]').nth(0).check(); // referred to NCD
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    // dates are shown as "dd MMM yyyy"; the diagnoses are shown by the diagnosis widget, not in a span.value (checked below)
+    const apptYear = new Date().getFullYear() + 1;
+    const labels = {
+      ...VIEW_LABELS,
+      'Date of implant placement: 2025-03-10': '10 Mar 2025',
+      [`Return visit date: ${apptYear}-06-20`]: `20 Jun ${apptYear}`,
+    };
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    expect((await viewMismatches(api, view, encounter.uuid, labels)).filter((m) => !m.startsWith('Diagnosis'))).toEqual([]);
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '[X] yes', // the GBV answer and the genitalia answer
+      '[X] no',
+      '[X] Family planning',
+      '[X] other',
+      'Walk-in for advice',
+      '[X] Jadelle',
+      '10 Mar 2025',
+      `20 Jun ${apptYear}`,
+      '[X] NCD clinic',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the genitalia question: "Abnormal" is saved, "yes" is shown
+    await expect(view.page.locator('p', { hasText: 'Symptoms/problems around the genitalia' }).locator('.value')).toHaveText('[X] yes');
+    // the diagnoses come from the diagnosis widget; the two checkbox lists stay blank in VIEW
+    await expect(view.page.locator('#data-collection')).toContainText('Malaria');
+    await expect(view.page.locator('#data-collection')).toContainText('Syphilis');
+    await expect(view.page.locator('#data-collection')).not.toContainText('Typhoid');
+    // nothing was ticked for the other methods or reasons
+    for (const unexpected of ['[X] Implanon', '[X] ANC', '[X] Microgynon', '[X] OPD', '[X] Typhoid']) {
+      expect(shown, unexpected).not.toContain(unexpected);
+    }
+  });
+
+  // EDIT round-trip (SL-1458, SL-1467): the genitalia answer and the "Other" reason text come back as saved, and a second save replaces them.
+  test('EDIT: reopening shows the saved genitalia answer and other-reason text, and a second save replaces them', async ({
+    page,
+    api,
+    createEntryContext,
+  }) => {
+    const context = await open(page, createEntryContext);
+    await answerGbvNo(page);
+    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Abnormal
+    await checkboxOf(page, 'vr-other').check();
+    await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
+    await checkboxOf(page, 'vr-fp').check();
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    expect(await obsSummary(api, encounter.uuid)).toContain('Urogenital exam findings=Abnormal');
+
+    await page.goto(
+      SectionFormPage.editUrl(FORM, { patient: context.patient, encounter: { uuid: encounter.uuid, visitUuid: context.visitUuid } }),
+    );
+    await expect(page.locator(SAVE)).toBeVisible();
+    const genitalia = radioOf(page, 'Symptoms/problems around the genitalia');
+    await expect(genitalia.nth(0)).toBeChecked();
+    await expect(genitalia.nth(1)).not.toBeChecked();
+    await expect(checkboxOf(page, 'vr-other')).toBeChecked();
+    await expect(checkboxOf(page, 'vr-fp')).toBeChecked();
+    await expect(page.locator('#other-visit-reason')).toBeVisible();
+    await expect(page.locator('#other-visit-reason textarea')).toHaveValue('Walk-in for advice');
+
+    // change the answer, the text, and drop the other reason
+    await genitalia.nth(1).check(); // no -> Normal
+    await page.locator('#other-visit-reason textarea').fill('Follow-up question');
+    await checkboxOf(page, 'vr-fp').uncheck();
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const obs = await obsSummary(api, encounter.uuid);
+    expect(obs.filter((o) => o.startsWith('Urogenital exam findings='))).toEqual(['Urogenital exam findings=Normal']);
+    expect(obs.filter((o) => o.endsWith('=Follow-up question'))).toHaveLength(1);
+    expect(obs.some((o) => o.endsWith('=Walk-in for advice'))).toBeFalsy();
+    expect(obs.filter((o) => o.startsWith('Reason for visit='))).toEqual(['Reason for visit=Other']);
+
+    // VIEW shows the second save: the new text and answer, and nothing of what was replaced or dropped
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, VIEW_LABELS);
+    const shown = await view.valueTexts();
+    expect(shown).toContain('Follow-up question');
+    expect(shown).not.toContain('Walk-in for advice');
+    expect(shown).not.toContain('[X] Family planning');
+    await expect(view.page.locator('p', { hasText: 'Symptoms/problems around the genitalia' }).locator('.value')).toHaveText('[X] no');
   });
 });

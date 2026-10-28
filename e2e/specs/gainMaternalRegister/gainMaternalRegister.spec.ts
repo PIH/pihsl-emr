@@ -1,7 +1,7 @@
-import type { APIRequestContext, Page } from '@playwright/test';
+import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // gainMaternalRegister.xml: "Maternity and Delivery Register" (GAIN): one page with admission, labour, delivery, newborn
 // condition, diagnoses, family planning, maternal outcome (disposition) and "Delivery conducted by". A top-level form: the
@@ -20,7 +20,9 @@ import { EntryFormPage } from '../../pages';
 // Scripts: none of its own.
 // Side effects on save: postSubmissionAction ApplyDispositionAction (:21) with the encounterDisposition widget (:296); left
 // on its default here (transfer / death dispositions are not exercised).
-// Not covered here: the disposition actions, diagnosis autocomplete (:231, :251), VIEW and EDIT modes.
+// VIEW (end of the save test, and the last test): every saved value is shown under the form's own label ("Sex" M/F), the date and time obs as a
+// date and a time, the encounter date appears once (under "Maternal outcome"), the "Other" cadre shows its specify text, and what was left blank is not.
+// Not covered here: the disposition actions, diagnosis autocomplete (:231, :251), EDIT mode.
 //
 // Findings: only duplicate id="when" :286 (_shared V10).
 
@@ -104,5 +106,100 @@ test.describe('gainMaternalRegister', () => {
         'Delivery assistant=Midwife',
       ]),
     );
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Child gender: Female': 'F',
+      'Type of delivery: Spontaneous vaginal delivery': 'Normal',
+    });
+    // (the labels are short: check them as whole selected options too; the date is the encounter date under "Maternal outcome")
+    const now = new Date();
+    const today = `${String(now.getDate()).padStart(2, '0')} ${now.toLocaleString('en', { month: 'short' })} ${now.getFullYear()}`;
+    expect(await view.valueTexts()).toEqual(['[X] Normal', '[X] F', '3.2', today, 'Auto Midwife', '[X] Midwife']);
+  });
+
+  // The date and time widgets: a read-only datepicker plus hour and minute selects (enabled once a date is chosen).
+  const setDateTime = async (page: Page, row: Locator, date: Date, hour: number, minute: number) => {
+    await row.locator('input.hasDatepicker').evaluate(
+      (el, [y, m, d]) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).jq(el).datepicker('setDate', new Date(y, m, d));
+        (window as any).jq(el).trigger('change'); // enables the hour and minute selects
+      },
+      [date.getFullYear(), date.getMonth(), date.getDate()],
+    );
+    await row.locator('select.hfe-hours').selectOption(String(hour));
+    await row.locator('select.hfe-minutes').selectOption(String(minute));
+  };
+
+  // VIEW: every saved value is shown, the date and time obs as a date and a time, and the "Other" cadre shows its specify text.
+  test('VIEW: shows the saved admission, labour, delivery, newborn and cadre answers, the dates and times, and nothing for what was left blank', async ({
+    page,
+    api,
+  }) => {
+    const yesterday = new Date(Date.now() - 86400000);
+    const day = `${String(yesterday.getDate()).padStart(2, '0')} ${yesterday.toLocaleString('en', { month: 'short' })} ${yesterday.getFullYear()}`;
+    await open(page);
+    await setDateTime(page, page.locator('#intake p.date-one-line'), yesterday, 9, 30);
+    await page.locator('#intake p', { hasText: 'Gravida' }).locator('input').first().fill('3');
+    await page.locator('#intake p', { hasText: 'Parity' }).locator('input').first().fill('2');
+    await page.locator('#intake p', { hasText: 'Gestational age' }).locator('input').first().fill('38.4');
+    await page.locator('#intake input[type=checkbox]').first().check(); // PAC type
+    await setDateTime(page, page.locator('#labor p.date-one-line'), yesterday, 12, 45);
+    await page.locator('#labor input[type=radio]').first().check(); // presentation
+    await page.locator('#labor input[type=text]:visible').last().fill('Face to pubes');
+    await setDateTime(page, page.locator('#delivery-section p.date-one-line'), yesterday, 3, 5);
+    await page.locator('#delivery-section').getByLabel('Assisted (vacuum or instrument)', { exact: true }).check();
+    await page.locator('#delivery-section').getByLabel('FSB', { exact: true }).check();
+    await page.locator('#delivery-section input[type=radio]').nth(6).check(); // partograph used: yes
+    await page.locator('#delivery-section input[type=radio]').nth(9).check(); // uterotonic: no
+    await page.locator('#newborn').getByLabel('M', { exact: true }).check();
+    await page.locator('#newborn p', { hasText: '(Birth) Weight' }).locator('input[type=text]').fill('3.2');
+    await page.locator('#newborn p', { hasText: 'APGAR' }).locator('input[type=text]').fill('8');
+    await page.locator('#postpartum-fp input[type=radio]').nth(0).check(); // counselled: yes
+    await page.locator('#initial-diagnosis-non-coded input').fill('Initial free text');
+    await page.locator('#final-diagnosis-non-coded input').fill('Final free text');
+    await page.locator('#hcw input[type=text]').first().fill('Auto Midwife');
+    await page.locator('#hcw-cadre').getByLabel('Other', { exact: true }).check();
+    await page.locator('#other-role input').fill('Traditional birth attendant');
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Child gender: Male': 'M',
+      'Type of delivery: Assistance required': 'Assisted (vacuum or instrument)',
+      'Qualitative birth outcome: Fresh stillbirth': 'FSB',
+    });
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '3',
+      '2',
+      '38.4',
+      '[X] Misoprostol', // PAC type
+      '[X] Breech presentation',
+      'Face to pubes',
+      '[X] Assisted (vacuum or instrument)',
+      '[X] FSB',
+      '[X] M',
+      '3.2',
+      '8',
+      'Initial free text',
+      'Final free text',
+      'Auto Midwife',
+      '[X] Other',
+      'Traditional birth attendant',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the date and time obs are shown as a date and a 12-hour time (admission, labour start and delivery), and the encounter date under "Maternal outcome"
+    expect(shown.filter((t) => t === day)).toHaveLength(3);
+    for (const time of ['9:30 AM', '12:45 PM', '3:05 AM']) {
+      expect(shown, time).toContain(time);
+    }
+    await expect(view.page.locator('#adt #encounterDate .value')).toHaveCount(1);
+    // the newborn "Alive" and "Breastfeeding" questions and the second postpartum question were not answered
+    await expect(view.page.locator('#newborn p', { hasText: 'Alive' }).locator('.value')).toHaveCount(0);
+    await expect(view.page.locator('#newborn p', { hasText: 'Breastfeeding' }).locator('.value')).toHaveCount(0);
+    await expect(view.page.locator('#postpartum-fp .value')).toHaveCount(1);
+    await expect(view.page.locator('#hcw #other-role .value')).toHaveText('Traditional birth attendant');
   });
 });

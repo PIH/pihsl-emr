@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // inpatientVitals.xml: "Vital Signs Inpatient" (BP, HR, RR, temperature, SpO2, haemoglobin, glucose, FHR, then oxygen flow rate
 // and total fluid input/output). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an adult woman, so
@@ -10,13 +10,15 @@ import { EntryFormPage } from '../../pages';
 //
 // Conditions in the form, from documentation inventory (inpatientVitals.inv.md):
 //   ifMode VIEW include=false :96, :111, :140, :175   provider/location/date block, headings, Oxygen-and-fluids inputs, buttons
-//   ifMode VIEW (include true) :162                   VIEW copy of the oxygen/fluid obs (VIEW cannot be tested: a REST encounter has no form)
+//   ifMode VIEW (include true) :162                   VIEW copy of the oxygen/fluid obs (tested in the VIEW checks below)
 //   (:136 #most-recent-encounter-title is outside any ifMode: present, hidden by style, in ENTER too.)
 // Scripts: none in this file. The vitals scoring (shared vital-signs-widget.js, pregnancy ranges, _shared V9) is exercised by one
 //   table-driven test: a summed score >= 2 shows #confirmMsg and disables Save until #contactDr is ticked (see _shared V2, V4, V9);
 //   the FHR block #fhrDiv is hidden only at some wards (_shared), visible at the session location.
 // Side effects on save: none (no program, order or disposition). Encounter type 6b1c3929-... (Vital Signs Inpatient).
-// Not covered here: EDIT and VIEW modes, the retro-entry privilege, ward-dependent FHR hiding (needs another login location).
+// VIEW is covered by the save test and by one test with only BP and haemoglobin: every saved value is in a span.value of its own field, and the
+// fields left empty show nothing. (The page script that colours the vitals in VIEW needs the app's jq: not exercised by setContent.)
+// Not covered here: EDIT mode, the retro-entry privilege, ward-dependent FHR hiding (needs another login location).
 
 const FORM = 'inpatientVitals.xml';
 const INPATIENT_VITALS_ENCOUNTER_TYPE_UUID = '6b1c3929-f23c-423f-8cad-64b17cf10b99';
@@ -117,5 +119,31 @@ test.describe('inpatientVitals', () => {
       Hemoglobin: 11, 'Serum glucose (mmol/L)': 5, 'Fetal heart rate': 140, 'Second fetal heart rate': 142,
       'Delivered oxygen flow rate (L/m)': 2, 'Total fluid input over past 24 hours (mL)': 500, 'Total fluid output over past 24 hours (mL)': 300,
     });
+
+    // VIEW: every vital, oxygen and fluid value is shown in its own field (:162 VIEW copy of the oxygen/fluid obs)
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid);
+    for (const [id, value] of Object.entries(values)) {
+      await expect(view.page.locator(`#${id} .value`), id).toHaveText(value);
+    }
+    expect(await view.valueTexts()).toEqual([...Object.values(values), '2', '500', '300']);
+    await expect(view.page.locator('#o2andFluidsDiv')).toHaveCount(0); // ifMode VIEW include=false :140: the ENTER inputs and their wrapper are gone
+    await expect(view.page.locator('#buttons, input')).toHaveCount(0);
+  });
+
+  // VIEW of a partly filled form: only the entered vitals are values, the other fields show nothing as a value.
+  test('VIEW: a vitals encounter with only BP and haemoglobin shows just those values', async ({ page, api }) => {
+    await EntryFormPage.open(page, FORM, context);
+    await fillWhoWhere(page);
+    for (const [id, value] of Object.entries({ bp_systolic: '118', bp_diastolic: '76', hemoglobin: '11' })) {
+      await enter(page, id, value);
+    }
+    await saveButton(page).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['118', '76', '11']);
+    await expect(view.page.locator('#heart_rate .value, #temperature_c .value, #o2_sat .value, #glucose .value, #fhr .value')).toHaveCount(0);
+    await expect(view.page.locator('#hemoglobin .value')).toHaveText('11');
   });
 });

@@ -10,8 +10,9 @@ const config: PlaywrightTestConfig = {
     timeout: 20 * 1000,
   },
   fullyParallel: true,
-  // One worker: the specs create and purge their own patients on a shared server.
-  workers: 1,
+  // One worker by default: the specs create and purge their own patients on a shared server. E2E_WORKERS=3 runs
+  // specs in parallel (each test has its own patient), if the server can take it.
+  workers: Number(process.env.E2E_WORKERS ?? 1),
   forbidOnly: !!process.env.CI,
   retries: 0,
   reporter: process.env.CI ? [['junit', { outputFile: 'results.xml' }], ['html']] : [['html', { open: 'never' }]],

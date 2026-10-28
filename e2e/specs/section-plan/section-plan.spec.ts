@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-plan.xml: outpatient Plan section (clinical management plan, HIV counselling, family planning, X-ray and
 // ultrasound orders, medication orders, disposition and return visit date). The specs use an outpatient initial
@@ -15,6 +15,7 @@ import { SectionFormPage } from '../../pages';
 // Shared: drug-order-widget.xml (:116, see _shared.e2e.md; its orders are covered in section-plan-medication.spec.ts).
 // Side effects on save (pihcore classes, not read here): ApplyDispositionAction, SetOrderAutoExpireDateAction (:7-8).
 // Not covered here: the "Other" X-ray / ultrasound comment fields (the REST obs display does not show comments).
+// EDIT/ENTER and VIEW are both covered by the save test (the VIEW lists exactly the saved answers; an order is never saved from a spec).
 //
 // Findings:
 //   V1 Medium :108    Ultrasound "Other" checkbox saves PIH:Other (US) but has answerLabel="Other (XRay)", so the X-ray
@@ -65,7 +66,11 @@ test.describe('section-plan', () => {
     await page.locator('#family-planning input[type=radio]').first().check(); // Offered family planning: Yes
     await page.getByLabel('Chest', { exact: true }).check(); // X-ray: chest
     await page.getByLabel('Obstetric', { exact: true }).check(); // Ultrasound: obstetric
+    await page.locator('#drug-orders textarea').fill('Compare with last film');
     await page.locator('#encounter-disposition select').selectOption({ label: 'Discharge' });
+    await page.locator('#disposition-section input[type=text]:visible').first().fill('Home with family');
+    // the date input is a read-only datepicker: set the date through the widget (the return visit date is a future date)
+    await page.evaluate(() => (window as any).jq('#apptDate input.hasDatepicker').first().datepicker('setDate', new Date(2030, 5, 20)));
     await page.locator('#buttons input.submitButton').click();
     await new SectionFormPage(page, FORM).expectSaved();
 
@@ -74,5 +79,33 @@ test.describe('section-plan', () => {
     expect(displays.some((d) => d.includes('chest'))).toBeTruthy();
     expect(displays.some((d) => d.includes('obstetric'))).toBeTruthy();
     expect(displays.some((d) => d.includes('discharge'))).toBeTruthy();
+
+    // VIEW: exactly the saved answers; the radiology tick uses the form's own label (Chest, not "Chest, 1 view (X-ray)"), the disposition
+    // shows as a plain value, the return visit date as dd MMM yyyy, and no buttons are rendered
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Radiology image order (coded): Chest, 1 view (X-ray)': '[X] Chest',
+      'Radiology image order (coded): Obstetric (US)': '[X] Obstetric',
+      'Disposition categories: Discharged': 'Discharge',
+      'Return visit date: 2030-06-20': '20 Jun 2030', // a date-only value: the helper compares only text, number and coded values
+    });
+    expect(await view.valueTexts()).toEqual([
+      'Review in two weeks',
+      '[X] yes', // HIV counselling
+      '[X] Yes', // family planning
+      '[X] Chest',
+      '[X] Obstetric',
+      'Compare with last film',
+      'Discharge',
+      'Home with family',
+      '20 Jun 2030',
+    ]);
+    await expect(view.page.locator('#clinical-management-plan .value')).toHaveText('Review in two weeks');
+    await expect(view.page.locator('#hiv-counselling .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#family-planning .value')).toHaveText('[X] Yes');
+    await expect(view.page.locator('#radiology-orders .value')).toHaveText(['[X] Chest', '[X] Obstetric']);
+    await expect(view.page.locator('#drug-orders .value')).toHaveText('Compare with last film'); // the remarks
+    await expect(view.page.locator('#encounter-disposition .value')).toHaveText('Discharge');
+    await expect(view.page.locator('#apptDate .value')).toHaveText('20 Jun 2030');
+    await expect(view.page.locator('#buttons')).toHaveCount(0);
   });
 });

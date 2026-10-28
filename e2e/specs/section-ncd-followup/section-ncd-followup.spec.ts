@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-ncd-followup.xml: Patient Details, NCD categories and vitals of the NCD followup encounter.
 // The specs open the form URL directly, so the visit-page rule that shows this section only for the full
@@ -17,6 +17,8 @@ import { SectionFormPage } from '../../pages';
 //   includeIf age < 13         :413, :483  MUAC fields; need a child patient and are not covered here
 //   ifMode VIEW / not VIEW     :459, :469  BP read-only text vs inputs
 //   ifMode VIEW include=false  :526  #buttons
+// VIEW (getAsHtml): the visit-details answers, categories, blood pressure, BMI and notes are covered by two VIEW checks; the scripts
+//   (last vitals panel, BMI) need the page's jQuery and the visit's vitals encounter and are not run by the harness (setContent).
 
 // Scripts (:41-155, run on jq(document).ready in every mode including VIEW):
 //   prefill (REST): GET ws/rest/v1/visit/<visitUuid>?v=custom:(...encounters:(...obs...)) with the visit uuid fixed at
@@ -107,5 +109,55 @@ test.describe('section-ncd-followup', () => {
     expect(res.ok()).toBeTruthy();
     const enrollments = (await res.json()).results as Array<{ program: { name: string } }>;
     expect(enrollments.some((e) => /ncd/i.test(e.program.name))).toBeTruthy();
+
+    // VIEW: the three Patient Details answers and the two NCD categories; Yes-only details are not shown for "No"
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, { 'Reason for visit: Scheduled visit': '[X] Scheduled' });
+    expect(await view.valueTexts()).toEqual(['[X] Scheduled', '[X] No', '[X] No', '[X] Diabetes', '[X] Hypertension']);
+    await expect(view.page.locator('#specify-support .value, #days-missed .value')).toHaveCount(0);
+    await expect(view.page.locator('#ncd_info .value')).toHaveText(['[X] Diabetes', '[X] Hypertension']);
+  });
+
+  // VIEW: the answers that open a detail block (social support, missed school) show the detail, the blood pressure is shown as
+  // read-only text (ifMode VIEW :459), the form's own labels are used for the visit type, support, BMI and obesity answers
+  test('VIEW: shows the visit details with their conditional detail, the blood pressure, BMI results and notes', async ({ page, api }) => {
+    await page.locator('#w2_0').check(); // Type of visit: Scheduled
+    await page.locator('#w4_0').check(); // Social support: Yes
+    await page.locator('#specify-support').getByLabel('Transport', { exact: true }).check();
+    await page.locator('#w15_0').check(); // Missed school: Yes
+    await page.locator('#days-missed input[type=text]').fill('3');
+    await page.locator('#bp_systolic input[type=text]').fill('130');
+    await page.locator('#bp_diastolic input[type=text]').fill('85');
+    await page.locator('#bmi-results').getByLabel('Overweight (BMI 25.0 - 29.9)', { exact: true }).check();
+    await page.locator('p').filter({ hasText: 'Obesity' }).getByLabel('yes', { exact: true }).check();
+    await page.locator('textarea').fill('Doing well on treatment');
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Reason for visit: Scheduled visit': '[X] Scheduled',
+      'Socio-economic assistance received: Transport assistance': '[X] Transport',
+      'Physical appearance exam findings: Overweight': '[X] Overweight (BMI 25.0 - 29.9)',
+      'Symptom present: Obesity': '[X] yes',
+    });
+    const v = view.page;
+    expect(await view.valueTexts()).toEqual([
+      '[X] Scheduled',
+      '[X] Yes', // social support
+      '[X] Transport',
+      '[X] Yes', // missed school
+      '3',
+      '130',
+      '85',
+      '[X] Overweight (BMI 25.0 - 29.9)',
+      '[X] yes', // obesity
+      'Doing well on treatment',
+    ]);
+    await expect(v.locator('#specify-support .value')).toHaveText('[X] Transport');
+    await expect(v.locator('#days-missed .value')).toHaveText('3');
+    await expect(v.locator('#bp_systolic .value')).toHaveText('130');
+    await expect(v.locator('#bp_diastolic .value')).toHaveText('85');
+    await expect(v.locator('#bmi-results .value')).toHaveText('[X] Overweight (BMI 25.0 - 29.9)');
+    await expect(v.locator('#ncd_info .value')).toHaveCount(0); // no NCD category was ticked
+    await expect(v.locator('#buttons')).toHaveCount(0);
   });
 });

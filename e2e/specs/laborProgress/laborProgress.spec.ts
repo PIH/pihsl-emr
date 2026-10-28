@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // laborProgress.xml: "Labour Progress" (MCOE labour ward note): intake, vitals, lab results, labour complications,
 // labour onset and membranes, physical exam (up to 4 foetuses), induction, abdominal scar and outcome. The specs open
@@ -23,8 +23,9 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //   :268-301 foetus 2-4 are hidden on load; "Show more" shows them, "Show less" hides them again; the buttons swap.
 // Side effects on save: postSubmissionActions CleanDiagnosisConstructAction, ApplyDispositionAction and
 //   PregnancyProgramEnrollmentAction (patient is enrolled in the Pregnancy program, asserted below).
+// VIEW is covered by the save test (every section) and one test with two foetuses; the EDD/GA block is ENTER/EDIT only (script :35-54).
 // Not covered here: disposition (ApplyDispositionAction; transfer/death side effects), partogram upload (complex obs),
-//   lab results and vitals scoring (shared widgets, _shared.e2e.md), VIEW mode, other session locations.
+//   lab results and vitals scoring (shared widgets, _shared.e2e.md), other session locations.
 //
 // Findings:
 //   V1 Medium :359, :363  <div id="other-presentation"> sits inside the 4-foetus <repeat> without {0}, and every <when>
@@ -38,6 +39,13 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //                    foetus number, so HFE binds them to the slots in obs order.   (TESTED below with test.fail)
 //   V3 Low    :37-43 the LMP date is formatted as 'yyyy-MM-dd' and parsed with new Date(), i.e. as UTC midnight, then shown
 //                    in the browser's time zone: EDD is one day early in time zones west of UTC (not Sierra Leone).
+//   VW1 Medium :340-342  the foetus obsgroups (CIEL:165381) carry no foetus number, and HFE binds them to the four slots in the reverse of the entry
+//                    order: with two foetuses saved, VIEW (and the reopened EDIT form) show foetus 2's heart rate and presentation under
+//                    "------- 1 -------" and foetus 1's under "------- 2 -------" (140/150 bpm came back as 150/140, 6 of 6 runs). A save from
+//                    EDIT then writes the swapped data back. Fix: store the foetus number in the group (a hidden obs per slot), or bind the slots
+//                    in saved order.   (TESTED below with test.fail)
+//   VW2 Info :229,:359,:409,:449  VIEW does not run the <when>/thenDisplay controls (the generated script is ENTER/EDIT only), so the conditional blocks
+//                   (#rupture-details, #other-presentation, #induced-details, #ab-scar-details) are always rendered in VIEW, blank when not applicable (same as gainNewbornRegister VW1; not tested).
 
 const FORM = 'laborProgress.xml';
 const DAY_MS = 86400000;
@@ -258,6 +266,32 @@ test.describe('laborProgress', () => {
     ];
     expect(expected.filter((e) => !displays.includes(e))).toEqual([]);
     expect(await pregnancyEnrollments(api, context.patient.uuid)).toContain('Pregnancy');
+    // VIEW: every value is shown, the coded answers with the form's own labels, and what was not filled is blank or absent
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Antenatal and postnatal care team: Team B': '[X] B',
+      'Method of gestational age determination: Date of last menstrual period': '[X] Last menstrual date',
+      'Complications at delivery set: Prolonged labor': '[X] Prolonged labour',
+      'Status of fetal membranes: Ruptured membranes': '[X] Ruptured',
+      'Method of labor induction: Administration of oxytocin': '[X] Oxytocin',
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    for (const [id, value] of Object.entries({ bp_systolic: '120', bp_diastolic: '80', heart_rate: '80', 'fetus-hr-1': '140' })) {
+      await expect(at(`#${id}`), id).toHaveText(value);
+    }
+    await expect(at('#membrane-state')).toHaveText('[X] Ruptured');
+    await expect(at('#rupture-details')).toHaveText('[X] Clear'); // :229 section: shown in VIEW with its saved answer
+    await expect(at('#induced')).toHaveText('[X] Yes');
+    await expect(at('#induced-details')).toHaveText('[X] Oxytocin');
+    await expect(at('#ab-scar')).toHaveText('[X] No');
+    await expect(at('#fetus-presentation-1')).toHaveText('[X] Cephalic or vertex presentation');
+    await expect(at('#outcome-condition')).toHaveText('[X] satisfactory');
+    await expect(at('#outcome').last()).toHaveText('Labour note');
+    // not filled: the other vitals, the rapid tests, the rupture and induction dates, the other foetuses
+    await expect(view.page.locator('#respiratory_rate .value, #temperature_c .value, #o2_sat .value, #fhr .value')).toHaveCount(0);
+    await expect(view.page.locator('#rapid-tests-widget .value')).toHaveCount(0);
+    await expect(view.page.locator('#rupture-date .value, #induced-date .value')).toHaveCount(0);
+    await expect(view.page.locator('#fetus-2 .value, #fetus-3 .value, #fetus-4 .value')).toHaveCount(0);
+    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :507
   });
 
   // V2 (Medium): hasValue() checks a class that does not exist, so saved foetus 2 data is hidden when the form is reopened.
@@ -281,5 +315,43 @@ test.describe('laborProgress', () => {
     await expect(page.locator('#buttons input.submitButton')).toBeVisible();
     await expect(page.locator('#fetus-hr-2 input')).not.toHaveValue('');
     await expect(page.locator('#fetus-2')).toBeVisible({ timeout: 3000 });
+  });
+
+  // Two foetuses saved, the first with 140 bpm and a cephalic presentation, the second with 150 bpm and "Other" (specified).
+  const saveTwoFoetuses = async (page: Page, api: APIRequestContext) => {
+    await pickLocation(page);
+    await page.locator('#fetus-hr-1 input').fill('140');
+    await page.locator('#fetus-presentation-1').getByLabel('Cephalic or vertex presentation').check();
+    await page.locator('#show-more-fetus-button').click();
+    await page.locator('#fetus-hr-2 input').fill('150');
+    await page.locator('#fetus-presentation-2').getByLabel('Other', { exact: true }).check();
+    await page.locator('#fetus-2 input[type=text]').first().fill('Compound presentation'); // the "if other, specify" field (V1: always visible)
+    await saveForm(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    return (await getPatientEncounters(api, context.patient.uuid))[0];
+  };
+
+  // VIEW has no foetus-hiding script (ifMode VIEW include=false :267), so both saved foetuses are shown and the unused ones are not rendered.
+  test('VIEW: shows both saved foetuses, and not the unused foetuses 3 and 4', async ({ page, api }) => {
+    const encounter = await saveTwoFoetuses(page, api);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    // which slot holds which foetus is VW1: compare the two sorted
+    expect((await view.page.locator('#fetus-hr-1 .value, #fetus-hr-2 .value').allInnerTexts()).sort()).toEqual(['140', '150']);
+    expect(await view.valueTexts()).toEqual(expect.arrayContaining(['[X] Cephalic or vertex presentation', '[X] Other', 'Compound presentation']));
+    await expect(view.page.locator('#fetus-3 .value, #fetus-4 .value')).toHaveCount(0);
+    await expect(view.page.locator('#fetus-3 h6, #fetus-4 h6')).toHaveCount(0);
+  });
+
+  // VW1 (Medium): the saved foetus groups carry no foetus number, and HFE hands them to the four slots in the reverse of the entry order, in VIEW
+  // and in EDIT: foetus 1 shows the data entered for foetus 2 and vice versa. Intended: each foetus keeps its own data.
+  // Remove test.fail() when the group stores which foetus it is (or the slots are bound in the saved order).
+  test('VIEW: foetus 1 and foetus 2 show their own values (VW1)', async ({ page, api }) => {
+    test.fail();
+    const encounter = await saveTwoFoetuses(page, api);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    await expect(view.page.locator('#fetus-hr-1 .value')).toHaveText('140');
+    await expect(view.page.locator('#fetus-hr-2 .value')).toHaveText('150');
+    await expect(view.page.locator('#fetus-1 .value').filter({ hasText: 'Cephalic' })).toHaveCount(1);
+    await expect(view.page.locator('#fetus-2 .value').filter({ hasText: 'Compound presentation' })).toHaveCount(1);
   });
 });

@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, ViewFormPage, viewMismatches } from '../../pages';
 
 // section-dx.xml: "Clinical impressions": coded diagnoses (encounterDiagnosesByObs widget) and a free-text clinical note.
 // It hangs under several parents (Outpatient initial/followup, NCD initial/followup, MCH delivery; see
@@ -18,8 +18,9 @@ import { SectionFormPage } from '../../pages';
 // Side effects on save: the widget writes obs, not Encounter Diagnosis rows: a "Visit Diagnoses" obs group (diagnosis,
 //   certainty, order) per diagnosis; GET encounter ... diagnoses is empty. Not covered: other widget options, since the
 //   tag has no attributes besides selectedDiagnosesTarget.
-// Not covered here: VIEW mode (REST-created encounters have no form, so viewEncounterWithHtmlForm.page fails); a free-text
-//   (non-coded) diagnosis.
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the two save tests: the widget prints each diagnosis as
+//   "<Primary|Secondary> Diagnosis (<certainty>) <name> [<code>]" in a plain span (no span.value), the clinical note is a span.value.
+// Not covered here: a free-text (non-coded) diagnosis.
 //
 // Findings:
 //   V1 Low   :24    the widget label reads "Add presumed or confirmed diagnosis (required)" but the tag has no required="true"
@@ -57,6 +58,11 @@ test.describe('section-dx', () => {
     await form.save();
     await form.expectSaved();
     expect(await getEncounterObs(api, section.encounter.uuid)).toHaveLength(0);
+
+    // VIEW: no diagnosis line and no note value
+    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    await expect(view.values).toHaveCount(0);
+    await expect(page.locator('#data-collection', { hasText: 'Diagnosis' })).toHaveCount(0);
   });
 
   test('saves a confirmed primary diagnosis and the clinical note, and shows them again on reopen (EDIT)', async ({
@@ -82,5 +88,16 @@ test.describe('section-dx', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#encounter-diagnoses-target .diagnosis.primary')).toContainText('Pneumonia');
     await expect(page.locator('#encounter-diagnoses-target').getByLabel('Confirmed')).toBeChecked();
+
+    // VIEW: the widget prints each diagnosis as "<order> Diagnosis: (<certainty>) <name> [<code>]" in a plain span (not a span.value),
+    // so only the clinical note is a value and the three diagnosis obs are checked on that line instead
+    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['Fever and cough for three days']);
+    expect((await viewMismatches(api, view, section.encounter.uuid)).filter((m) => !m.startsWith('Diagnosis'))).toEqual([]);
+    const diagnosis = page.locator('#data-collection p', { hasText: 'Primary Diagnosis' });
+    await expect(diagnosis).toHaveCount(1);
+    await expect(diagnosis.locator('span')).toHaveText('(Confirmed) Pneumonia [J18.9]');
+    await expect(page.locator('#data-collection p', { hasText: 'Secondary Diagnosis' })).toHaveCount(0);
+    await expect(page.locator('h3, #buttons, textarea, input')).toHaveCount(0);
   });
 });

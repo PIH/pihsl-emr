@@ -13,14 +13,17 @@
 // Script (:22-27): setUpNextAndSubmitButtons() only (Next / section buttons / Save); no validation or derived value.
 // Side effects on save: <postSubmissionAction CleanDiagnosisConstructAction> (:19, pihcore, not read); observed to add
 //   a "Diagnosis order: Secondary" obs per saved diagnosis (asserted below). No program enrollment.
-// Not covered here: Next / section-jump buttons, VIEW mode, the other COPD/asthma radios (plain obs, no logic).
+// EDIT is covered by the save tests (restored when-targets), VIEW by the two save tests (exactly the saved answers).
+// Not covered here: Next / section-jump buttons, the other COPD/asthma radios (plain obs, no logic).
 //
 // Findings:
 //   V1 High :331 vs :287  "If exacerbation, hospitalization needed?" uses PIH:14626 ("Night waking with dyspnea
 //                      (coded)"), the same concept as "Night waking due to dyspnea", inside the same obsgroup PIH:14620:
 //                      answering the hospitalization question saves a second Night-waking obs, so the record shows two
 //                      contradictory night-waking answers and the hospitalization answer is lost. Fix: a hospitalization
-//                      concept (e.g. CIEL:1788 as at :472). TESTED below (test.fail).
+//                      concept (e.g. CIEL:1788 as at :472). TESTED below (test.fail). The VIEW is affected too: with the two obs saved
+//                      (night waking No, "hospitalization" Yes) it sometimes shows them swapped (night waking "yes", hospitalization
+//                      "no": 2 of 6 runs) and sometimes correctly, depending on the obs order, so it is not asserted.
 //   V2 Low  :432, 457  <when> targets #lung-fui-understands-details, -titrate-, -adher-, -aware- and
 //                      #lung-dc-fui-improved-details do not exist: answering Yes shows nothing. Fix: drop the five <when>s.
 //   V3 Low  :296       <sl> is not an HTML element (should be <ul>); the exacerbation definition list loses its bullets.
@@ -30,7 +33,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 const FORM = 'section-lung.xml';
 
@@ -105,6 +108,30 @@ test.describe('section-lung, NCD initial encounter', () => {
     await expect(page.locator('#details-exar-copd')).toBeVisible();
     await expect(page.getByLabel('COPD', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Grade B', { exact: true })).toBeChecked();
+
+    // VIEW: exactly the saved answers (diagnoses, GOLD group, treatment, evaluation, exacerbation count, spirometry); "Diagnosis order:
+    // Secondary" is written by CleanDiagnosisConstructAction, not by a field of the form
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'COPD group classification: COPD, group B by 2017 GOLD classification': '[X] Grade B',
+      'Treatment for chronic lung disease: Short-acting beta agonists': '[X] SABA (Short-acting beta-agonist)',
+      'Symptom present: Wheeze': '[X] yes',
+      'Diagnosis order: Secondary': '',
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] COPD',
+      '[X] Asthma',
+      '[X] SABA (Short-acting beta-agonist)',
+      '[X] Grade B',
+      '[X] yes', // smoking cessation
+      '[X] yes', // wheezing
+      '[X] yes', // COPD exacerbation
+      '2',
+      '70',
+      '[X] Improved',
+    ]);
+    await expect(row(view.page, /^\s*Wheezing/).locator('.value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#exar-copd .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#details-exar-copd .value')).toHaveText('2');
   });
 });
 
@@ -161,6 +188,15 @@ test.describe('section-lung, NCD followup encounter', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#lung-fui-missed-details')).toBeVisible();
     await expect(page.locator('#lung-dc-fui-lungDecomp-details')).toBeVisible();
+
+    // VIEW: each indicator on its own row; the missed-dose count is shown; the initial-only diagnosis tables are absent
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['[X] yes', '[X] yes', '[X] yes', '4']);
+    await expect(row(view.page, /^\s*Missed doses in past week/).locator('.value').first()).toHaveText('[X] yes');
+    await expect(view.page.locator('#lung-fui-missed-details .value')).toHaveText('4');
+    await expect(row(view.page, /^\s*Lung decompensation/).locator('.value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#lung-dc-fui-lungDecomp-details .value')).toHaveText('[X] yes'); // Send for admission
+    await expect(view.page.getByText('Interstitial lung disease')).toHaveCount(0);
   });
 
   // V1 (High): "If exacerbation, hospitalization needed?" (:331) uses PIH:14626, the same concept as

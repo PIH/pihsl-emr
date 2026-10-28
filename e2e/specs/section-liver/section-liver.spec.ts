@@ -16,7 +16,8 @@
 // Script (:22-27): setUpNextAndSubmitButtons() only (Next / section buttons / Save); no validation or derived value.
 // Side effects on save: <postSubmissionAction CleanDiagnosisConstructAction> (:19, pihcore, not read); observed to add
 //   a "Diagnosis order: Secondary" obs to the Visit Diagnoses group, asserted below. No program enrollment.
-// Not covered here: the Next / section-jump buttons (navigate to other forms), VIEW mode, the Hepatitis B drug
+// EDIT is covered by the two save tests (restored when-targets and ticks), VIEW by the same tests (exactly the saved answers).
+// Not covered here: the Next / section-jump buttons (navigate to other forms), the Hepatitis B drug
 //   "response to treatment" answers (plain radios, no logic).
 //
 // Findings:
@@ -33,7 +34,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 const FORM = 'section-liver.xml';
 
@@ -143,6 +144,19 @@ test.describe('section-liver, NCD initial encounter', () => {
     await expect(page.locator('#new-hepb-reason')).toBeVisible();
     await expect(page.getByLabel('Chronic Hepatitis B', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Co-infection with HCV and/or HIV', { exact: true })).toBeChecked();
+    // VIEW: exactly the saved answers. The diagnosis, symptoms and Hepatitis B indication use the form's labels ("yes" for a
+    // symptom, the indication reason by its own text); "Diagnosis order: Secondary" is written by CleanDiagnosisConstructAction, not
+    // by a field of the form, so it has no value of its own in the VIEW.
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Diagnosis: Chronic viral Hepatitis B': '[X] Chronic Hepatitis B',
+      'Symptom absent: Asymptomatic liver disease': '[X] no',
+      'Symptom present: Oedema': '[X] yes',
+      'Reason for Hepatitis B treatment: Chronic hepatitis C with HIV infection': '[X] Co-infection with HCV and/or HIV',
+      'Diagnosis order: Secondary': '',
+    });
+    expect(await view.valueTexts()).toEqual(['[X] Chronic Hepatitis B', '[X] no', '[X] yes', '[X] yes', '[X] Co-infection with HCV and/or HIV']);
+    await expect(view.page.locator('#new-hepb-tto .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#hepB-q')).toHaveCount(0); // followup-only question
   });
 });
 
@@ -232,5 +246,17 @@ test.describe('section-liver, NCD followup encounter', () => {
     await expect(page.locator('#new-hepb-tto').getByLabel('no', { exact: true })).toBeChecked();
     await expect(page.locator('#hepB-q').getByLabel('yes', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Tenofovir', { exact: true })).toBeChecked();
+    // VIEW: the same concept (PIH:14889) answered No for the indication and Yes for the treatment stays on the right question,
+    // the missed-dose count is shown, and the Hepatitis B drug is shown by name
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'NCD clinical status: Not controlled': '[X] uncontrolled',
+    });
+    await expect(view.page.locator('#new-hepb-tto .value')).toHaveText('[X] no');
+    await expect(view.page.locator('#hepB-q .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#liver-fui-miss-details .value')).toHaveText('3');
+    await expect(view.page.locator('#liver-control .value')).toHaveText('[X] uncontrolled');
+    await expect(view.page.locator('#liver-fui-uncontrolled .value')).toHaveText('[X] yes');
+    await expect(view.page.locator('#hepB-details .value')).toHaveText('[X] Tenofovir');
+    await expect(view.page.getByText('Chronic Hepatitis C')).toHaveCount(0); // initial-only diagnoses
   });
 });

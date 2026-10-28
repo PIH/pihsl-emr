@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // triage.xml: "MCOE Triage" (National Obstetric Triage and Treatment Form): referral, transport, gestational age, vitals with
 // a colour-coded triage priority, a symptom matrix (green/yellow/orange/red), TB screening, rapid tests, PHQ-2, disposition.
@@ -28,8 +28,10 @@ import { EntryFormPage } from '../../pages';
 //     (Admission shows a required location select) and the vitals widget does not require "contact the doctor" (drContactRequiredAndMissing).
 //   evaluateIsolationStatus(): duplicate of tb-symptom-screening-widget.js: #isolationMsg shows when all four TB radios are "yes".
 // Side effects on save: none beyond the obs (no postSubmissionAction, no program, no order; Disposition is only recorded).
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test and the save test: the status bar, title and provider/location/date
+// are not rendered in VIEW (ifMode VIEW include=false :285), so the VIEW has no triage priority; the page scripts do not run in it.
 // Not covered here: the vitals colours per range, the lab results / rapid tests and PHQ-2 (shared), the file upload, Admission / Transfer
-// dispositions (saved), VIEW and EDIT modes.
+// dispositions (saved), EDIT mode.
 //
 // Findings:
 //   V1 Low :152,:241-265  the TB isolation logic is written twice (inline here and in tb-symptom-screening-widget.js), so each radio change
@@ -50,6 +52,18 @@ const pickProviderAndLocation = async (page: Page) => {
 const fillVital = async (page: Page, id: string, value: string) => {
   await page.locator(`#${id} input`).fill(value);
   await page.keyboard.press('Tab');
+};
+
+// Obs that the form labels differently from their concept (answerCode / TB row labels) in the VIEW, "obs display" -> what the VIEW shows.
+const VIEW_LABELS: Record<string, string> = {
+  'Triage diagnosis or symptom: Normal labor': '[X] Labour signs (37+ weeks)',
+  'Triage diagnosis or symptom: Active labour greater than 34 weeks gestation': '[X] Active labour',
+  'Triage diagnosis or symptom: Seizure': '[X] Convulsing',
+  'TB symptom present: Cough > 2 weeks': '[X] yes',
+  'TB symptom present: Fever': '[X] yes',
+  'TB symptom present: Weight loss (kg)': '[X] yes',
+  'TB symptom absent: Night sweats': '[X] no',
+  'Disposition categories: Discharged': 'Discharge',
 };
 
 const tbRow = (page: Page, row: number) => page.locator('.tbScreen > div').nth(row);
@@ -290,5 +304,85 @@ test.describe('triage', () => {
     );
     // the four TB symptoms are saved as the answers of "TB symptom present"
     expect(obs.filter((o) => o.startsWith('TB symptom present='))).toHaveLength(4);
+    await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Triage diagnosis or symptom: Normal labor': '[X] Labour signs (37+ weeks)',
+      'TB symptom present: Cough > 2 weeks': '[X] yes',
+      'TB symptom present: Fever': '[X] yes',
+      'TB symptom present: Night sweats': '[X] yes',
+      'TB symptom present: Weight loss (kg)': '[X] yes',
+      'Disposition categories: Discharged': 'Discharge',
+    });
+  });
+
+  // VIEW: every saved value in a span.value, the other options listed unselected. The form labels the symptoms, the TB rows (yes/no) and the transport
+  // itself, so those obs are mapped to what the VIEW shows.
+  test('VIEW: shows the referral, transport, vitals, symptoms, TB screening and disposition that were saved, and no triage status', async ({ page, api }) => {
+    await pickProviderAndLocation(page);
+    await page.locator('#role-refer').getByLabel('Peripheral Health Unit').check();
+    await page.locator('#referral-address input').fill('Makeni PHU');
+    await page.locator('#referral-phone-number input').fill('076123456');
+    await page.locator('#refer-date input.hasDatepicker').click();
+    await page.locator('#ui-datepicker-div a.ui-state-default').first().click(); // a past day (the first cell of the calendar)
+    const referralDate = await page.locator('#refer-date input.hasDatepicker').inputValue(); // "dd MMM yyyy"
+    await page.locator('#refer-date select.hfe-hours').selectOption('8');
+    await page.locator('#refer-date select.hfe-minutes').selectOption('15');
+    await page.locator('#transport').getByLabel('other', { exact: true }).check();
+    await page.locator('#other-transport input').fill('Boat');
+    await page.locator('#gestationalAge input').fill('38');
+    await page.locator('#gravida input').fill('2');
+    await page.locator('#para input').fill('1');
+    await page.locator('#chief_complaint input').fill('Abdominal pain');
+    await fillVital(page, 'bp_systolic', '150');
+    await fillVital(page, 'bp_diastolic', '95');
+    await fillVital(page, 'heart_rate', '88');
+    await page.getByLabel('Labour signs (37+ weeks)', { exact: true }).check(); // one symptom per colour column, except yellow twice
+    await page.getByLabel('Active labour', { exact: true }).check();
+    await page.getByLabel('Vaginal bleeding', { exact: true }).check();
+    await page.getByLabel('Convulsing', { exact: true }).check();
+    await page.locator('#complaints').getByLabel('other', { exact: true }).check();
+    await page.locator('#other-complain input').fill('Headache');
+    for (let row = 0; row < 4; row++) {
+      await tbRow(page, row).getByLabel(row === 2 ? 'no' : 'yes').check(); // night sweats: no
+    }
+    await page.locator('#encounter-disposition select').selectOption({ label: 'Discharge' });
+    await page.locator('#contactDr input[type=checkbox]').check(); // the 150 systolic is a yellow vital, the convulsion a red symptom
+    await page.locator(SAVE).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, VIEW_LABELS);
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '[X] Peripheral Health Unit',
+      'Makeni PHU',
+      '076123456',
+      referralDate,
+      '8:15 AM',
+      '[X] other', // transport, other complaints
+      'Boat',
+      '38',
+      'Abdominal pain',
+      '150',
+      '95',
+      '88',
+      'Headache',
+      'Discharge',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // each value sits under its own label
+    await expect(page.locator('p.side-by-side', { hasText: 'Gravida' }).locator('.value')).toHaveText(['2', '1']);
+    await expect(page.locator('#refer-date .value')).toHaveText([referralDate, '8:15 AM']);
+    await expect(page.locator('p', { hasText: 'Method of transport' }).locator('.value').first()).toHaveText('[X] other');
+    // the symptom matrix: only the ticked symptoms are values, in the columns they belong to
+    await expect(page.locator('table .exam .value')).toHaveText(['[X] Labour signs (37+ weeks)', '[X] Active labour', '[X] Vaginal bleeding', '[X] Convulsing']);
+    // the TB rows: "no" for night sweats, "yes" for the others
+    await expect(tbRow(page, 0).locator('.value')).toHaveText('[X] yes');
+    await expect(tbRow(page, 2).locator('.value')).toHaveText('[X] no');
+    // not answered / not rendered: the "other referral" text, the lab results, the PHQ-2; the status bar, the title and the buttons are ENTER/EDIT only (:285, :600)
+    await expect(page.locator('#other-referee .value')).toHaveCount(0);
+    await expect(page.locator('.bordered-section .value, #rapid-tests-widget .value')).toHaveCount(0);
+    expect(shown).not.toContain('[X] Pregnancy discomfort');
+    await expect(page.locator('#sticky, #statusMessage, #buttons, h2')).toHaveCount(0);
   });
 });

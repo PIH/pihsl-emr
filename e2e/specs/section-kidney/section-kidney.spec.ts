@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-kidney.xml: chronic kidney disease / nephrotic syndrome section of the NCD initial (causes, biopsy,
@@ -21,7 +21,8 @@ import type { Page } from '@playwright/test';
 //   "Hypertension controlled" (:155-174), comments.
 // Scripts: only setUpNextAndSubmitButtons() (see _shared); no validation, message, formula or default.
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19); the form writes no diagnosis obs.
-// Not covered here: VIEW mode; the Next / other-section buttons (navigation, _shared); the "Other" comment fields.
+// EDIT is covered by the initial save round-trip (saved biopsy answer), VIEW by the two save tests (exactly the saved answers).
+// Not covered here: the Next / other-section buttons (navigation, _shared); the "Other" comment fields.
 //
 // Findings:
 //   V1 Low  :167,:194,:231,:276 11 of 12 thenDisplay targets (#ckd-fui-control-details, -understands-, -titrate-, -adher-,
@@ -102,6 +103,27 @@ test.describe('section-kidney: NCD initial', () => {
     await expect(radio(page, 'renal-biobsy', 'yes')).toBeChecked();
     await expect(page.locator('#biopsy-details')).toBeVisible();
     await expect(page.locator('#biopsy-details input[type=text]')).toHaveValue('Focal sclerosis');
+
+    // VIEW: exactly the saved answers, with the form's own labels for the stage and the nephrotic-syndrome cause; the biopsy
+    // results are shown; nothing for the cause / symptom / stage options that were not ticked
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Chronic kidney disease stage: Chronic Kidney Disease, Stage III (Moderate)': '[X] Stage 3',
+      'Nephrotic syndrome related disease: Nephrotic syndrome with lesion of minimal change glomerulonephritis':
+        '[X] Minimal change glomerulonephritis',
+      'Symptom present: Oedema': '[X] yes',
+      'CKD symptoms construct: Oedema': '[X] yes',
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] Diabetes',
+      '[X] yes', // biopsy performed
+      'Focal sclerosis',
+      '[X] Minimal change glomerulonephritis',
+      '[X] Stage 3',
+      '[X] yes', // oedema
+      '[X] no', // hypertension controlled
+      'Review in 3 months',
+    ]);
+    await expect(view.page.locator('#renal-biobsy .value')).toHaveText('[X] yes');
   });
 });
 
@@ -176,5 +198,20 @@ test.describe('section-kidney: NCD followup', () => {
     expect(displays).toContain('Proteinuria: No');
     expect(displays).toContain('Dialysis referral: Unknown');
     expect(displays).toContain('Patient referred to hospital: Yes'); // "Send for admission" (CIEL:1788)
+
+    // VIEW: each indicator shows its own answer. Missed doses was "no", so its count is not shown, and the initial-only questions are absent.
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'NCD clinical status: Not controlled': '[X] uncontrolled',
+    });
+    const v = view.page;
+    await expect(v.locator('#ckd-fui-missed .value')).toHaveText('[X] no');
+    await expect(v.locator('#ckd-fui-adher .value')).toHaveText('[X] yes');
+    await expect(v.locator('#ckd-fui-creatinine .value')).toHaveText('[X] yes');
+    await expect(v.locator('#ckd-fui-pu .value')).toHaveText('[X] no');
+    await expect(v.locator('#ckd-fui-dialysis .value')).toHaveText('[X] unknown');
+    await expect(v.locator('#ckd-controlled .value')).toHaveText('[X] uncontrolled');
+    await expect(v.locator('#ckd-fui-uncontrolled .value')).toHaveText('[X] yes');
+    await expect(v.locator('#ckd-fui-missed-details .value')).toHaveCount(0);
+    await expect(v.locator('#renal-biobsy')).toHaveCount(0);
   });
 });

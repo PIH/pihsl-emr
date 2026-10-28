@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // nicuTriage.xml: NICU triage for an infant (vitals, labs, reasons for presentation, delivery history, emergency and
 // priority signs, resuscitation, birth injury, disposition). A top-level form: the specs open
@@ -23,8 +23,12 @@ import { EntryFormPage } from '../../pages';
 // looked up with <lookup>) and the "specify" text is empty, the save is blocked and the page scrolls to the field;
 // clicking a location radio while "other" is chosen writes "Required" into the specify field's .field-error.
 // Side effects on save: ApplyDispositionAction and CleanDiagnosisConstructAction (:7-8); no program enrollment, no order.
+// VIEW is covered by the last test (a filled form saved, then rendered with viewEncounterWithHtmlForm): every saved value is shown
+// ("[X] other" for the delivery location, which the form labels with answerCodes), the other options are empty, the conditional details
+// (malformation, toxicity, birth injury) are shown with their values, and the ENTER-only content (:34, :42, :83, :397) is absent. The "when"
+// show/hide controls are JavaScript and cannot be checked in the loaded HTML.
 // Not covered here: vitals scoring and the Save block (shared, _shared.e2e.md), the disposition (Admit and the other
-// actions have side effects), VIEW and EDIT modes.
+// actions have side effects), EDIT mode.
 //
 // Findings:
 //   V1 Low  :56-62  the "required" text written on clicking "other" is never cleared: it stays after the specify text is
@@ -190,5 +194,78 @@ test.describe('nicuTriage', () => {
         'Danger signs, baby=Low birth weight',
       ]),
     );
+  });
+
+  const fillTriage = async (page: Page) => {
+    await chooseLocation(page);
+    await page.locator('#heart_rate input').fill('150');
+    await page.locator('#respiratory_rate input').fill('55');
+    await page.locator('#temperature_c input').fill('37.2');
+    await page.locator('#o2_sat input').fill('96');
+    await page.locator('#avpu').getByLabel('Awake').check();
+    await page.locator('#hemoglobin input').fill('14');
+    await page.locator('#hematocrit input').fill('42');
+    await page.locator('input[type=checkbox]').and(page.getByLabel('Jaundice', { exact: true })).check(); // reason for presentation
+    await page.locator('#congenital-q input[type=checkbox]').check();
+    await page.locator('#malformation-details input[type=text]').fill('Cleft palate');
+    await page.locator('#d-location').getByLabel('other', { exact: true }).check();
+    await page.locator('#delivery-location-other input[type=text]').fill('Roadside');
+    await page.locator('.two-columns').filter({ hasText: 'Emergency signs' }).last().locator('input[type=checkbox]').first().check(); // Hypoglycemia
+    await page.getByLabel('Low birth weight', { exact: true }).check(); // priority sign
+    await page.locator('#tox-t input[type=checkbox]').check();
+    await page.locator('#tox input[type=text]').fill('Lead');
+    await page.locator('#resuscitation').getByLabel('Yes').check();
+    await page.locator('#type-resuscitation input[type=checkbox]').nth(1).check();
+    await page.locator('#birthInjury').getByLabel('Yes').check();
+    await page.locator('#birthInjury-details textarea').fill('Bruise on the left shoulder');
+    await page.locator('#destination textarea').fill('Referred to the ward');
+  };
+
+  // VIEW (viewEncounterWithHtmlForm): saved values are span.value, unselected options span.emptyValue ("[X] other" / "[  ] home").
+  test('VIEW: shows the saved vitals, presentation, delivery location, signs and resuscitation, and not what was left empty', async ({ page, api }) => {
+    await fillTriage(page);
+    await save(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '150',
+      '37.2',
+      '[X] Awake',
+      '14',
+      '[X] Jaundice',
+      '[X] Congenital malformation',
+      'Cleft palate',
+      '[X] other', // delivery location, labelled by answerCodes ("Other" is the concept name)
+      'Roadside',
+      '[X] Hypoglycemia',
+      '[X] Low birth weight',
+      '[X] Toxicity',
+      'Lead',
+      '[X] Yes', // resuscitation
+      '[X] Bag valve mask ventilation',
+      'Bruise on the left shoulder',
+      'Referred to the ward',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the delivery location is one selected radio, and the other answers (labelled by answerCodes) are empty options
+    await expect(page.locator('#d-location .value')).toHaveText(['[X] other']);
+    await expect(page.locator('#d-location .emptyValue')).toHaveText([/home/, /in-transit/, /health clinic/, /KGH\/MCOE/]);
+    await expect(page.locator('#delivery-location-other .value')).toHaveText('Roadside');
+    await expect(page.locator('#malformation-details .value')).toHaveText('Cleft palate');
+    await expect(page.locator('#tox .value')).toHaveText('Lead');
+    await expect(page.locator('#birthInjury .value')).toHaveText('[X] Yes');
+    await expect(page.locator('#birthInjury .emptyValue')).toHaveText(/\[\s+\]\s*No/);
+    // what was not filled is shown as empty options or blanks, never as a value: the other levels of consciousness, the malaria
+    // test, the other reasons for presentation, and the priority signs other than Low birth weight and Toxicity
+    await expect(page.locator('#avpu .value')).toHaveCount(1);
+    await expect(page.locator('#avpu .emptyValue')).toHaveCount(3);
+    await expect(page.locator('#labTests .value')).toHaveText(['[X] Awake', '14', '42']);
+    await expect(page.locator('#assessment .value')).toHaveCount(13); // exactly what was ticked or typed in the Assessment section
+    // ENTER-only content is absent: the heading, the buttons and every field
+    await expect(page.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
   });
 });

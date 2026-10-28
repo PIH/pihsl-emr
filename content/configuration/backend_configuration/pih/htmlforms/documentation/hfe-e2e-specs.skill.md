@@ -53,7 +53,7 @@ The job is large (about 75 current forms in Sierra Leone). Keep it cheap:
     - Playwright's default test timeout is 3 minutes with no action timeout, so one bad locator hangs; iterate with `--timeout=60000`.
     - Parallel agents each pass their own `--output <dir>` (Playwright clears the output dir at start).
     - A form using the HFE `<submit>` tag (`section-plan`, `section-plan-medication`, `section-ncd-plan`) has no `#submit`; click `#buttons input.submitButton` instead of `SectionFormPage.save()`.
-    - VIEW mode cannot be tested: an encounter created over REST has no `form`, so `viewEncounterWithHtmlForm.page` throws.
+    - VIEW mode: `viewEncounterWithHtmlForm.page` throws for an encounter created over REST (no `form`), so VIEW is tested through `getAsHtml.action` with an explicit `definitionUiResource` (see "VIEW mode" below).
     - Sticky headings can intercept clicks (`section-exam`): click through the DOM.
     - Re-saving an encounter voids the first save's obs; `purgeClinicalDataForPatient` lists obs with `includeAll=true` and purges active orders for that reason. A saved lab order (`testorder`) cannot be purged over REST, so do not save one in a spec.
     - Probe specs and throwaway cleanup helpers go in `e2e/specs/_probe-*` and are deleted afterwards. Name probe patients `Auto<Something> Tester` so a name-filtered cleanup finds them.
@@ -78,6 +78,18 @@ then `test.describe` blocks. Each test carries a comment citing the condition it
 - **Conditions** get a test that exercises both states (show/hide: select the answer, assert visible; select another, assert hidden; EDIT starts from the saved value). `ifMode` rows that only gate headings or buttons need at most one test per form. `includeIf` rows need a fixture that satisfies the condition (patient age/gender, encounter type): say which.
 - **Required fields**: one test that saves with them blank and expects the `span.field-error` "Required", and one that fills them and saves.
 - **Save test**: fill a few fields, save, then read the obs of the test encounter over REST and assert them; also assert side effects (program enrollment, ...).
+- **VIEW mode**: every spec that saves also checks the read-only rendering of what it saved. Use `expectViewShowsSavedObs(page, api, FORM, encounterUuid)` from `e2e/pages/view-form-page.ts` at the end of the richest save test (and after an EDIT round-trip), then add 2-5 targeted assertions per form.
+    - The helper loads `viewEncounterWithHtmlForm/getAsHtml.action?encounterId=...&definitionUiResource=file:configuration/pih/htmlforms/<form>.xml` (what the visit page calls; htmlformentryui has no standalone VIEW page) into the test page with `setContent`. A saved value renders as `span.value`, an unanswered field as `span.emptyValue`, a selected radio/checkbox as `[X] <label>` and an unselected one as `[  ] <label>`.
+    - The generic check: every saved text, number and coded obs of the encounter appears (case-insensitive) in some `span.value`. A coded answer that the form labels differently from the concept name (`answerCodes`, `answerLabels`) goes in the `labels` argument (obs display -> text shown). Dates and groups are not compared by the helper: assert them with a targeted locator.
+    - Targeted assertions: the specific values worth checking (obs groups, conditional sections, custom answer labels, dates, lookups and computed text such as `$fn`/`<lookup>`), and that what the test did **not** fill is not shown as a value (`toHaveCount(0)` on `.value` inside that block).
+    - Select fields by their ids (`controlId`, `id=`), not by structure: `setContent` re-parses the HTML, so a `<tr>` wrapped in a `<span>` is lifted out of its table and `#wrapper .value` finds nothing.
+    - `ifMode mode="VIEW" include="false"` blocks (Save/Cancel buttons, ENTER-only widgets) must be absent here; assert that for one of them per form.
+    - A value that was saved but is missing, mislabelled or blank in VIEW is a finding (`VW1`..): write the test for the intended rendering and mark it `test.fail()` like any known bug. Intentional design (a field hidden in VIEW by `ifMode`) is not a finding.
+    - The helper skips dates and datetimes and the diagnosis obs (`Diagnosis*`, `Visit Diagnoses`: the widget prints them as plain text, assert that text yourself), maps `Disposition categories: Discharged` to "Discharge", matches a short expected text (3 characters or fewer, or a number: "3" matches "3.0") against a whole value only, and treats an empty label (`labels[display] = ''`) as "do not look for this obs" (use it for hidden marker obs and row numbers).
+    - `setContent` runs no jQuery, so `when`/`toggle` show/hide and the VIEW scripts (vitals colouring, BMI, totals) do not run: blocks that are only hidden by a script show up in VIEW (a finding when misleading, e.g. a "Death Outcome" heading on a discharged baby). To run a script, start from a page that has `jq` and let `jq(document).ready` wait one tick (see `openViewWithScripts` in the `pacuFollowup` spec).
+    - Entry forms that only hold a shell (`ncd-*`, `ancIntake`, `delivery`, `outpatient-*`) render nothing in VIEW (the content is in the section forms): one test asserting no values and a hidden `.htmlform` wrapper is enough.
+    - Two questions on one concept (the same defect as SL-1461) show up here as a lone answer under the wrong question, or two texts swapped; HFE's obs-to-field order is not stable, so such a test can be random: compare sorted or leave it out of `test.fail()`.
+    - Add "VIEW" to the header's covered/"Not covered here" sentence.
 - **Known bugs** (a Medium/High finding whose behaviour a test can assert): write the test for the **intended** behaviour and mark it `test.fail()` with the V-id in the title and a comment ("remove test.fail() when fixed"). The suite stays green and the bug stays visible; confirm by running once without the marker that it fails for the intended reason.
 - **Findings with no test** (Low/Info, or too costly to reach) stay in the header block only. Findings in shared code are `see _shared V3`, never repeated.
 - Keep the header comment ≤ ~40 lines. Do not write a "Findings" block with nothing in it.
@@ -120,7 +132,7 @@ Found in `<script>` blocks: `.show()`, `.hide()`, `.toggle()`, `.css('display'..
 ```
 
 - Modes are `ENTER`, `EDIT`, `VIEW`. `mode` is required; `include` **defaults to `true`** (verified in `IfModeTagHandler`). `include="false"` means "every mode except this one".
-- Evaluated when the form is rendered, so it cannot be toggled by clicking. A test must open the form in the right mode (enter new / edit existing / view).
+- Evaluated when the form is rendered, so it cannot be toggled by clicking. A test must open the form in the right mode (enter new / edit existing / view; VIEW is covered by `expectViewShowsSavedObs`, see Spec skeleton).
 - Important consequence: an obs wrapped in `<ifMode mode="ENTER">` is **recorded only on first entry** and is absent (or read-only elsewhere) when editing; an obs wrapped in `<ifMode mode="VIEW" include="false">` is not shown on the read-only view. E2E assertions after save → view/edit must account for this. Flag every `<obs>` (and every `<script>`) under an `ifMode` and state the modes in which it exists.
 
 ### 4. `<includeIf>` / `<excludeIf>` — server-side, by data

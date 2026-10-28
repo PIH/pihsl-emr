@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // newbornDischarge.xml: discharge of a newborn (vitals, weight, oxygen saturations, treatment, diagnoses, labs, physical
 // exam, medication orders, feeding, plan and disposition, appointment). A top-level form: the specs open
@@ -29,8 +29,13 @@ import { EntryFormPage } from '../../pages';
 // .exam container untick each other (cord stump, eyes, skin). (3) setUpNextAndSubmitButtons().
 // Side effects on save: enrollInProgram Infant (:147, tested), ApplyDispositionAction (:19), drug orders (not saved here),
 // scheduleAppointment (declined here: a saved appointment is not purged with the patient).
+// VIEW is covered by the last test (a filled form saved, then rendered with viewEncounterWithHtmlForm): every saved value is shown (labels
+// from answerCode/answerCodes: "[X] Clean", "[X] Breastfed", "[X] Prophylactic eye ointment"), the first-urination date and time are two values,
+// the unselected options are empty, the Overview and the "[ x ] <date>" prior-value lookups (:127-279) are not rendered even though an
+// earlier encounter holds them, the post-ductal difference is the empty span.value of :237 (viewPostDuctDiff fills it by script, not run on
+// the loaded HTML) and the appointment is the "View Appointments" link of :643. Drug orders in VIEW are not covered.
 // Not covered here: vitals scoring and the Save block (shared, _shared.e2e.md), medication orders (a saved drug order
-// cannot be purged), the appointment, diagnosis search, the disposition actions other than Home, VIEW and EDIT modes.
+// cannot be purged), the appointment, diagnosis search, the disposition actions other than Home, EDIT mode.
 //
 // Findings (duplicate id="when" :153 and id="glucose" :340 are _shared V10):
 //   V1 Low  :42-52   clearing one saturation leaves the old difference (and red class) in place: the guard only skips
@@ -41,6 +46,9 @@ import { EntryFormPage } from '../../pages';
 //                    "Don't schedule appointment" is chosen (TESTED).
 //   V4 Info :302     the diagnosis widget is labelled "Add presumed or confirmed diagnosis (required)" but a discharge with
 //                    no diagnosis saves (TESTED in the save test).
+//   VW1 Medium :395, :422  "Comments about umbilical cord" and "Comments about eyes" are two inputs of one concept (CIEL:168722; the same
+//                    as V1 of newbornInitial): a saved obs is bound to the first input of its concept, so a lone eye comment is shown as the
+//                    umbilical cord comment in VIEW. TESTED below (test.fail). Fix: a separate concept for one of them.
 
 const FORM = 'newbornDischarge.xml';
 
@@ -264,5 +272,125 @@ test.describe('newbornDischarge', () => {
     const enrollments = (await res.json()).results as Array<{ program: { name: string }; dateCompleted: string | null }>;
     expect(enrollments.map((e) => e.program.name)).toEqual(['Infant']);
     expect(enrollments[0].dateCompleted).toBeNull();
+  });
+
+  const fillDischarge = async (page: Page) => {
+    await chooseLocation(page);
+    await page.locator('#weight_kg input[type=text]').fill('3.1');
+    await page.locator('#muac_c input[type=text]').fill('11');
+    await page.locator('#preDuctalO2 input[type=text]').fill('98');
+    await page.locator('#postDuctalO2 input[type=text]').fill('90');
+    await page.locator('#heart_rate input').fill('140');
+    await page.locator('#temperature_c input').fill('36.9');
+    await page.getByLabel('Vitamin D', { exact: true }).check();
+    await page.getByLabel('Prophylactic eye ointment', { exact: true }).check();
+    await page.locator('#hemoglobin input').fill('15');
+    await page.locator('#tcb input').fill('9');
+    await page.getByLabel('Clean', { exact: true }).check();
+    await page.getByLabel('Normal (pink)', { exact: true }).check();
+    await page.getByLabel('Normal (passed urine)').check();
+    await page
+      .locator('#pee-time')
+      .locator('input.hasDatepicker')
+      .evaluate((el) => {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        (window as any).jQuery(el).datepicker('setDate', d);
+        (window as any).jQuery(el).trigger('change');
+      });
+    await page.locator('#pee-time select.hfe-hours').selectOption('9');
+    await page.locator('#pee-time select.hfe-minutes').selectOption('5');
+    await page.getByLabel('Breastfed').check();
+    await page.locator('#outcome-condition').getByLabel('Satisfactory').check();
+    await page.getByLabel('Transport assistance').check();
+    await page.locator('#encounter-disposition select').selectOption({ label: 'Home' });
+    await page.locator('input[type=radio][value=no]').last().check(); // no appointment
+  };
+
+  // VIEW (viewEncounterWithHtmlForm): saved values are span.value, unselected options span.emptyValue ("[X] Clean" / "[  ] Dry").
+  test('VIEW: shows the saved vitals, treatment, exam, plan and disposition, and none of the ENTER-only lookups', async ({ page, api }) => {
+    await createPriorEncounter(api, context); // delivery date and type, eye ointment, cord care and vitamin K given earlier in the visit
+    await open(page);
+    await fillDischarge(page);
+    await save(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = (await getPatientEncounters(api, context.patient.uuid)).filter((e) => e.encounterType.uuid !== MCH_DELIVERY_ENCOUNTER_TYPE_UUID);
+
+    // Answers the form labels differently from the concept (answerCode / answerCodes).
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Procedure performed: Administration of prophylactic antibiotics to neonatal eyes': 'Prophylactic eye ointment',
+      'Supplement received: Vitamin D / vitamin D2': 'Vitamin D',
+      'Neonatal umbilical stump status: Neonatal umbilical stump clean': 'Clean',
+      'Infant feeding method: Breastfeeding child': 'Breastfed',
+    });
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '3.1',
+      '98',
+      '90',
+      '[X] Prophylactic eye ointment',
+      '[X] Vitamin D',
+      '15',
+      '[X] Clean',
+      '[X] Normal (pink)',
+      '[X] Normal (passed urine)',
+      '[X] Breastfed',
+      '[X] Satisfactory',
+      'Home',
+      '[X] Transport assistance',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+
+    // the date and time of the first urination are two values ("dd MMM yyyy" and "h:mm a")
+    const urinated = new Date();
+    urinated.setDate(urinated.getDate() - 1);
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][urinated.getMonth()];
+    await expect(page.locator('#pee-time .value')).toHaveText([`${`${urinated.getDate()}`.padStart(2, '0')} ${month} ${urinated.getFullYear()}`, '9:05 AM']);
+    // the disposition is plain text (not "[X]"), and the transfer/death fields that belong to other dispositions hold no value
+    await expect(page.locator('#disposition .value')).toHaveText('Home');
+
+    // what was not filled is an empty option: the treatments given earlier in the visit (the prior-value markers are ENTER only,
+    // :254-279) are not marked as given now, and the other exam answers are not selected
+    const empty = (await page.locator('span.emptyValue').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
+    for (const expected of ['[ ] Umbilical cord care', '[ ] Vitamin K', '[ ] Dry', '[ ] Jaundice', '[ ] Anuria (No urination)', '[ ] Formula', '[ ] Deteriorated']) {
+      expect(empty, expected).toContain(expected);
+    }
+    await expect(page.locator('#treatment .value')).toHaveText(['[X] Prophylactic eye ointment', '[X] Vitamin D']);
+    await expect(page.locator('#treatment .prior-obs-value')).toHaveCount(0);
+    await expect(page.locator('#Overview')).toHaveCount(0);
+    await expect(page.getByText('Date & time of delivery')).toHaveCount(0);
+    await expect(page.getByText('Type of delivery')).toHaveCount(0);
+
+    // VIEW-only parts: the post-ductal difference is an empty span.value that viewPostDuctDiff() (script :54-68) fills from the two
+    // saturations, which the loaded HTML has no jQuery to run (the difference is not saved); and the appointment is replaced by a link
+    await expect(page.locator('span#postductalDifference.value')).toHaveText('');
+    await expect(page.locator('#preDuctalO2 .value')).toHaveText('98');
+    await expect(page.locator('#postDuctalO2 .value')).toHaveText('90');
+    await expect(page.locator('#postductalDifference').locator('xpath=ancestor::*[@id="postductalDiffDiv"]')).toHaveCount(1);
+    await expect(page.locator('#postductalDiffDiv input')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'View Appointments' })).toHaveAttribute('href', '/openmrs/spa/home/appointments');
+    await expect(page.locator('p.schedule-appointment-none')).toHaveText('No appointment scheduled');
+    // no visible field, button or heading (the order widget keeps a hidden template with a "Calculate Quantity" button)
+    await expect(page.locator('h2, #buttons, input:visible, select:visible, textarea:visible, button:visible')).toHaveCount(0);
+  });
+
+  // VW1 (Medium): the umbilical cord comment (:395) and the eye comment (:422) are two inputs of one concept (CIEL:168722). A saved obs is
+  // bound to the first input of its concept, so a lone eye comment is shown as the cord comment. Intended: shown with the eyes.
+  // Remove test.fail() when the concepts differ.
+  test('VW1: an eye comment is shown with the eyes, not with the umbilical cord', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await chooseLocation(page);
+    await page.locator('.exam').nth(1).locator('input[type=text]').fill('Discharge from the left eye');
+    await page.locator('#encounter-disposition select').selectOption({ label: 'Home' });
+    await page.locator('input[type=radio][value=no]').last().check(); // no appointment
+    await save(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(page.locator('.exam').nth(0).locator('.value')).toHaveCount(0);
+    await expect(page.locator('.exam').nth(1).locator('.value')).toHaveText(['Discharge from the left eye']);
   });
 });

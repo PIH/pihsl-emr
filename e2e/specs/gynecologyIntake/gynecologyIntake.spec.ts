@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // gynecologyIntake.xml: first gynecology visit (vitals, family planning history, menstrual and pregnancy history, clinical
 // history, gynecology exam, procedures, diagnoses, rapid tests, lab and drug orders, follow-up clinic and disposition). A
@@ -23,7 +23,7 @@ import { EntryFormPage } from '../../pages';
 // Side effects on save: ApplyDispositionAction and CleanDiagnosisConstructAction (:20-21; no disposition or diagnosis is
 // chosen here). pihLabOrder (:483) and drug orders (:490) can create orders.
 // Not covered here: lab and drug orders and the disposition (a saved testorder cannot be purged), diagnosis search, the
-// procedure autocompletes, EDIT and VIEW modes, the Next/Save navigation script.
+// procedure autocompletes, EDIT mode, the Next/Save navigation script. VIEW is covered by the full save test (every section) and VW1.
 //
 // Findings:
 //   V1 Medium :338,:420,:442  every hidden CIEL:1937 obs has a defaultValue (6, 1-5, 1-3), so the "showIfEmpty=false" obsgroups
@@ -38,6 +38,10 @@ import { EntryFormPage } from '../../pages';
 //                       followup :158).
 //   V4 Low    :368      the STI rows use class="{switch}" but their <render>s define finding/name, so the rendered class is
 //                       literally "{switch}" (also :373-379; same in followup :170). Harmless, nothing targets it.
+//   VW1 Low   :335-446  the V1 defaults also show in VIEW: the empty procedure groups are rendered as blank "____" lines (5 procedure history and 3
+//                       planned procedures), because the groups are never empty. Fix: V1. TESTED below (test.fail).
+//   VW2 Info :359  the STI list (#sti-list) is always rendered in VIEW, as seven empty checkboxes when "STI suspected?" is not Yes (when/thenDisplay is
+//                   ENTER/EDIT only; same as gainNewbornRegister VW1; not tested).
 
 const FORM = 'gynecologyIntake.xml';
 const GYN_INTAKE_ENCOUNTER_TYPE_UUID = '34700f4f-c3df-4cfc-863a-bd8b92a0a485';
@@ -168,6 +172,21 @@ test.describe('gynecologyIntake', () => {
     expect(obs.filter((o) => o.startsWith('Procedure performed quantity') || o.startsWith('Planned procedure set'))).toEqual([]);
   });
 
+  // VW1 (Low): the V1 defaults also keep the empty procedure groups in the VIEW, as blank "____" lines (5 procedure history, 3 planned
+  // procedures) next to the two real "other" lines. Intended: the empty groups are not shown. Remove test.fail() when V1 is fixed.
+  test('VIEW: no blank procedure lines for procedures that were not entered (VW1)', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, { 'Papanicolaou test status: Completed': '[X] PAP test performed' });
+    // only "if other, specify" and "Other procedure planned" may be blank
+    expect(await view.page.locator('#procedures .emptyValue').count()).toBeLessThanOrEqual(2);
+  });
+
   test('saves vitals, histories, exam, rapid test and follow-up clinic as a gynecology intake encounter', async ({ page, api }) => {
     await open(page);
 
@@ -238,5 +257,32 @@ test.describe('gynecologyIntake', () => {
         'Type of referral ordered=Family planning services',
       ]),
     );
+
+    // VIEW: every value is shown, with the form's own labels for the coded answers; the rows and tests that were left alone are not
+    const nextYear = new Date().getFullYear() + 1;
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Method of family planning: Ethinyl estradoil / Levonorgestrel': '[X] Microgynon',
+      'Regular menstrual period: Yes': '[X] Regular',
+      'Papanicolaou test status: Completed': '[X] PAP test performed',
+      'Tanner staging, qualitative: Stage III': '[X] III',
+      'Family planning start date: 2023-05-01': '01 May 2023', // date-only values arrive as yyyy-MM-dd and are shown as dd MMM yyyy
+      [`Return visit date: ${nextYear}-09-12`]: `12 Sep ${nextYear}`,
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    for (const [id, value] of Object.entries({ bp_systolic: '120', bp_diastolic: '80', weight: '62', height: '165', gravidaInput: '3', paraInput: '2', abortusInput: '1', livingInput: '2' })) {
+      await expect(at(`#${id}`), id).toHaveText(value);
+    }
+    await expect(at('#f104625-fp')).toHaveText('[X] Microgynon');
+    await expect(at('td.f104625-date').first()).toHaveText('01 May 2023'); // start date, dd MMM yyyy; the end date is blank
+    await expect(at('td.f104625-date')).toHaveCount(1);
+    await expect(at('#fp-history')).toHaveCount(2); // no other method row is ticked
+    await expect(at('#history')).toHaveText('Lower abdominal pain for two weeks');
+    await expect(at('#susp-sti')).toHaveText('[X] Yes');
+    await expect(at('#sti-list')).toHaveText('[X] Chlamydia'); // the STI list is shown in VIEW only with its answer ticked
+    await expect(at('#hiv-rapid-test')).toHaveText('[X] Negative');
+    await expect(view.page.locator('#syphillis-rapid-test .value, #HBsAg .value, #encounter-disposition .value')).toHaveCount(0); // not filled
+    await expect(at('#apptDate')).toHaveText(`12 Sep ${nextYear}`);
+    await expect(view.page.locator('#disposition-section .value')).toHaveText([`12 Sep ${nextYear}`, '[X] Family planning services']);
+    await expect(view.page.locator('#buttons, textarea')).toHaveCount(0); // ifMode VIEW include=false :527
   });
 });

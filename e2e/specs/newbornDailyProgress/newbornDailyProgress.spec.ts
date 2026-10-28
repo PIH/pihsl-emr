@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // newbornDailyProgress.xml: "Newborn Daily Progress" (one per day of the NICU stay): read-only overview of the birth data
 // recorded earlier in the visit, infant vitals, condition, labs, exam, scores, diagnoses, inputs (feeding, IV, respiration,
@@ -20,7 +20,8 @@ import { EntryFormPage } from '../../pages';
 //   when apnea checkbox         :814  show #apnea-duration;   when #resuscitation = Yes :839 -> #type-resuscitation
 //   when #transfusion-q = Yes   :888  show #transfusion-details (value CIEL:1065 although the answers are PIH:YES/NO, see below)
 //   ifMode ENTER :51; ifMode VIEW include=false :73, :239, :261, :360, :980, :993, :1005, :1013, :1058  scripts, heading,
-//     Overview, prior-value spans, buttons (VIEW cannot be tested; ENTER renders them)
+//     Overview, prior-value spans, buttons (ENTER renders them; the VIEW test asserts none of them is rendered, although the visit holds
+//     the data they look up)
 // Scripts: :52-70 (ENTER) retrospective date -> set the time widgets to 00:00, runs once on load (not covered). :74-224
 //   (ENTER/EDIT): .normalObs/.abnormalObs mutual exclusion inside one .exam block; setUpNextAndSubmitButtons(); REST GET of the
 //   encounters in the same visit -> #birthWeightBox / #birthLengthBox / #lastWeightKg; on change of #weight_kg, if birth weight
@@ -28,8 +29,12 @@ import { EntryFormPage } from '../../pages';
 //   block Save).
 // Side effects on save: enrollInProgram Infant (:259, locationTag "Program Location "), CleanDiagnosisConstructAction and
 //   ApplyDispositionAction (:21-22). No order. Provider and location are required (shared subform).
+// VIEW is covered by 'VIEW: ...' (a filled form saved, then rendered with viewEncounterWithHtmlForm): every saved value is shown with the
+//   labels of answerCode/answerCodes/aLabel ("[X] breastfed", "[X] Normal saline (NS) 0.9%"), the IV date as "dd MMM yyyy", each obsgroup
+//   (IVF, transfusion fluid) with its own volume, the CPAP pressure without the oxygen flow rate, and no value for what was left empty.
+//   The "when"/toggle show/hide controls are JavaScript and cannot be checked in the loaded HTML.
 // Not covered here: disposition (ApplyDispositionAction), infant vitals scoring and the Save block (_shared.e2e.md), diagnosis
-//   search, the retrospective-time script, EDIT/VIEW.
+//   search, the retrospective-time script, EDIT mode.
 //
 // Findings (the duplicate ids "glucose" (:426) and "when" (:265) are see _shared V10):
 //   V1 Low  :455, :482  CIEL:168722 is used for both "Comments about umbilical cord" and "Comments about eyes": two inputs of one
@@ -44,6 +49,16 @@ import { EntryFormPage } from '../../pages';
 //                       carries two unrelated questions).
 //   V6 Info :888        <when value="CIEL:1065"> although the answers are PIH:YES/PIH:NO: the mechanical lead is a false alarm,
 //                       both codes are the same concept (tested: Yes shows #transfusion-details).
+//   VW1 Medium :455, :482  (V1 in VIEW) the cord comment and the eye comment are one concept: a saved obs is bound to the first input of
+//                       its concept, so a lone eye comment is shown as the umbilical cord comment. TESTED below (test.fail).
+//                       Fix: a separate concept for one of them.
+//   VW2 Medium :645, :1053 (V2 in VIEW) the same for the two summaries: a lone Outcome summary is shown in Diagnoses (with both filled the
+//                       two texts are swapped). TESTED below (test.fail). Fix: a separate concept for one of them.
+//   VW3 Low  :811 (and :927, same structure, not tested)  "Apnea of newborn" is a checkbox in an obsgroup of PIH:Visit Diagnoses that comes
+//                       after the diagnosis picker (:629). In VIEW the picker takes the group ("Secondary Diagnosis (Presumed) Apnea of newborn
+//                       [P28.4]" under Diagnoses) and the checkbox (showIfEmpty="false") is not rendered, so Respiration shows the
+//                       apnea duration without the ticked box. TESTED below for apnea (test.fail). Fix: put these checkboxes before the picker
+//                       (as the checkboxes of newbornInitial) or render their diagnoses explicitly.
 
 const FORM = 'newbornDailyProgress.xml';
 const NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID = '093b6ffc-e55a-461a-85cc-c6acf7714a23';
@@ -263,5 +278,183 @@ test.describe('newbornDailyProgress', () => {
     // enrollInProgram Infant :259
     const enrollments = (await (await api.get(enrollmentsUrl)).json()).results as Array<{ program: { name: string } }>;
     expect(enrollments.some((e) => /infant/i.test(e.program.name))).toBeTruthy();
+  });
+
+  const fillDaily = async (page: Page) => {
+    await page.locator('#encounterLocation select').selectOption({ index: 1 });
+    await page.locator('#heart_rate input').fill('150');
+    await page.locator('#weight_kg input[type=text]').fill('2.9');
+    await page.locator('#labs input[type=text]').fill('4.2');
+    await page.locator('.exam').nth(0).getByLabel('Clean', { exact: true }).check();
+    await page.locator('.exam').nth(0).locator('input[type=text]').fill('Cord comment'); // (the eye comment is the same concept, see V1 and VW1)
+    await page.locator('.exam').nth(1).getByLabel('Clear', { exact: true }).check();
+    await page.locator('.exam').nth(2).getByLabel('Jaundice', { exact: true }).check();
+    await page.locator('#scores input[type=text]').nth(0).fill('3');
+    await page.locator('#dx textarea[id^=w]').fill('Dx summary text'); // (the Outcome summary is the same concept, see V2 and VW2)
+    await page.getByLabel('breastfed', { exact: true }).check();
+    await page.getByLabel('Tube', { exact: true }).check();
+    await page.getByLabel('Intravenous (IV) access', { exact: true }).check();
+    await page.locator('#ivf').getByLabel('Hand', { exact: true }).check();
+    await page // date of IV placement: a read-only datepicker, set it through the widget
+      .locator('#ivf input.hasDatepicker')
+      .evaluate((el) => {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        (window as any).jQuery(el).datepicker('setDate', d);
+        (window as any).jQuery(el).trigger('change');
+      });
+    await page.locator('#ivf input[type=text]').nth(1).fill('4'); // days with IV
+    await page.locator('#ivf input[type=checkbox]').nth(1).check(); // IVF: normal saline
+    await page.locator('#ivf input[type=text]').nth(2).fill('100'); // IVF volume
+    await page.locator('#air').getByLabel('CPAP', { exact: true }).check();
+    await page.locator('#cpap input[type=text]').nth(0).fill('6');
+    await page.locator('#resuscitation').getByLabel('yes', { exact: true }).check();
+    await page.locator('#type-resuscitation input[type=checkbox]').nth(1).check();
+    await page.locator('#transfusion-q').getByLabel('yes', { exact: true }).check();
+    await page.locator('#transfusion-details').getByLabel('exchange', { exact: true }).check();
+    await page.locator('#transfusion-details .four-columns > div').nth(1).locator('input[type=checkbox]').check();
+    await page.locator('#transfusion-details .four-columns > div').nth(1).locator('input[type=text]').fill('40');
+    await page.locator('#outputs input[type=text]').nth(0).fill('55');
+    await page.locator('#treatment-support').getByLabel('Vitamin D', { exact: true }).check();
+    await page.locator('#treatment-support').getByLabel('Prophylactic eye drops', { exact: true }).check();
+    await page.locator('#treatment-support textarea').fill('Continue phototherapy');
+    await page.locator('#outcome-condition').getByLabel('Satisfactory', { exact: true }).check();
+  };
+
+  // VIEW (viewEncounterWithHtmlForm): saved values are span.value, unselected options span.emptyValue ("[X] yes" / "[  ] no").
+  test('VIEW: shows the saved inputs, respiration, transfusion and treatment, and none of the ENTER-only lookups', async ({ page, api }) => {
+    // data recorded earlier in the visit, which the Overview (:261) and the prior-value markers (:980-1017) show in ENTER only
+    await recordEarlierEncounter(api, context, [
+      { concept: 'CIEL:5599', value: `${daysAgo(2)}T12:00:00.000Z` },
+      { concept: 'PIH:11663', value: 'CIEL:155884' },
+      { concept: 'CIEL:5916', value: 3.0 },
+      { concept: 'CIEL:1651', value: 'CIEL:168725' },
+    ]);
+    await open(page);
+    await fillDaily(page);
+    await saveButton(page).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = (await getPatientEncounters(api, context.patient.uuid)).filter((e) => e.encounterType.uuid !== NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID);
+
+    // Answers the form labels differently from the concept (answerCode / answerCodes / aLabel), and the hidden diagnosis order.
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
+      'Neonatal umbilical stump status: Neonatal umbilical stump clean': 'Clean',
+      'Type of blood transfusion: Neonatal exchange transfusion': 'exchange',
+      'Supportive care: Intravenous fluid administration': 'Intravenous (IV) access',
+      'Feeding technique for newborn: Tube feeding of infant': 'Tube',
+      'Infant feeding method: Breastfeeding child': 'breastfed',
+      'Intravenous fluids administered: Sodium Chloride 0.9%': 'Normal saline (NS) 0.9%',
+      'Skin exam findings: Neonatal jaundice': 'Jaundice',
+      'Procedure performed: Administration of prophylactic antibiotics to neonatal eyes': 'Prophylactic eye drops',
+      'Supplement received: Vitamin D / vitamin D2': 'Vitamin D',
+    });
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '150',
+      '2.9',
+      '4.2',
+      '[X] Clean',
+      'Cord comment',
+      '[X] Clear',
+      '[X] Jaundice',
+      '3',
+      'Dx summary text',
+      '[X] breastfed',
+      '[X] Tube',
+      '[X] Intravenous (IV) access',
+      '[X] Hand',
+      '[X] Normal saline (NS) 0.9%',
+      '[X] CPAP',
+      '[X] yes',
+      '[X] Bag valve mask ventilation',
+      '[X] exchange',
+      '[X] Packed red blood cells',
+      '55',
+      '[X] Prophylactic eye drops',
+      '[X] Vitamin D',
+      'Continue phototherapy',
+      '[X] Satisfactory',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+
+    // the IV block: the placement date ("dd MMM yyyy", without time), site, days, and the IVF group with its own volume
+    const placed = new Date();
+    placed.setDate(placed.getDate() - 1);
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][placed.getMonth()];
+    await expect(page.locator('#ivf .value')).toHaveText([
+      `${`${placed.getDate()}`.padStart(2, '0')} ${month} ${placed.getFullYear()}`,
+      '[X] Hand',
+      '4',
+      '[X] Normal saline (NS) 0.9%',
+      '100',
+    ]);
+    // the transfusion groups: the volume is shown with the fluid it was given with (Packed red blood cells, the second of the four)
+    await expect(page.locator('#transfusion-details .four-columns > div').nth(1).locator('.value')).toHaveText(['[X] Packed red blood cells', '40']);
+    for (const other of [0, 2, 3]) {
+      await expect(page.locator('#transfusion-details .four-columns > div').nth(other).locator('.value')).toHaveCount(0);
+    }
+    // CPAP shows its pressure and the oxygen flow rate stays empty; only the ticked resuscitation method is a value
+    await expect(page.locator('#cpap .value')).toHaveText(['6']);
+    await expect(page.locator('#oxy2 .value')).toHaveCount(0);
+    await expect(page.locator('#type-resuscitation .value')).toHaveText(['[X] Bag valve mask ventilation']);
+    // the surgery question and the other birth-plan boxes were left empty
+    await expect(page.locator('#treatment-support .value')).toHaveText(['[X] Prophylactic eye drops', '[X] Vitamin D', 'Continue phototherapy']);
+    await expect(page.locator('#treatment-support .emptyValue').filter({ hasText: 'Umbilical cord care' })).toHaveCount(1); // given earlier in the visit, not now
+    // ENTER-only content is absent although the visit holds the data: the Overview, the "[ x ] <date>" markers, the heading, the buttons
+    await expect(page.locator('#Overview, #treatment-support .prior-obs-value, .apgar, #lastWeightKg')).toHaveCount(0);
+    await expect(page.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
+  });
+
+  // VW1 (Medium): the umbilical cord comment (:455) and the eye comment (:482) are two inputs of one concept (CIEL:168722; V1). A saved obs
+  // is bound to the first input of its concept, so a lone eye comment is shown as the cord comment. Intended: shown with the eyes.
+  // Remove test.fail() when the concepts differ.
+  test('VW1: an eye comment is shown with the eyes, not with the umbilical cord', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#encounterLocation select').selectOption({ index: 1 });
+    await page.locator('.exam').nth(1).locator('input[type=text]').fill('Discharge from the left eye');
+    await saveButton(page).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = (await getPatientEncounters(api, context.patient.uuid)).filter((e) => e.encounterType.uuid !== NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID);
+
+    await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(page.locator('.exam').nth(0).locator('.value')).toHaveCount(0);
+    await expect(page.locator('.exam').nth(1).locator('.value')).toHaveText(['Discharge from the left eye']);
+  });
+
+  // VW2 (Medium): the summary in Diagnoses (:645) and the one in Outcome (:1053) are the same concept (CIEL:161011; V2): a lone Outcome
+  // summary is shown in the Diagnoses section. Intended: shown in Outcome. Remove test.fail() when the concepts differ.
+  test('VW2: an Outcome summary is shown in the Outcome section, not in Diagnoses', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#encounterLocation select').selectOption({ index: 1 });
+    await page.locator('#outcome textarea[id^=w]').fill('Discharged to the ward');
+    await saveButton(page).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = (await getPatientEncounters(api, context.patient.uuid)).filter((e) => e.encounterType.uuid !== NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID);
+
+    await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(page.locator('#dx .value')).toHaveCount(0);
+    await expect(page.locator('#outcome .value')).toHaveText(['Discharged to the ward']);
+  });
+
+  // VW3 (Low): "Apnea of newborn" (:811) is a checkbox inside a PIH:Visit Diagnoses obsgroup, like the diagnosis picker's own rows
+  // (:629). The picker comes first in the form, so in VIEW it takes the group as an encounter diagnosis ("Secondary Diagnosis (Presumed)
+  // Apnea of newborn [P28.4]" under Diagnoses) and the checkbox, hidden by showIfEmpty="false", is not rendered: only the apnea duration
+  // is left in Respiration. The same holds for the blood-reaction checkbox (:927, not tested). In newbornInitial the checkboxes
+  // come before the picker and are shown. Intended: the ticked box is shown where it was ticked. Remove test.fail() when it is.
+  test('VW3: a ticked apnea checkbox is shown in Respiration', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#encounterLocation select').selectOption({ index: 1 });
+    await page.locator('#apnea-q').getByLabel('Apnea of newborn', { exact: true }).check();
+    await page.locator('#apnea-duration input').fill('20');
+    await saveButton(page).click();
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = (await getPatientEncounters(api, context.patient.uuid)).filter((e) => e.encounterType.uuid !== NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID);
+
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    expect(await view.valueTexts()).toContain('[X] Apnea of newborn');
   });
 });

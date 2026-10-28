@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // maternalDeath.xml: "Maternal Death" review (health facility block read from the visit's admission, preventable death, quality issues, 3 delays,
 // underlying causes, three action points). The specs open enterHtmlFormWithStandardUi inside a visit they create with a 25-year-old female
@@ -21,7 +21,7 @@ import { EntryFormPage } from '../../pages';
 //        that have an entry. The inventory's two [macro-undefined?] leads ($visitEncounter, $i) are Velocity #foreach/#set variables: not findings.
 // Side effects on save: none. The form does not mark the patient dead and does not close the visit (asserted); death is recorded elsewhere
 // (e.g. the "Death" disposition of maternalDischarge.xml, see that spec).
-// Not covered here: VIEW/EDIT, the "earliest of several admissions" rule (a REST encounter before the visit start is refused), date pickers
+// EDIT is covered by the save, reopen, change, save round-trip, VIEW by the last test (both SL-1463). Not covered here: the "earliest of several admissions" rule (a REST encounter before the visit start is refused), date pickers
 // of the action points, app-loader availability.
 //
 // Findings:
@@ -205,5 +205,86 @@ test.describe('maternalDeath', () => {
     expect(displays).toContain('Diagnosis order: Secondary');
     expect(displays.filter((d) => d.startsWith('Action point set'))).toHaveLength(3);
     expect(displays.filter((d) => d.startsWith('Sequence number')).sort()).toEqual(['Sequence number: 1', 'Sequence number: 2', 'Sequence number: 3']);
+  });
+
+  // EDIT round-trip (SL-1463): the hidden marker and row number must follow the entries, also when a row is cleared or added on reopen.
+  test('EDIT: reopening shows the saved rows, and clearing, changing and adding rows on a second save keeps the groups in step', async ({
+    page,
+    api,
+  }) => {
+    const actionRow = (n: number) => page.locator('#actionPts tr').nth(n + 1).locator('input[type=text]:visible'); // n = 1..3
+    const secondaryCause = page.locator('#secondaryCause input.autoCompleteText');
+
+    // first save: both causes, action point 1 (item and person) and action point 2 (person only)
+    await openForm(page, ctx);
+    await fillReview(page);
+    await secondaryCause.fill('malaria');
+    await page.locator('.ui-autocomplete li:visible').first().click();
+    await actionRow(2).nth(1).fill('Ward sister');
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
+    const before = (await getEncounterObs(api, encounter.uuid)).map((o) => o.display);
+    expect(before.filter((d) => d.startsWith('Action point set'))).toHaveLength(2);
+
+    // reopen: everything that was saved is shown, the rest is empty
+    const edit = () =>
+      page.goto(SectionFormPage.editUrl(FORM, { patient: ctx.patient, encounter: { uuid: encounter.uuid, visitUuid: ctx.visitUuid } }));
+    await edit();
+    await expect(page.locator(SAVE)).toBeVisible();
+    await expect(page.locator('#primaryCause input.autoCompleteText')).toHaveValue(/malaria/i);
+    await expect(secondaryCause).toHaveValue(/malaria/i);
+    await expect(actionRow(1).nth(0)).toHaveValue('Review the referral protocol');
+    await expect(actionRow(2).nth(1)).toHaveValue('Ward sister');
+    await expect(actionRow(3).nth(0)).toHaveValue('');
+
+    // second save: clear the secondary cause and action point 2, change action point 1, add action point 3
+    await secondaryCause.fill('');
+    await actionRow(2).nth(1).fill('');
+    await actionRow(1).nth(0).fill('Revised protocol');
+    await actionRow(3).nth(0).fill('Audit the referral register');
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const after = (await getEncounterObs(api, encounter.uuid)).map((o) => o.display);
+    expect(after.filter((d) => d.startsWith('Underlying cause of death set'))).toHaveLength(1);
+    expect(after).toContain('Diagnosis order: Primary');
+    expect(after).not.toContain('Diagnosis order: Secondary');
+    expect(after.filter((d) => d.startsWith('Action point set'))).toHaveLength(2);
+    expect(after.filter((d) => d.startsWith('Sequence number')).sort()).toEqual(['Sequence number: 1', 'Sequence number: 3']);
+    expect(after).toContain('Action item: Revised protocol');
+    expect(after).not.toContain('Action item: Review the referral protocol');
+    expect(after).not.toContain('Name of clinician (text): Ward sister');
+  });
+
+  // VIEW: every saved value is shown, and the rows that were left empty (secondary cause, action points 2 and 3) are blank.
+  test('VIEW: shows the saved review, and nothing for the rows that were left empty', async ({ page, api }) => {
+    await markDead(api, ctx);
+    await openForm(page, ctx);
+    await fillReview(page); // primary cause and action point 1 only
+    await page.locator(SAVE).click();
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '[X] yes',
+      '[X] Timing',
+      '[X] Reaching care',
+      'Arrived late from a peripheral unit',
+      'Earlier referral',
+      'Malaria',
+      '[X] Primary',
+      'Review the referral protocol',
+      'Matron',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    await expect(view.page.locator('#secondaryCause .value')).toHaveCount(0);
+    // (the form wraps each <tr> in a <span id="action-n">, which the browser lifts out of the table: select the fields by id)
+    await expect(view.page.locator('#action-desc-1 .value')).toHaveText('Review the referral protocol');
+    await expect(view.page.locator('#action-person-1 .value')).toHaveText('Matron');
+    await expect(view.page.locator('#action-desc-2 .value, #action-person-2 .value, #action-desc-3 .value, #action-person-3 .value')).toHaveCount(0);
   });
 });

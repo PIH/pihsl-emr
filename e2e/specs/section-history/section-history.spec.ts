@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type SectionEncounter, type SectionEncounterOptions } from '../../core';
 import { NCD_INITIAL_ENCOUNTER_TYPE_UUID, OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-history.xml: history of an outpatient initial encounter (chief complaint, presenting history, family and past
 // medical history, blood type, hospitalizations, medications). On the visit page it hangs only under Outpatient initial
@@ -26,8 +26,11 @@ import { SectionFormPage } from '../../pages';
 //   checkWithoutComments message (past history); a ticked relative / box without text -> "Please specify". The same
 //   check runs in beforeSubmit and blocks the save. setUpNextAndSubmitButtons() wires #next / #submit (see _shared).
 // Side effects on save: none (no program enrollment, orders or post-submission action).
-// Not covered here: VIEW mode (REST-created encounters have no form, so viewEncounterWithHtmlForm.page fails); the
-//   hospitalization table, current medications, diagnostic tests and the other NCD-only fields (plain obs).
+// EDIT is covered by the NCD Pregnant round-trip; VIEW by that test (the Pregnant tick) and by the last test (the saved items only,
+//   nothing for the rest).
+// EDIT is covered by the NCD Pregnant round-trip; VIEW by that test (the Pregnant tick) and by the last test (the saved items only,
+//   nothing for the rest).
+// Not covered here: the hospitalization table, current medications, diagnostic tests and the other NCD-only fields (plain obs).
 //
 // Findings:
 //   V1 Medium :442  toggle id/class "{comment}-date" is "Tubal ligation-date": the space makes it two classes, so the
@@ -127,9 +130,10 @@ test.describe('section-history', () => {
     });
   }
 
-  test('NCD initial: the Pregnant checkbox shows #pregnant and is saved ticked on reopen (EDIT)', async ({
+  test('NCD initial: the Pregnant checkbox shows #pregnant and is saved ticked on reopen (EDIT) and shown in VIEW', async ({
     page,
     createSectionEncounter,
+    api,
   }) => {
     // toggle :381; includeIf F :378
     await open(page, createSectionEncounter, NCD_F30);
@@ -147,6 +151,11 @@ test.describe('section-history', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#sexual-activities').getByLabel('Pregnant')).toBeChecked();
     await expect(page.locator('#pregnant')).toBeVisible();
+
+    // VIEW: the ticked Pregnant is shown in the sexual-activities section, and no family-planning method is
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, { 'Pregnancy status: Yes': '[X] Pregnant' });
+    await expect(view.page.locator('#sexual-activities .value')).toHaveText(['[X] Pregnant']);
+    await expect(view.page.locator('[id="Pill-fp"] .value')).toHaveCount(0);
   });
 
   test('NCD initial: a man has no Pregnant checkbox', async ({ page, createSectionEncounter }) => {
@@ -260,5 +269,25 @@ test.describe('section-history', () => {
     expect(hasAll('past medical history:', 'malaria', 'yes')).toBeTruthy();
     expect(hasAll('past medical history:', 'surgery', 'appendectomy', 'yes')).toBeTruthy();
     expect(has('blood group: a+')).toBeTruthy();
+
+    // VIEW: each ticked item is shown by its own label (the coded "Yes" answers are written by the form's tags and a ticked item shows as
+    // "[X] label", so they are looked for by that); items that were not ticked hold no value.
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Sign/symptom present: Yes': '[X]',
+      'Family history diagnosis: Asthma': '[X] Mother', // the diagnosis is the row's static label; its value is the ticked relative
+    });
+    const v = view.page;
+    await expect(v.locator('#chief-complaint .value')).toHaveText('Cough for two weeks');
+    await expect(v.locator('#presenting-history .value')).toHaveText('Worse at night');
+    const asthma = v.locator('.family-history-item', { hasText: 'Asthma' });
+    await expect(asthma).toHaveCount(1);
+    await expect(asthma.locator('.value')).toHaveText(['[X] Mother']);
+    await expect(v.locator('.family-history-item', { hasText: 'Heart disease' }).locator('.value')).toHaveCount(0);
+    await expect(v.locator('#familyCancer .value, #familyOther .value')).toHaveCount(0);
+    await expect(pastItem(v, 'Malaria').locator('.value')).toHaveText(['[X] Malaria']);
+    await expect(pastItem(v, 'Surgery').filter({ has: v.locator('.value') }).locator('.value')).toHaveText(['[X] Surgery', 'Appendectomy']);
+    await expect(pastItem(v, 'Trauma').locator('.value')).toHaveCount(0);
+    await expect(v.locator('#patient-history .value')).toHaveCount(3);
+    expect((await view.valueTexts()).filter((t) => /^\[X\] (A|B|AB|O)[+-]$/.test(t))).toEqual(['[X] A+']); // blood group: only the chosen one
   });
 });

@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // familyPlanningIntake.xml: first family planning visit (disability, service type, vitals, earlier methods with dates,
 // method chosen today, appointment, referrals). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit
@@ -23,7 +23,10 @@ import { EntryFormPage } from '../../pages';
 // Scripts: :32-37 setUpNextAndSubmitButtons() only; there are no #next / .nextSection buttons, so Save posts the form.
 // Side effects on save: ReopenVisitAction (:20, reopens a closed visit; the visit here is open). No program, order or
 // disposition. No required field apart from the provider (preselected).
-// Not covered here: EDIT and VIEW modes, a closed visit being reopened, the Next/Save navigation script.
+// VIEW (end of the save test, and the last test): every saved value is shown in its own checkbox/radio or field (expectViewShowsSavedObs, with the
+// labels of the visit type and the methods, and the dates as "dd MMM yyyy"), the history shows only the ticked row with its start date and a
+// blank end date, and a male patient's VIEW has Vasectomy and none of the female-only methods (includeIf :362-:402).
+// Not covered here: EDIT mode, a closed visit being reopened, the Next/Save navigation script.
 //
 // Findings:
 //   V1 Medium :310-311  the second <when> value is CIEL:5275 (intrauterine device) but the repeat only renders Jadelle
@@ -241,5 +244,58 @@ test.describe('familyPlanningIntake', () => {
         'Patient referred or escorted=No',
       ]),
     );
+
+    // VIEW: every saved value is shown (the dates as "dd MMM yyyy", the methods under the form's labels), the others are not
+    const year = new Date().getFullYear();
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Visit type: Change contraceptive method': 'Method switch',
+      'Method of family planning: Ethinyl estradoil / Levonorgestrel': 'Microgynon',
+      'Method of family planning: Medroxyprogesterone acetate (Depo-provera)': 'Depo-provera',
+      'Method of family planning: Jadelle (implantable contraceptive)': 'Jadelle',
+      'Family planning start date: 2024-01-15': '15 Jan 2024',
+      [`Date of implant placement: ${year}-01-10`]: `10 Jan ${year}`,
+      [`Return visit date: ${year + 1}-06-20`]: `20 Jun ${year + 1}`,
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] Visual impairment',
+      '[X] Method switch',
+      '[X] 48 hours to 6 weeks',
+      '120',
+      '80',
+      '60',
+      '160',
+      '[X] Microgynon', // history row, with its start date and an empty end date
+      '15 Jan 2024',
+      '[X] yes', // counselling
+      '[X] yes', // accepts post-partum family planning
+      '[X] Depo-provera',
+      '[X] Jadelle',
+      `10 Jan ${year}`, // implant date
+      `20 Jun ${year + 1}`,
+      '[X] no', // referred out
+    ]);
+    // the history keeps the start date in the Microgynon row, leaves its end date blank, and shows no row for the methods that were not ticked
+    await expect(view.page.locator('td.f104625-date .value')).toHaveText('15 Jan 2024');
+    await expect(view.page.locator('td.f104625-date .emptyValue')).toHaveCount(1);
+    await expect(view.page.locator('td[id$="-fp"]')).toHaveCount(1);
+    await expect(view.page.locator('#implant-date .value')).toHaveText(`10 Jan ${year}`);
+  });
+
+  // VIEW of the gender-specific methods (includeIf gender M / F): a male patient's VIEW has Vasectomy and none of the female-only methods.
+  test('VIEW: a male patient is shown Vasectomy and none of the female-only methods', async ({ page, api, createEntryContext }) => {
+    context = await createEntryContext({ givenName: 'AutoFpMale', familyName: 'Tester', gender: 'M', birthdate: birthdateYearsAgo(25) });
+    await open(page);
+    await page.locator('#fp-method').getByLabel('Vasectomy', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    expect(await view.valueTexts()).toEqual(['[X] Vasectomy']);
+    const methods = await view.page.locator('#fp-method').innerText();
+    expect(methods).toContain('Vasectomy');
+    for (const femaleOnly of ['Emergency contraceptive pills', 'Tubal ligation', 'Lactation amenorrhea method']) {
+      expect(methods, femaleOnly).not.toContain(femaleOnly);
+    }
   });
 });

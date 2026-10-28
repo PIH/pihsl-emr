@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-diabetes.xml: diabetes section of the NCD initial (diagnosis, complications) and followup
@@ -21,7 +21,9 @@ import type { Page } from '@playwright/test';
 //   when Loss of sensation    :419 show #foot-numb-message (on each of the 4 foot checkboxes; V1)
 // Scripts: only setUpNextAndSubmitButtons() (see _shared); no validation, message, formula or default.
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19) completes the diagnosis constructs.
-// Not covered here: VIEW mode; the Next / other-section buttons (navigation, _shared).
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered for both encounter types: the diagnosis table only for NCD initial, the indicators only
+// for NCD followup, saved values in span.value, no scripts at all (so every conditional block is rendered, empty).
+// Not covered here: the Next / other-section buttons (navigation, _shared).
 //
 // Findings:
 //   V1 Medium :416-421 the "Ulcer prevention recommended" message has a <when value="Loss of sensation"> on each of the
@@ -34,11 +36,23 @@ import type { Page } from '@playwright/test';
 //   V4 Low    :416,:426 the Foot infection render has no `tag`, so its wrapper id is the literal dm-foot-{tag}-dx.
 //   V5 Low    :132-146 "Complications at injection site" is always shown; it is not tied to the "Injection site"
 //                      complication (unconfirmed intent).
+//   VW1 Low   :446-450 the "Ulcer prevention recommended" message is plain text that only the <when> script hides; VIEW has no scripts, so every diabetes
+//                      encounter shows it, also with no foot exam or without "Numbness of foot" ticked. Fix: render it in VIEW only when the encounter has a
+//                      CIEL:165471 = CIEL:132653 obs (includeIf on $encounter.obs) and keep the <when> for ENTER/EDIT. TESTED below (test.fail).
 
 const FORM = 'section-diabetes.xml';
 
 const radio = (page: Page, wrapperId: string, label: string) =>
   page.locator(`#${wrapperId}`).getByLabel(label, { exact: true });
+
+// Obs whose concept name is not what the form shows (answerCodes) or that the VIEW does not print as a span.value (hidden diagnosis metadata).
+const VIEW_LABELS: Record<string, string> = {
+  'Diagnosis order: Secondary': '',
+  'Diagnosis: Type 1 diabetes': '[X] Type 1 DM',
+  'Diagnosis: Type 2 diabetes': '[X] Type 2 DM',
+  'Complications related to diabetes: Cerebrovascular accident': '[X] Stroke',
+  'Complications related to diabetes: Complications at injection site': '[X] Injection site',
+};
 
 const displaysOf = async (api: Parameters<typeof getEncounterObs>[0], section: SectionEncounter) =>
   (await getEncounterObs(api, section.encounter.uuid)).map((o) => o.display);
@@ -102,7 +116,7 @@ test.describe('section-diabetes: NCD initial', () => {
     expect(displays.some((d) => /fundoscopy|completed/i.test(d))).toBeTruthy();
   });
 
-  test('EDIT starts from the saved value: a saved Completed fundoscopy shows the results block', async ({ page }) => {
+  test('EDIT starts from the saved value: a saved Completed fundoscopy shows the results block', async ({ page, api }) => {
     // when :346 in EDIT mode
     const form = await SectionFormPage.openEdit(page, FORM, section);
     await page.getByLabel('Type 1 DM').check();
@@ -113,6 +127,57 @@ test.describe('section-diabetes: NCD initial', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(radio(page, 'fundy-perf', 'Completed')).toBeChecked();
     await expect(page.locator('#fundy-results')).toBeVisible();
+    await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, VIEW_LABELS);
+  });
+
+  test('VIEW: shows the diagnosis, complications, fundoscopy and foot findings that were saved, and nothing of the followup indicators', async ({
+    page,
+    api,
+  }) => {
+    const form = await SectionFormPage.openEdit(page, FORM, section);
+    await page.getByLabel('Type 2 DM').check();
+    await page.getByLabel('Diabetic foot', { exact: true }).check();
+    await page.getByLabel('Stroke', { exact: true }).check();
+    await page.getByLabel('Injection site', { exact: true }).check();
+    await page.locator('#injection-site').getByLabel('Lipohypertrophy').check();
+    await radio(page, 'fundy-perf', 'Completed').check();
+    await radio(page, 'fun-abnorm', 'Abnormal').check();
+    await page.locator('#fun-findings').getByLabel('Retinal detachment').check();
+    await radio(page, 'foot-exam', 'Completed').check();
+    await radio(page, 'normal-foot', 'Abnormal').check();
+    await page.locator('#dm-foot-ulcer-dx').getByLabel('Foot ulcer').check();
+    await page.locator('#dm-foot-numb-dx').getByLabel('Numbness of foot').check();
+    await page.locator('#abnormal-foot p.list-inline').getByLabel('yes').check(); // referred to surgery
+    await page.locator('#diabetes > p').last().locator('input[type=text]').fill('Review in 2 weeks');
+    await form.save();
+    await form.expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, VIEW_LABELS);
+    const shown = await view.valueTexts();
+    for (const expected of [
+      '[X] Type 2 DM', // answerCodes: the form's label, not "Type 2 diabetes"
+      '[X] Diabetic foot',
+      '[X] Stroke', // the concept is "Cerebrovascular accident"
+      '[X] Injection site',
+      '[X] Lipohypertrophy',
+      '[X] Completed', // fundoscopy, foot examination
+      '[X] Abnormal', // fundoscopy results, foot exam findings
+      '[X] Retinal detachment',
+      '[X] Numbness of foot',
+      '[X] Foot ulcer',
+      '[X] yes', // referred to surgery
+      'Review in 2 weeks',
+    ]) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the other diagnoses are listed unselected, the unanswered questions have no value, the followup block is not rendered (includeIf :152)
+    await expect(page.locator('.emptyValue', { hasText: /Type 1 DM/ })).toHaveCount(1);
+    await expect(page.locator('.emptyValue', { hasText: /Gestational DM/ })).toHaveCount(1);
+    expect(shown).not.toContain('[X] Neuropathy');
+    await expect(page.locator('p.list-inline', { hasText: 'Improvement since last visit' }).locator('.value')).toHaveCount(0);
+    await expect(page.getByText('Diabetes followup indicators')).toHaveCount(0);
+    await expect(page.getByText('Disease control')).toHaveCount(0);
+    await expect(page.locator('#buttonsTopRow, input:not([type=hidden]), textarea, select')).toHaveCount(0); // read-only
   });
 });
 
@@ -232,5 +297,71 @@ test.describe('section-diabetes: NCD followup', () => {
     expect(displays.some((d) => /missed/i.test(d) && /yes/i.test(d))).toBeTruthy();
     expect(displays.some((d) => /Foot examination findings: Foot ulcer/i.test(d))).toBeTruthy();
     expect(displays.some((d) => /: 3$/.test(d))).toBeTruthy();
+    await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, VIEW_LABELS);
+  });
+
+  // The four required indicator radios, so that a followup can be saved.
+  const fillRequired = async (page: Page) => {
+    await radio(page, 'dm-insulin-top', 'no').check();
+    await radio(page, 'dm-missed-top', 'no').check();
+    await radio(page, 'dm-home-top', 'no').check();
+    await page.getByLabel('controlled', { exact: true }).check();
+  };
+
+  test('VIEW: shows the indicators that were saved with the form\'s own yes/no/controlled labels, and nothing of the diagnosis table', async ({
+    page,
+    api,
+  }) => {
+    await radio(page, 'dm-insulin-top', 'no').check();
+    await radio(page, 'dm-missed-top', 'yes').check();
+    await page.locator('#dm-missed-details input[type=text]').fill('3');
+    await radio(page, 'dm-home-top', 'no').check();
+    await radio(page, 'dm-indications-ace', 'yes').check();
+    await radio(page, 'dm-ace', 'no').check();
+    await page.locator('#dm-not-ace-details input').fill('Hyperkalaemia');
+    await radio(page, 'dm-fui-aware', 'unknown').check();
+    await page.getByLabel('controlled', { exact: true }).check();
+    await page.locator('p', { hasText: 'DKA indicates hospitalization' }).getByLabel('unknown').check();
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, VIEW_LABELS);
+    const answer = (label: string) => page.locator('p.list-inline-wide', { hasText: label }).locator('.value');
+    await expect(answer('On insulin')).toHaveText('[X] no');
+    await expect(answer('Missed doses in past week')).toHaveText('[X] yes');
+    await expect(answer('Indications for ACE inhibitors')).toHaveText('[X] yes');
+    await expect(answer('On ACE inhibitors')).toHaveText('[X] no');
+    await expect(answer('Aware and understands the disease')).toHaveText('[X] unknown');
+    await expect(answer('Glucometer (home)')).toHaveText('[X] no');
+    // "controlled" is the answer, "uncontrolled" is only listed unselected
+    await expect(answer('Disease control')).toHaveText('[X] controlled');
+    await expect(page.locator('.emptyValue', { hasText: /^\s*\[\s*\]\s*uncontrolled\s*$/ })).toHaveCount(1);
+    expect(await view.valueTexts()).toEqual(expect.arrayContaining(['3', 'Hyperkalaemia']));
+    // not answered: the other indicators, fundoscopy and foot examination
+    await expect(answer('Patient condition improved')).toHaveCount(0);
+    await expect(answer('Understands treatment')).toHaveCount(0);
+    await expect(page.locator('p.side-by-side', { hasText: 'Fundoscopy performed' }).locator('.value')).toHaveCount(0);
+    await expect(page.locator('p.list-inline', { hasText: 'Foot examination performed' }).locator('.value')).toHaveCount(0);
+    // the diagnosis table is for the initial encounters only (includeIf :37)
+    await expect(page.getByText('Type 1 DM')).toHaveCount(0);
+    await expect(page.getByText('Suggested treatment')).toHaveCount(0);
+  });
+
+  // VW1 (Low): VIEW has no scripts, so the <when>-controlled message is always printed. Intended: only with "Numbness of foot" ticked.
+  // Remove test.fail() when the message is made conditional in VIEW.
+  test('VIEW: "Ulcer prevention recommended" is shown only when Numbness of foot was saved (VW1)', async ({ page, api }) => {
+    test.fail();
+    await fillRequired(page);
+    await radio(page, 'foot-exam', 'Completed').check();
+    await radio(page, 'normal-foot', 'Abnormal').check();
+    await page.locator('#dm-foot-ulcer-dx').getByLabel('Foot ulcer').check(); // not the numbness box
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    expect((await displaysOf(api, section)).some((d) => /numbness|loss of sensation/i.test(d))).toBe(false); // the precondition: not saved
+    await expect(page.getByText('Ulcer prevention recommended')).toBeHidden();
   });
 });

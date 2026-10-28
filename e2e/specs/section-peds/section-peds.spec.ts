@@ -1,7 +1,7 @@
 import { test, expect, birthdateYearsAgo, type SectionEncounter } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-peds.xml: "Pediatrics food & supplements" section of the outpatient initial/followup encounter.
 // On the visit page the section is only shown for patients < 15 years at visit start; the specs open the
@@ -11,7 +11,8 @@ import { SectionFormPage } from '../../pages';
 //   ifMode VIEW include=false  section-peds.xml:116  supplements heading shown in ENTER/EDIT only
 //   ifMode VIEW include=false  section-peds.xml:201  feeding heading shown in ENTER/EDIT only
 //   ifMode VIEW include=false  section-peds.xml:288  #buttons (#next, #submit, #cancel) in ENTER/EDIT only
-// The specs run in EDIT mode, so the headings and buttons are expected to be present.
+// The specs run in EDIT mode, so the headings and buttons are expected to be present. VIEW is covered by the last test (saved rows
+// shown with their own age, the rows left empty blank, and no buttons).
 
 // Scripts (all covered below): jq(function(){...}) on load; `change` on .supplement / .yes-feeding enables and
 // focuses the row's .ageReceived input and clears + disables it when unticked; `change` on .no-feeding clears
@@ -103,5 +104,51 @@ test.describe('section-peds', () => {
     expect(displays.some((d) => d.includes('6 months'))).toBeTruthy();
     expect(displays.some((d) => d.includes('infant formula'))).toBeTruthy();
     expect(displays.some((d) => d.includes('2 months'))).toBeTruthy();
+  });
+
+  // VIEW: each row shows its own tick and age (the rows are separate obsgroups), a "No" lands in the No column, and the rows that were
+  // left empty show nothing. The feeding Yes / No boxes have no label of their own (the column headers say which is which).
+  test('VIEW: shows each supplement and feeding row with its own age, and nothing for the rows left empty', async ({ page, api }) => {
+    const supplement = (name: string) => page.locator('tr', { hasText: name });
+    await supplement('Vitamin A').getByRole('checkbox').check();
+    await supplement('Vitamin A').getByRole('textbox').fill('6 months');
+    await supplement('Ferrous sulfate').getByRole('checkbox').check();
+    await supplement('Ferrous sulfate').getByRole('textbox').fill('1 year');
+    const formula = page.locator('tr', { hasText: 'Infant Formula' });
+    await formula.getByRole('checkbox').nth(0).check();
+    await formula.getByRole('textbox').fill('2 months');
+    await page.locator('tr', { hasText: 'Mixed' }).getByRole('checkbox').nth(1).check(); // Mixed feeding: No
+    await page.locator('#feeding textarea').fill('Weaned early');
+
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Infant feeding method: Infant formula': '[X]', // the Yes box has no label text
+      'Feeding method absent: Mixed feeding': '[X]', // the No box has no label text
+    });
+    const v = view.page;
+    expect(await view.valueTexts()).toEqual([
+      '[X] Vitamin A',
+      '6 months',
+      '[X] Ferrous sulfate',
+      '1 year',
+      '[X]', // infant formula: Yes
+      '2 months',
+      '[X]', // mixed feeding: No
+      'Weaned early',
+    ]);
+    const cells = (name: string) => v.locator('tr', { hasText: name }).locator('td');
+    await expect(cells('Vitamin A').nth(1).locator('.value')).toHaveText('6 months');
+    await expect(cells('Ferrous sulfate').nth(1).locator('.value')).toHaveText('1 year');
+    await expect(cells('Infant Formula').nth(1).locator('.value')).toHaveText('[X]'); // Yes column
+    await expect(cells('Infant Formula').nth(2).locator('.value')).toHaveCount(0);
+    await expect(cells('Infant Formula').nth(3).locator('.value')).toHaveText('2 months');
+    await expect(cells('Mixed').nth(1).locator('.value')).toHaveCount(0);
+    await expect(cells('Mixed').nth(2).locator('.value')).toHaveText('[X]'); // No column
+    await expect(cells('Mixed').nth(3).locator('.value')).toHaveCount(0);
+    await expect(v.locator('tr', { hasText: 'Iodine' }).locator('.value')).toHaveCount(0);
+    await expect(v.locator('#next, #submit, #cancel')).toHaveCount(0);
   });
 });

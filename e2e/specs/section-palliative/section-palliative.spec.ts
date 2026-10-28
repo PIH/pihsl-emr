@@ -13,7 +13,8 @@
 // Script (:22-27): setUpNextAndSubmitButtons() only (Next / section buttons / Save); no validation or derived value.
 // Side effects on save: <postSubmissionAction CleanDiagnosisConstructAction> (:19, pihcore, not read); no
 //   diagnosis obs in this form, so nothing observable. No program enrollment.
-// Not covered here: Next / section-jump buttons, VIEW mode, the "Other" disease / hospitalization comment fields.
+// EDIT is covered by the two save tests (restored when-targets and ticks), VIEW by the same tests (exactly the saved answers).
+// Not covered here: Next / section-jump buttons, the "Other" disease / hospitalization comment fields.
 //
 // Findings:
 //   V1 Low  :117, 154  <when> targets #pall-fui-understand-details, -titrate-, -adher-, -aware- and
@@ -25,7 +26,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 const FORM = 'section-palliative.xml';
 
@@ -96,6 +97,14 @@ test.describe('section-palliative, NCD initial encounter', () => {
     await expect(page.locator('#hosp-pall-reason')).toBeVisible();
     await expect(page.getByLabel('Breast cancer', { exact: true })).toBeChecked();
     await expect(page.getByLabel('2', { exact: true })).toBeChecked();
+
+    // VIEW: exactly the saved answers; the diseases use the form's labels, the unticked ones and the other ECOG grades show no value
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Disease requiring palliative care treatment: Malignant neoplasm of breast': '[X] Breast cancer',
+    });
+    expect(await view.valueTexts()).toEqual(['[X] Chronic kidney disease', '[X] Breast cancer', '[X] 2', '[X] Yes', '[X] Vomiting']);
+    await expect(view.page.locator('#palliative-hosp .value')).toHaveText('[X] Yes');
+    await expect(view.page.locator('#hosp-pall-reason .value')).toHaveText('[X] Vomiting');
   });
 });
 
@@ -170,5 +179,24 @@ test.describe('section-palliative, NCD followup encounter', () => {
     await expect(page.locator('#Pain-details')).toBeVisible();
     await expect(page.locator('#Nausea-details')).toBeHidden();
     await expect(page.locator('#Pain-details').getByLabel('worse', { exact: true })).toBeChecked();
+
+    // VIEW: each indicator on its own row, the ticked symptom with its progress and control (the radio labels differ from the
+    // concept names: worse / uncontrolled), and no row of values for the other six symptoms
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Counseling status: Completed': '[X] yes',
+      'Symptom management: Not controlled': '[X] uncontrolled',
+    });
+    const v = view.page;
+    await expect(row(v, /^\s*Missed doses in past week/).locator('.value').first()).toHaveText('[X] yes');
+    await expect(v.locator('#pall-fui-missed-details .value')).toHaveText('2');
+    await expect(row(v, /^\s*Counselling done/).locator('.value')).toHaveText('[X] yes');
+    await expect(v.locator('#Pain-symp .value')).toHaveText('[X] Pain');
+    await expect(v.locator('#Pain-details .value')).toHaveText(['[X] worse', '[X] uncontrolled']);
+    for (const symptom of SYMPTOMS.filter((x) => x !== 'Pain')) {
+      await expect(v.locator(`#${symptom}-symp .value, #${symptom}-details .value`), symptom).toHaveCount(0);
+    }
+    await expect(v.locator('#palliative-hosp .value')).toHaveText('[X] No');
+    await expect(v.locator('#hosp-pall-reason .value')).toHaveCount(0);
+    expect((await view.valueTexts()).filter((t) => /^\[X\] \d$/.test(t))).toEqual(['[X] 3']); // ECOG: only the chosen grade
   });
 });

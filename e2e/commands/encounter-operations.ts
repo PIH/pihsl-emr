@@ -102,8 +102,18 @@ export const purgeClinicalDataForPatient = async (api: APIRequestContext, patien
   for (const encounter of (await encRes.json()).results) {
     const obsRes = await api.get(`obs?encounter=${encounter.uuid}&includeAll=true&limit=200`);
     expect(obsRes.ok()).toBeTruthy();
-    for (const o of (await obsRes.json()).results) {
-      expect((await api.delete(`obs/${o.uuid}?purge=true`)).ok()).toBeTruthy();
+    // An obs can be referenced by another one (a group member by its group, an obs edited by a later save through
+    // previousVersion), and the referenced one cannot be purged first. Retry what failed until nothing is left.
+    let remaining: Array<{ uuid: string }> = (await obsRes.json()).results;
+    while (remaining.length > 0) {
+      const failed: Array<{ uuid: string }> = [];
+      for (const o of remaining) {
+        if (!(await api.delete(`obs/${o.uuid}?purge=true`)).ok()) {
+          failed.push(o);
+        }
+      }
+      expect(failed.length, `${failed.length} obs could not be purged`).toBeLessThan(remaining.length);
+      remaining = failed;
     }
     expect((await api.delete(`encounter/${encounter.uuid}?purge=true`)).ok()).toBeTruthy();
   }

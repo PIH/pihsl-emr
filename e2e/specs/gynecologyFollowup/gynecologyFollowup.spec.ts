@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // gynecologyFollowup.xml: gynecology followup visit (vitals, gynecology exam, planned procedures, diagnoses, rapid tests, lab and
 // drug orders, follow-up clinic and disposition). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit
@@ -21,7 +21,7 @@ import { EntryFormPage } from '../../pages';
 // Side effects on save: ApplyDispositionAction and CleanDiagnosisConstructAction (:20-21; no disposition or diagnosis is
 // chosen here). pihLabOrder (:263) and drug orders (:270) can create orders.
 // Not covered here: lab and drug orders and the disposition (a saved testorder cannot be purged), diagnosis search, the
-// procedure autocompletes, EDIT and VIEW modes, the Next/Save navigation script.
+// procedure autocompletes, EDIT mode, the Next/Save navigation script. VIEW is covered by the full save test (every section) and VW1.
 //
 // Findings (the same issues as gynecologyFollowup.xml, at these lines):
 //   V1 Medium :140,:222  every hidden CIEL:1937 obs has a defaultValue (6, 1-3), so the "showIfEmpty=false" obsgroups (cryotherapy
@@ -35,6 +35,10 @@ import { EntryFormPage } from '../../pages';
 //                       visit" (Yes/No): the label asks about suspicion, the concept records a test (concept unconfirmed).
 //   V4 Low    :170      the STI rows use class="{switch}" but their <render>s define finding/name, so the rendered class is
 //                       literally "{switch}" (also :175-181). Harmless, nothing targets it.
+//   VW1 Low   :220-232  the V1 defaults also show in VIEW: the empty planned-procedure groups are rendered as blank "____" lines (3), because the
+//                       groups are never empty. Fix: V1. TESTED below (test.fail).
+//   VW2 Info :161  the STI list (#sti-list) is always rendered in VIEW, as seven empty checkboxes when "STI suspected?" is not Yes (when/thenDisplay is
+//                   ENTER/EDIT only; same as gainNewbornRegister VW1; not tested).
 
 const FORM = 'gynecologyFollowup.xml';
 const GYN_FOLLOWUP_ENCOUNTER_TYPE_UUID = '9b973514-7799-41b6-85f1-1ebc752d01f0';
@@ -146,6 +150,21 @@ test.describe('gynecologyFollowup', () => {
     expect(obs.filter((o) => o.startsWith('Procedure performed quantity') || o.startsWith('Planned procedure set'))).toEqual([]);
   });
 
+  // VW1 (Low): the V1 defaults also keep the empty planned-procedure groups in the VIEW, as blank "____" lines (3) next to the one real
+  // "Other procedure planned" line. Intended: the empty groups are not shown. Remove test.fail() when V1 is fixed.
+  test('VIEW: no blank procedure lines for procedures that were not entered (VW1)', async ({ page, api }) => {
+    test.fail();
+    await open(page);
+    await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
+    await save(page);
+    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, { 'Papanicolaou test status: Completed': '[X] PAP test performed' });
+    // only "Other procedure planned" may be blank
+    expect(await view.page.locator('#procedures .emptyValue').count()).toBeLessThanOrEqual(1);
+  });
+
   test('saves vitals, exam, rapid test and follow-up clinic as a gynecology followup encounter', async ({ page, api }) => {
     await open(page);
 
@@ -190,5 +209,26 @@ test.describe('gynecologyFollowup', () => {
         'Type of referral ordered=Mental health',
       ]),
     );
+
+    // VIEW: every value is shown, with the form's own labels for the coded answers; the tests and rows that were left alone are not
+    const nextYear = new Date().getFullYear() + 1;
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid, {
+      'Papanicolaou test status: Completed': '[X] PAP test performed',
+      'Tanner staging, qualitative: Stage IV': '[X] IV',
+      [`Return visit date: ${nextYear}-11-03`]: `03 Nov ${nextYear}`, // date-only values arrive as yyyy-MM-dd and are shown as dd MMM yyyy
+    });
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    for (const [id, value] of Object.entries({ bp_systolic: '115', bp_diastolic: '75', weight: '64', height: '166' })) {
+      await expect(at(`#${id}`), id).toHaveText(value);
+    }
+    await expect(at('#physical-exam').filter({ hasText: 'Genital ulcers' })).toHaveText('[X] Genital ulcers');
+    await expect(at('#physical-exam').filter({ hasText: 'Neoplasm/cancer' })).toHaveText('[X] Neoplasm/cancer');
+    await expect(at('#susp-sti')).toHaveText('[X] Yes');
+    await expect(at('#sti-list')).toHaveText('[X] Gonorrhea');
+    await expect(at('#syphillis-rapid-test')).toHaveText('[X] Positive');
+    await expect(view.page.locator('#hiv-rapid-test .value, #HBsAg .value, #encounter-disposition .value')).toHaveCount(0); // not filled
+    await expect(at('#apptDate')).toHaveText(`03 Nov ${nextYear}`);
+    await expect(view.page.locator('#disposition-section .value')).toHaveText([`03 Nov ${nextYear}`, '[X] Mental health']);
+    await expect(view.page.locator('#buttons, textarea')).toHaveCount(0); // ifMode VIEW include=false :307
   });
 });

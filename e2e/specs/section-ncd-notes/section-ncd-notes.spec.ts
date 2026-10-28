@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_INITIAL_2_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-ncd-notes.xml: "NCD Overview" of the NCD initial part 2 encounter: reason for the visit and clinical
 // notes, two free-text areas. The specs use an NCD initial part 2 encounter (_availability.e2e.md: shown for part 2
@@ -12,7 +12,7 @@ import { SectionFormPage } from '../../pages';
 //   ifMode VIEW include=false  :42  #buttons (Next, Save, Cancel) in ENTER/EDIT only
 // Scripts: setUpNextAndSubmitButtons() (:17-19, navigation only: no rule, message or default).
 // Side effects on save: none. No required fields.
-// Not covered here: Next (needs the visit-page section wiring), VIEW mode.
+// EDIT is covered by the save test (saved text reopened), VIEW by the same test and by a blank save. Not covered here: Next (needs the visit-page section wiring).
 // Findings: none.
 
 const FORM = 'section-ncd-notes.xml';
@@ -60,5 +60,21 @@ test.describe('section-ncd-notes', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#reason-for-visit textarea')).toHaveValue('Referred for uncontrolled blood pressure');
     await expect(page.locator('textarea').nth(1)).toHaveValue('Counselled on salt intake');
+
+    // VIEW: both notes are shown as saved, in their own place, and the EDIT-only buttons and heading are absent (ifMode :12, :42)
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    await expect(view.page.locator('#reason-for-visit .value')).toHaveText('Referred for uncontrolled blood pressure');
+    expect(await view.valueTexts()).toEqual(['Referred for uncontrolled blood pressure', 'Counselled on salt intake']);
+    await expect(view.page.locator('#buttons, #next, #submit, #cancel')).toHaveCount(0);
+  });
+
+  test('VIEW of an encounter saved with both notes blank shows no value', async ({ page, api }) => {
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    await expect(view.values).toHaveCount(0);
+    await expect(view.page.locator('#reason-for-visit .emptyValue')).toHaveCount(1);
   });
 });

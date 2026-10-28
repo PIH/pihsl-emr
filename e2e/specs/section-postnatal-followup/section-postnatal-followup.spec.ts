@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { POSTNATAL_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-postnatal-followup.xml: postnatal followup visit (delivery date, danger signs, risk factors, vitals, tests,
 // treatment, diagnoses, orders, prevention and family planning, counselling, disposition, appointment). On the visit page
@@ -20,6 +20,8 @@ import { SectionFormPage } from '../../pages';
 // widget never show (tested); the second also calls setUpNextAndSubmitButtons() (#next/#submit). No validation or default.
 // Side effects on save: PregnancyProgramEnrollmentAction (:7) enrolls the patient in the Pregnancy program (tested),
 // CleanDiagnosisConstructAction and ApplyDispositionAction (:6, :8). No required field.
+// EDIT is covered by the reopen tests; VIEW by the last test (nothing unanswered is shown; the VIEW harness runs no page scripts, so
+// the "fhrDiv" hiding and the implant-date toggles of V1 are not exercised there).
 // Not covered here: vitals scoring and the Save block (shared, _shared.e2e.md), orders, the appointment widget, the
 // disposition, the last-vitals box (see _shared V3).
 //
@@ -146,5 +148,57 @@ test.describe('section-postnatal-followup', () => {
     // PregnancyProgramEnrollmentAction :7
     const enrollments = (await (await api.get(enrollmentsUrl)).json()).results as Array<{ program: { name: string } }>;
     expect(enrollments.some((e) => /pregnancy/i.test(e.program.name))).toBeTruthy();
+  });
+
+  // VIEW: a fuller save. The delivery date and time, a danger sign and a risk factor (the form's own labels), the lab and treatment
+  // answers, the family-planning method with its implant date (dd MMM yyyy), counselling and the clinical impression. The vitals, the
+  // disposition and the questions that were not answered show no value.
+  test('VIEW: shows the saved delivery date, danger sign, family planning method with its date and counselling, and nothing for the rest', async ({
+    page,
+    api,
+  }) => {
+    await page.getByLabel('Abnormal vaginal bleeding', { exact: true }).check();
+    await page.getByLabel('Postpartum haemorrhage', { exact: true }).check();
+    await page.locator('#malariaRDT input[type=radio]').first().check();
+    await page.locator('#fefol input[type=radio]').first().check();
+    await page.locator('#accepts-fp input[type=radio]').first().check();
+    await page.getByLabel('Implant', { exact: true }).check();
+    await page.evaluate(() => (window as any).jq('#implant-date input.hasDatepicker').first().datepicker('setDate', new Date(2026, 8, 3)));
+    await page.locator('#lab-treatment textarea').last().fill('Breast pain');
+    await page.locator('#counselling input[type=radio]').first().check();
+    await page.locator('#diagnosis textarea[rows="5"]').fill('Healthy postpartum woman');
+    await page.evaluate(() => (window as any).jq('#dateOfDelivery input.hasDatepicker').first().datepicker('setDate', new Date(2026, 8, 1)));
+    await page.locator('#submit').click();
+    await new SectionFormPage(page, FORM).expectSaved();
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Method of family planning: Jadelle (implantable contraceptive)': '[X] Implant',
+      'Risk factors for current pregnancy: Postpartum hemorrhage': '[X] Postpartum haemorrhage',
+      'Diagnosis order: Secondary': '', // written by CleanDiagnosisConstructAction (the danger sign is saved as a visit diagnosis), not by a field
+      'Date of implant placement: 2026-09-03': '03 Sep 2026', // a date-only value: the helper compares only text, number and coded values
+    });
+    const v = view.page;
+    expect(await view.valueTexts()).toEqual([
+      '01 Sep 2026', // delivery date
+      '12:00 AM', // delivery time
+      '[X] Abnormal vaginal bleeding',
+      '[X] Postpartum haemorrhage',
+      '[X] Positive', // malaria RDT
+      '[X] yes', // FeFol
+      'Breast pain',
+      'Healthy postpartum woman',
+      '[X] yes', // accepts family planning
+      '[X] Implant',
+      '03 Sep 2026', // implant date
+      '[X] yes', // counselled for HIV testing
+    ]);
+    await expect(v.locator('#dateOfDelivery .value')).toHaveText(['01 Sep 2026', '12:00 AM']);
+    await expect(v.locator('#malariaRDT .value')).toHaveText('[X] Positive');
+    await expect(v.locator('#fefol .value')).toHaveText('[X] yes');
+    await expect(v.locator('#accepts-fp .value')).toHaveText('[X] yes');
+    await expect(v.locator('#family-method .value')).toHaveText(['[X] Implant', '03 Sep 2026']);
+    await expect(v.locator('#implant-date .value')).toHaveText('03 Sep 2026');
+    await expect(v.locator('#vitals .value, #sickling .value, #ipt-sp .value, #disposition-section .value')).toHaveCount(0);
+    await expect(v.locator('#submit, #next, #cancel')).toHaveCount(0);
+    await expect(v.locator('a[href="/openmrs/spa/home/appointments"]')).toHaveCount(1); // ifMode VIEW include=true :458
   });
 });

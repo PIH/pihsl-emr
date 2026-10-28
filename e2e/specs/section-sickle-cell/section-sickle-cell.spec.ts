@@ -20,7 +20,8 @@
 // Script (:22-27): setUpNextAndSubmitButtons() only (Next / section buttons / Save); no validation or derived value.
 // Side effects on save: <postSubmissionAction CleanDiagnosisConstructAction> (:19, pihcore, not read); observed to add
 //   a "Diagnosis order: Secondary" obs to the saved diagnosis (asserted below). No program enrollment.
-// Not covered here: Next / section-jump buttons, VIEW mode, the "reason not on hydroxyurea" and "Other" comment boxes.
+// EDIT is covered by the two save tests (restored when-targets and ticks), VIEW by the same tests (exactly the saved answers).
+// Not covered here: Next / section-jump buttons, the "reason not on hydroxyurea" and "Other" comment boxes.
 //
 // Findings:
 //   V1 Low  :227, 265  <when> targets #scd-fui-malaria-details, -under-, -tite-, -adher-, -aware-, -family- and
@@ -35,7 +36,7 @@ import { type Locator, type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 const FORM = 'section-sickle-cell.xml';
 
@@ -151,6 +152,31 @@ test.describe('section-sickle-cell, NCD initial encounter', () => {
     await expect(page.locator('#side-effect-hydroxy-compl-details')).toBeVisible();
     await expect(page.getByLabel('Sickle-cell disease', { exact: true })).toBeChecked();
     await expect(page.getByLabel('Pancytopenia', { exact: true })).toBeChecked();
+
+    // VIEW: exactly the saved answers, each on its own question; the hydroxyurea side effect and its free text are shown.
+    // The form labels the diagnosis, the test and the symptoms differently from the concepts ("Diagnosis order: Secondary" is written
+    // by CleanDiagnosisConstructAction, not by a field of the form).
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Diagnosis: Sickle cell disease': '[X] Sickle-cell disease',
+      'Method of sickle cell confirmation: Hemoglobin electrophoresis by HPLC': '[X] HPLC',
+      'Symptom absent: Asymptomatic sickle cell': '[X] no',
+      'Symptom present: Pain': '[X] yes',
+      'Diagnosis order: Secondary': '',
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] Sickle-cell disease',
+      '[X] HPLC',
+      '[X] no', // asymptomatic
+      '[X] yes', // pain
+      '[X] yes', // hydroxyurea indicated
+      '[X] yes', // on hydroxyurea
+      '[X] yes', // side effect
+      '[X] Pancytopenia',
+      'Dry skin',
+    ]);
+    await expect(view.page.locator('#sickle-asymptom .value')).toHaveText('[X] no');
+    await expect(view.page.locator('#side-effect-hydroxy-compl-details .value')).toHaveText(['[X] Pancytopenia', 'Dry skin']);
+    await expect(view.page.locator('#scd-comp-q')).toHaveCount(0); // followup-only
   });
 });
 
@@ -228,5 +254,24 @@ test.describe('section-sickle-cell, NCD followup encounter', () => {
     await expect(within(page, 'scd-hydroxy-q', 'yes')).toBeChecked();
     await expect(within(page, 'hydroxy-treatment', 'yes')).toBeChecked();
     await expect(page.locator('#scd-comp-text').getByLabel('Anaemia', { exact: true })).toBeChecked();
+
+    // VIEW: the two obsgroups that share PIH:14872 (complications and hydroxyurea) each show their own answers, and the
+    // questions that were not answered (transfusion details, missed-dose count) show no value
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Complications related to sickle cell disease: Anemia': '[X] Anaemia',
+    });
+    const v = view.page;
+    await expect(v.locator('#scd-comp-q .value')).toHaveText('[X] yes');
+    await expect(v.locator('#scd-comp-text .value')).toHaveText('[X] Anaemia');
+    await expect(v.locator('#transfusion-status .value')).toHaveText('[X] no');
+    await expect(v.locator('#on-sickle-treatment .value')).toHaveText('[X] Yes');
+    await expect(v.locator('#sickle-treatment .value')).toHaveText('[X] Folic acid');
+    await expect(row(v, /^\s*Missed doses in past week/).locator('.value')).toHaveText('[X] no');
+    await expect(v.locator('#sickle-control .value')).toHaveText('[X] controlled');
+    await expect(v.locator('#scd-hydroxy-q .value')).toHaveText('[X] yes');
+    await expect(v.locator('#hydroxy-treatment .value')).toHaveText('[X] yes');
+    await expect(v.locator('#transfusion-details .value')).toHaveCount(0);
+    await expect(v.locator('#side-effect-hydroxy-compl-details .value')).toHaveCount(0);
+    expect(await view.valueTexts()).toHaveLength(9);
   });
 });

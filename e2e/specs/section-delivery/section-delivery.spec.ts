@@ -1,6 +1,6 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID } from '../../core/constants';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-delivery.xml: delivery summary, labor, up to three infants, findings and discharge. On the visit
 // page it is the "section" of the MCH delivery encounter; the specs open the form URL directly
@@ -12,6 +12,7 @@ import { SectionFormPage } from '../../pages';
 //   when HCW cadre = Other     :510  show #other-role
 //   js :78,89                  GA/EDD block hidden unless the patient has an LMP obs
 //   js :106-131                #fetus-2 / #fetus-3 hidden, Show more / Show less buttons
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test: the infant groups, the form's own answer labels, no third infant.
 // Not covered: the post-submission actions (program transition), which need a pregnancy enrollment.
 
 // Sections inside the form: delivery-intake, labor, delivery-section (infants 1-3), delivery-findings, hcw,
@@ -36,7 +37,8 @@ import { SectionFormPage } from '../../pages';
 //   V3 Low    :371     id="perineal tear" contains a space. Fix: perineal-tear.
 //   V4 Low    :141,324,359,394,449  literal English used as uimessage code or plain text; <h7> is not a valid element.
 //   V5 Low    :79      LMP is the patient's latest CIEL:1427 obs, not limited to the current pregnancy (unconfirmed).
-//   V6 Info   :73-95   the GA/EDD block exists only in ENTER/EDIT (ifMode VIEW excluded).
+//   V6 Info   :73-95   the GA/EDD block is filled and shown only in ENTER/EDIT (the script is ifMode VIEW excluded): in VIEW its markup stays
+//                      hidden (class "hidden") with two blank span.value (#calculated-edd, #calculated-gestational-age-value).
 
 const FORM = 'section-delivery.xml';
 
@@ -106,5 +108,96 @@ test.describe('section-delivery', () => {
 
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#fetus-2')).toBeVisible();
+  });
+
+  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): the infants are obs groups with showIfEmpty="false", so an infant without data is not
+  // shown at all; the answers the form labels itself (Alive / FSB / MSB, M / F, "2nd degree", the HCW cadre, the disposition) are not the concept names.
+  test('VIEW: shows what was saved per infant (and no third infant), with the form\'s own answer labels', async ({ page, api }) => {
+    const setDateTime = async (row: number, hour: string, minute: string) => {
+      const line = page.locator('p.date-one-line').nth(row);
+      await line.locator('input.hasDatepicker').click();
+      await page.locator('#ui-datepicker-div a.ui-state-default').first().click(); // a past day (the first cell of the calendar)
+      await line.locator('select.hfe-hours').selectOption(hour);
+      await line.locator('select.hfe-minutes').selectOption(minute);
+      return line.locator('input.hasDatepicker').inputValue(); // "dd MMM yyyy"
+    };
+    const admissionDate = await setDateTime(0, '9', '5');
+    const labourDate = await setDateTime(1, '14', '30'); // start of labour
+    await page.locator('.three-columns input[type=text]').nth(0).fill('3'); // gravida
+    await page.locator('.three-columns input[type=text]').nth(1).fill('2'); // para
+    await page.locator('.three-columns input[type=text]').nth(2).fill('38.4'); // gestational age
+    // infant 1: the whole group
+    const infant1 = page.locator('#fetus-1');
+    await infant1.locator('input.hasDatepicker').click();
+    await page.locator('#ui-datepicker-div a.ui-state-default').first().click(); // the delivery date/time defaults to today in ENTER only
+    const deliveryDate = await infant1.locator('input.hasDatepicker').inputValue();
+    await infant1.locator('select.hfe-hours').selectOption('15');
+    await infant1.locator('select.hfe-minutes').selectOption('45');
+    await infant1.getByRole('radio').nth(0).check(); // type: spontaneous vaginal
+    await infant1.getByLabel('Alive').check();
+    await infant1.getByLabel('F', { exact: true }).check();
+    await infant1.locator('input[type=text]').nth(1).fill('3.1'); // [0] is the delivery date
+    await infant1.locator('input[type=text]').nth(2).fill('50');
+    await infant1.locator('input[type=text]').nth(3).fill('34');
+    await infant1.locator('.apgar input').nth(0).fill('7');
+    await infant1.locator('.apgar input').nth(1).fill('8');
+    await infant1.locator('.apgar input').nth(2).fill('9');
+    await infant1.locator('#presentation input[type=radio]').nth(0).check();
+    // infant 2: stillbirth, presentation "Other" with its specify text
+    await page.locator('#show-more-fetus-button').click();
+    const infant2 = page.locator('#fetus-2');
+    await infant2.getByLabel('FSB').check();
+    await infant2.locator('input[type=text]').nth(1).fill('2.9');
+    await infant2.locator('#presentation').getByLabel('Other', { exact: true }).check();
+    await infant2.locator('#other-presentation input').fill('Oblique lie');
+    await page.getByLabel('2nd degree').check();
+    await page.getByLabel('Eclampsia', { exact: true }).check();
+    await page.getByLabel('Prolonged labour', { exact: true }).check();
+    await page.getByLabel('Birth asphyxia', { exact: true }).check();
+    await page.locator('#hcw input[type=text]').first().fill('Nurse Kamara');
+    await page.locator('#hcw').getByLabel('SECHN Midwife').check();
+    await page.locator('#encounter-disposition select').selectOption({ label: 'Discharge' });
+    await page.locator('#submit').click();
+    await new SectionFormPage(page, FORM).expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Diagnosis order: Secondary': '', // hidden metadata of the "Visit Diagnoses" construct
+      'Diagnosis: Prolonged labor': '[X] Prolonged labour',
+      'Child gender: Female': '[X] F',
+      'Qualitative birth outcome: Livebirth': '[X] Alive',
+      'Qualitative birth outcome: Fresh stillbirth': '[X] FSB',
+      'Perineal tear: Perineal laceration, second degree': '[X] 2nd degree',
+      'Disposition categories: Discharged': 'Discharge',
+    });
+    // the admission and labour dates print as "dd MMM yyyy" followed by the time as "h:mm AM/PM" (the hidden calculated GA/EDD spans are blank values)
+    await expect(view.page.locator('#delivery-intake .value').filter({ hasText: /\S/ })).toHaveText([admissionDate, '9:05 AM', '3', '2', '38.4']);
+    await expect(view.page.locator('#labor .value')).toHaveText([labourDate, '2:30 PM']);
+    // infant 1 has its whole group, infant 2 only what was entered, infant 3 is not rendered
+    await expect(view.page.locator('#fetus-1 .value')).toHaveText([
+      deliveryDate,
+      '3:45 PM',
+      '[X] Spontaneous vaginal delivery',
+      '[X] Alive',
+      '[X] F',
+      '3.1',
+      '50',
+      '34',
+      '7',
+      '8',
+      '9',
+      '[X] Breech presentation',
+    ]);
+    await expect(view.page.locator('#fetus-1')).toContainText('Infant 1');
+    await expect(view.page.locator('#fetus-2 .value')).toHaveText(['[X] FSB', '2.9', '[X] Other', 'Oblique lie']);
+    await expect(view.page.locator('#fetus-2')).toContainText('Infant 2');
+    await expect(view.page.locator('#fetus-3 .value, #fetus-3 .emptyValue')).toHaveCount(0);
+    await expect(view.page.locator('#fetus-3')).not.toContainText('Infant 3');
+    // the findings: only the ticked ones are values
+    await expect(view.page.locator('#delivery-findings .value')).toHaveText(['[X] Eclampsia', '[X] Prolonged labour', '[X] Birth asphyxia']);
+    await expect(view.page.locator('#hcw .value')).toHaveText(['Nurse Kamara', '[X] SECHN Midwife']); // answerCodes: the form's label, not the concept's
+    // what was not answered shows no value
+    await expect(view.page.locator('#postpartum-fp .value')).toHaveCount(0);
+    await expect(view.page.locator('#adt .value')).toHaveText(['Discharge']);
+    await expect(view.page.locator('#buttons, textarea, select, input[type=text], input[type=radio], input[type=checkbox]')).toHaveCount(0); // read-only
   });
 });

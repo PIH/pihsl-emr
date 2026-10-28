@@ -1,7 +1,7 @@
 import { type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // mentalHealth.xml: "Mental Health Intake" (encounter type a8584ab8-cc2a-11e5-9956-625662870761). A long single-page form:
 // referral, history, mental state exam, suicide evaluation, diagnoses, CGI scores, the PHQ-9/GAD-7 questionnaires, interventions,
@@ -21,8 +21,9 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 // Side effects on save: enrollInProgram "Mental Health" (:190, tested), ApplyDispositionAction (:23), drug orders and the disposition (not saved here).
 // Required: family history (:440-458), suicide evaluation (:670-699), primary diagnosis (:734), PIH:3293 "assigned CHW" (:925), provider and
 // location (shared); the Required messages and a save with all of them filled are tested.
+// VIEW is covered by one test that fills the referral, history, pregnancy dates, CGI-S and both questionnaires.
 // Not covered here: the drug-order widget (a saved order cannot be purged over REST), the disposition obs and its follow-up fields, the diagnosis
-// autocompletes, EDD validation messages, VIEW mode.
+// autocompletes, EDD validation messages.
 //
 // Findings:
 //   V1 High (FIXED, SL-1457, superseded by SL-434) the old sub-form mental-health-phq9-gad7-scores.xml:162 bound "Total GAD-7 score" to CIEL:165137 (the
@@ -31,6 +32,8 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //   V2 Low    :130-152        the `.medication-checkbox` block matches nothing in the rendered form (0 elements at load), so it is dead code; if the
 //                             class ever appears, `jq(it).not(':checked')` is a jQuery object and always truthy, so every row starts disabled even when
 //                             its box is checked (EDIT). Fix: remove it, or use `!jq(it).is(':checked')`.
+//   VW1 Info :881  the Pregnant toggle is not applied in VIEW, so #pregnant (LMP, EDD) is always rendered, blank for a patient who is not pregnant (the
+//                   calculated GA/EDD box is ENTER/EDIT script output and stays empty). Same as gainNewbornRegister VW1; not tested.
 
 const FORM = 'mentalHealth.xml';
 const MENTAL_HEALTH_INTAKE_ENCOUNTER_TYPE_UUID = 'a8584ab8-cc2a-11e5-9956-625662870761';
@@ -68,6 +71,24 @@ const startVisitDaysAgo = async (api: APIRequestContext, context: EntryContext, 
   start.setDate(start.getDate() - days);
   const res = await api.post(`visit/${context.visitUuid}`, { data: { startDatetime: start.toISOString() } });
   expect(res.ok(), `update visit: ${res.status()}`).toBeTruthy();
+};
+
+// The VIEW shows the answers in the form's own wording ("Several days" ... "Nearly every day", "Not at all", "Current") where the concepts name them
+// "Some days" ... "Daily or almost daily", "Never", "Currently", and a date-only obs (yyyy-MM-dd) as dd MMM yyyy: the labels for the generic VIEW check.
+const viewLabels = (obs: Awaited<ReturnType<typeof getEncounterObs>>): Record<string, string> => {
+  const wording: Record<string, string> = { 'Some days': 'Several days', 'Daily or almost daily': 'Nearly every day', Never: 'Not at all', Currently: 'Current' };
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const labels: Record<string, string> = {};
+  for (const o of obs) {
+    const answer = typeof o.value === 'object' && o.value ? (o.value as { display: string }).display : undefined;
+    if (answer && wording[answer]) {
+      labels[o.display] = wording[answer];
+    } else if (typeof o.value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.value)) {
+      const [y, m, d] = o.value.split('-');
+      labels[o.display] = `${d} ${MONTHS[Number(m) - 1]} ${y}`;
+    }
+  }
+  return labels;
 };
 
 test.describe('mentalHealth', () => {
@@ -274,5 +295,63 @@ test.describe('mentalHealth', () => {
     await expect(page.locator(SUBMIT)).toBeVisible();
     await expect(gad7Total(page)).toHaveValue('7');
     await expect(phq9Total(page)).toHaveValue('');
+
+    // VIEW: the same encounter shows the 7 under the GAD-7 total and no PHQ-9 total
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounterUuid, viewLabels(obs));
+    await expect(view.page.locator('#gad7-score .value')).toHaveText('7');
+    await expect(view.page.locator('#phq9-score .value')).toHaveCount(0);
+  });
+
+  // VIEW: everything the intake saved is shown (referral, alcohol, pregnancy dates, CGI-S, PHQ-9 and GAD-7 answers and totals), the coded answers
+  // with the form's own labels, and the sections and rows that were left empty carry no value.
+  test('VIEW: shows the referral, history, pregnancy dates, CGI score, PHQ-9 and GAD-7 answers as saved, and nothing for what was left empty', async ({ page, api }) => {
+    await open(page);
+    await page.locator('#mh_refer input[type=checkbox]').first().check();
+    await page.locator('p', { hasText: 'Alcohol' }).first().getByLabel('Current', { exact: true }).check();
+    await page.getByLabel('Pregnant', { exact: true }).check();
+    await setDate(page, '#lastPeriodDate', -70); // the script fills the EDD
+    await setDate(page, '#return-visit-date', 14);
+    await page.getByLabel('3 = Mildly ill', { exact: true }).check(); // CGI-S
+    await answerAll(page, '#phq9-questions', 'Several days'); // 9, then question 9 back to "Not at all": 8
+    await page.locator('#phq9-question9 select').selectOption({ label: 'Not at all' });
+    await answerAll(page, '#gad7-questions', 'Nearly every day'); // 21
+    await fillRequiredAndSave(page);
+    const encounterUuid = await onlyEncounterUuid(api);
+
+    const labels = { ...viewLabels(await getEncounterObs(api, encounterUuid)), 'Clinical Global Impressions Severity Score: 3': '3 = Mildly ill' };
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounterUuid, labels);
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+
+    await expect(at('#mh_refer')).toHaveText('[X] Teacher');
+    await expect(at('#mh_patientHistory')).toHaveText('[X] Current'); // alcohol; the other substances are blank
+    await expect(at('#mh_familyhistory')).toHaveText(['[X] No', '[X] No', '[X] No']);
+    await expect(at('#mh-diagnoses')).toHaveText('Symptoms of depression');
+    await expect(at('#mh_improvements')).toHaveText('[X] 3 = Mildly ill');
+    await expect(at('#phq9-questions')).toHaveText([...Array(8).fill('Several days'), 'Not at all', '8']); // nine answers, then the total
+    await expect(at('#gad7-questions')).toHaveText([...Array(7).fill('Nearly every day'), '21']);
+    await expect(at('#phq9-score')).toHaveText('8'); // totals are saved obs: the script that computes them is not in VIEW
+    await expect(at('#gad7-score')).toHaveText('21');
+    await expect(at('#mh-Outcome').filter({ hasText: 'Yes' })).toHaveText('[X] Yes'); // assigned CHW
+    // pregnancy: LMP, EDD and the return visit date are shown as dd MMM yyyy; the calculated GA/EDD box (ENTER/EDIT script) is not
+    const lmp = new Date();
+    lmp.setDate(lmp.getDate() - 70);
+    const DATE = /^\d{2} [A-Z][a-z]{2} \d{4}$/;
+    await expect(at('#lastPeriodDate')).toHaveText(new RegExp(`^${String(lmp.getDate()).padStart(2, '0')} ${lmp.toLocaleString('en', { month: 'short' })} ${lmp.getFullYear()}$`));
+    await expect(at('#edd')).toHaveText(DATE);
+    await expect(at('#return-visit-date')).toHaveText(DATE);
+    await expect(at('#calculated-edd-and-gestational')).toHaveText(['', '']);
+    // left empty: the interventions, the other history rows, the disposition
+    await expect(at('#mh-interventions')).toHaveCount(0);
+    await expect(at('#encounter-disposition')).toHaveCount(0);
+    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :946
+  });
+
+  test('VIEW: a male patient\'s encounter has no pregnancy block (includeIf :875)', async ({ page, api, createEntryContext }) => {
+    context = await createEntryContext({ givenName: 'AutoMentalHealthM', familyName: 'Tester', gender: 'M', birthdate: birthdateYearsAgo(30) });
+    await open(page);
+    await fillRequiredAndSave(page);
+    const view = await expectViewShowsSavedObs(page, api, FORM, await onlyEncounterUuid(api));
+    await expect(view.page.locator('#pregnant, #edd, #lastPeriodDate')).toHaveCount(0);
+    await expect(view.page.locator('#mh-Outcome .value').filter({ hasText: 'Yes' })).toHaveText('[X] Yes');
   });
 });

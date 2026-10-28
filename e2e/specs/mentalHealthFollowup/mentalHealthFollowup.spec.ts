@@ -2,7 +2,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // mentalHealthFollowup.xml: "Mental Health Follow-up" (encounter type 9d701a81-bb83-40ea-9efc-af50f05575f2), the short counterpart of
 // mentalHealth.xml (housing, presenting features, mental state exam, suicide evaluation, diagnoses, CGI scores with the previous values, the
@@ -26,13 +26,16 @@ import { EntryFormPage } from '../../pages';
 // Side effects on save: enrollInProgram "Mental Health" (:183, tested), ApplyDispositionAction (:23), drug orders and the disposition (not saved here).
 // Required: suicide evaluation (:402-433), primary diagnosis (:468), PIH:3293 "assigned CHW" (:681), provider and location (shared); the Required
 // messages and a save with all of them filled are tested.
+// VIEW is covered by one test (housing, presenting feature, pregnancy dates, CGI-S, PHQ-9; the previous-value rows are absent).
 // Not covered here: the drug-order widget (a saved order cannot be purged over REST), the disposition obs, the other CGI previous-value rows (only
-// CGI-S is seeded), the diagnosis autocompletes beyond the required one, EDD validation messages, VIEW mode.
+// CGI-S is seeded), the diagnosis autocompletes beyond the required one, EDD validation messages.
 //
 // Findings:
 //   V1 Low    :127-149        the `.medication-checkbox` block matches nothing in the rendered form (0 elements at load), so it is dead code; if the
 //                             class ever appears, `jq(it).not(':checked')` is a jQuery object and always truthy, so every row starts disabled even when
 //                             its box is checked (EDIT). Fix: remove it, or use `!jq(it).is(':checked')`. (Same as mentalHealth.xml V2.)
+//   VW1 Info :634  the Pregnant toggle is not applied in VIEW, so #pregnant (LMP, EDD) is always rendered, blank for a patient who is not pregnant (the
+//                   calculated GA/EDD box is ENTER/EDIT script output and stays empty). Same as gainNewbornRegister VW1; not tested.
 
 const FORM = 'mentalHealthFollowup.xml';
 const MENTAL_HEALTH_FOLLOWUP_ENCOUNTER_TYPE_UUID = '9d701a81-bb83-40ea-9efc-af50f05575f2';
@@ -72,7 +75,7 @@ const startVisitDaysAgo = async (api: APIRequestContext, context: EntryContext, 
 
 // An earlier followup (3 days ago, before the visit starts, outside any visit) with a seizure frequency of 4 per month and CGI-S 3, which the
 // "previous value" rows (:516, :552) read through fn.latestObs(..., aMomentBefore(encounter date)).
-const createPriorFollowup = async (api: APIRequestContext, context: EntryContext): Promise<void> => {
+const createPriorFollowup = async (api: APIRequestContext, context: EntryContext): Promise<string> => {
   const earlier = new Date();
   earlier.setDate(earlier.getDate() - 3);
   const res = await api.post('encounter', {
@@ -88,6 +91,7 @@ const createPriorFollowup = async (api: APIRequestContext, context: EntryContext
     },
   });
   expect(res.ok(), `create prior encounter: ${res.status()}`).toBeTruthy();
+  return (await res.json()).uuid;
 };
 
 test.describe('mentalHealthFollowup', () => {
@@ -231,5 +235,53 @@ test.describe('mentalHealthFollowup', () => {
     // enrollInProgram :183
     const enrollments = (await (await api.get(enrollmentsUrl)).json()).results as Array<{ program: { name: string } }>;
     expect(enrollments.some((e) => /mental health/i.test(e.program.name))).toBeTruthy();
+  });
+
+  // VIEW: everything the follow-up saved is shown (housing, presenting feature, pregnancy dates, CGI-S, PHQ-9 answers and total), the coded answers
+  // with the form's own labels; the "previous value" rows (ENTER/EDIT only) and what was left empty carry no value.
+  test('VIEW: shows the saved answers, dates and scores as saved, and not the previous-value rows nor what was left empty', async ({ page, api }) => {
+    const priorUuid = await createPriorFollowup(api, context); // seizure frequency 4 and CGI-S 3 earlier: the previous-value rows exist in ENTER
+    await open(page);
+    await expect(previousRows(page)).toHaveCount(2);
+    await page.locator('#housing input').first().check();
+    await page.locator('#mh_presentingFeatures input[type=checkbox]').first().check();
+    await page.getByLabel('Pregnant', { exact: true }).check();
+    await setDate(page, '#lastPeriodDate', -70); // the script fills the EDD
+    await setDate(page, '#return-visit-date', 14);
+    await page.getByLabel('2 = Borderline mentally ill', { exact: true }).check(); // CGI-S, different from the earlier 3
+    for (const select of await page.locator('#phq9-questions select').all()) {
+      await select.selectOption({ label: 'More than half the days' });
+    }
+    await fillRequiredAndSave(page);
+
+    const encounter = (await getPatientEncounters(api, context.patient.uuid)).find((e) => e.uuid !== priorUuid)!;
+
+    // a date-only obs arrives as yyyy-MM-dd and is shown as dd MMM yyyy; the coded answers of the questionnaire and the housing/pregnancy
+    // checkboxes are shown with the form's wording
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const labels: Record<string, string> = { 'Pregnancy status: Yes': '[X] Pregnant', 'Clinical Global Impressions Severity Score: 2': '2 = Borderline mentally ill' };
+    for (const o of await getEncounterObs(api, encounter.uuid)) {
+      if (typeof o.value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(o.value)) {
+        const [y, m, d] = o.value.split('-');
+        labels[o.display] = `${d} ${MONTHS[Number(m) - 1]} ${y}`;
+      }
+    }
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, labels);
+    const at = (selector: string) => view.page.locator(`${selector} .value`);
+    await expect(at('#housing')).toHaveText('[X] Currently homeless');
+    await expect(at('#mh_presentingFeatures')).toHaveText('[X] Hallucinations');
+    await expect(at('#mh-diagnoses')).toHaveText('Symptoms of depression');
+    await expect(at('#mh_improvements')).toHaveText('[X] 2 = Borderline mentally ill'); // not the earlier 3, which is only a previous value
+    await expect(view.page.locator('#mh_improvements label[style*="italic"]')).toHaveCount(0); // the previous-value rows are ENTER/EDIT only (:515, :551)
+    await expect(at('#phq9-questions')).toHaveText([...Array(9).fill('More than half the days'), '18']); // nine answers, then the total
+    await expect(at('#phq9-score')).toHaveText('18');
+    await expect(view.page.locator('#gad7-score .value, #gad7-questions .value')).toHaveCount(0); // GAD-7 left empty: no total
+    await expect(at('#mh-Outcome').filter({ hasText: 'Pregnant' })).toHaveText('[X] Pregnant');
+    await expect(at('#lastPeriodDate')).toHaveText(/^\d{2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(at('#edd')).toHaveText(/^\d{2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(at('#return-visit-date')).toHaveText(/^\d{2} [A-Z][a-z]{2} \d{4}$/);
+    await expect(at('#mh-interventions')).toHaveCount(0);
+    await expect(at('#encounter-disposition')).toHaveCount(0);
+    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :703
   });
 });

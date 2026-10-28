@@ -2,7 +2,7 @@ import { type Locator, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type SectionEncounter, type SectionEncounterOptions } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // section-exam.xml: physical exam of the outpatient encounter (11 body-system blocks of Normal / abnormal findings plus a
 // Pediatric Assessment block). Under the Outpatient initial type it hangs next to section-history; it is also used for the
@@ -22,8 +22,9 @@ import { SectionFormPage } from '../../pages';
 //   Duration / Units (:126-127) are .abnormalObs but are not checkboxes, so Normal does not clear them. Then
 //   setUpNextAndSubmitButtons() (see _shared.e2e.md). :105-109 hideIfEmpty runs in VIEW only.
 // Side effects on save: none (obs only).
-// Not covered here: VIEW mode (REST-created encounters have no form; hideIfEmpty); the free-text comment fields and the
-//   "Other" comment fields of each block (plain obs).
+// VIEW is covered by the last two tests (per-block values; weight-loss group, comment and peds block); the hideIfEmpty script (:105-109)
+//   needs the page's jQuery and is not run by the harness (the VIEW HTML is loaded with setContent), so the blocks that stay empty are checked
+//   to hold no value instead. Not covered here: the "Other" comment fields of each block (plain obs).
 //
 // Findings:
 //   V1 Low  :126-127  ticking Normal in the General block unticks "Weight loss" but leaves its Duration / Units filled; the
@@ -181,5 +182,53 @@ test.describe('section-exam', () => {
     expect(displays).toContain('urogenital exam findings: chronic pelvic pain in female');
     // V2: Pulmonary "Tachypneic" is saved under GENERAL EXAM FINDINGS, next to General "Normal"
     expect(displays).toContain('general exam findings: tachypneic');
+
+    // VIEW: the exam is rendered in blocks; Pulmonary "Tachypneic" (V2: a GENERAL EXAM FINDINGS answer) is still shown in its own block.
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Urogenital exam findings: Chronic pelvic pain in female': 'Chronic pelvic pain', // the form's own answerLabel
+    });
+    const viewBlock = (id: string) => view.page.locator(`#${id} + .exam .value`);
+    await expect(viewBlock('general')).toHaveText(['[X] Normal']);
+    await expect(viewBlock('cardio')).toHaveText(['[X] Tachycardia']);
+    await expect(viewBlock('chest')).toHaveText(['[X] Tachypneic']);
+    await expect(viewBlock('abs')).toHaveText(['[X] Abdominal mass']);
+    await expect(viewBlock('uro')).toHaveText(['[X] Chronic pelvic pain']);
+    // blocks that were not touched show no value, and an adult has no Pediatric Assessment block
+    for (const id of ['mental', 'skin', 'heent', 'lymph', 'neuro', 'musculo']) {
+      await expect(viewBlock(id), id).toHaveCount(0);
+    }
+    await expect(view.page.locator('#peds-dev')).toHaveCount(0);
+  });
+
+  // VIEW of the obsgroup (Weight loss + Duration + Units), a comment, and the Pediatric Assessment block (a child under 12).
+  test('VIEW: shows the weight-loss group, the general comment and the Pediatric Assessment of a child', async ({
+    page,
+    createSectionEncounter,
+    api,
+  }) => {
+    await open(page, createSectionEncounter, { gender: 'F', age: 10 });
+    await tick(box(page, 'general', 'Weight loss'));
+    await block(page, 'general').locator('.indented input[type=text]').first().fill('3');
+    await block(page, 'general').locator('.indented select').selectOption({ index: 1 });
+    await block(page, 'general').locator('textarea').fill('Thin, no fever');
+    const gross = page.locator('#gross').locator('xpath=ancestor::div[contains(@class,"exam")][1]');
+    await tick(gross.getByLabel('Abnormal', { exact: true }));
+    await gross.locator('textarea').fill('Cannot sit unaided');
+    const form = new SectionFormPage(page, FORM);
+    await form.save();
+    await form.expectSaved();
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    const general = view.page.locator('#general + .exam .value');
+    await expect(general).toHaveCount(4);
+    await expect(general.nth(0)).toHaveText('[X] Weight loss');
+    await expect(general.nth(1)).toHaveText('3');
+    await expect(general.nth(3)).toHaveText('Thin, no fever');
+    await expect(view.page.locator('#general + .exam .emptyValue', { hasText: '[  ] Normal' })).toHaveCount(1);
+    const shown = await view.valueTexts();
+    expect(shown).toContain('[X] Abnormal'); // gross motor skills
+    expect(shown).toContain('Cannot sit unaided');
+    await expect(view.page.locator('#peds-dev')).toHaveCount(1);
+    await expect(view.page.locator('#heent + .exam .value')).toHaveCount(0);
   });
 });

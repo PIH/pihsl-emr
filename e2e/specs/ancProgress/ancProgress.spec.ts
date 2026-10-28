@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage } from '../../pages';
+import { EntryFormPage, SectionFormPage, ViewFormPage, expectViewShowsSavedObs, viewMismatches } from '../../pages';
 
 // ancProgress.xml: "ANC Progress" (MCOE antenatal progress note): intake, vitals, lab results, pregnancy complications,
 // general and obstetrical exam (up to 3 foetuses), diagnosis and outcome. The specs open enterHtmlFormWithStandardUi
@@ -25,7 +25,10 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 // Side effects on save: postSubmissionActions CleanDiagnosisConstructAction, ApplyDispositionAction and
 //   PregnancyProgramEnrollmentAction (patient is enrolled in the Pregnancy program, asserted below).
 // Not covered here: disposition (ApplyDispositionAction; transfer/death side effects), diagnosis search widget, lab
-//   results and vitals scoring (shared widgets, _shared.e2e.md), VIEW mode, the "form shown" path of other locations.
+//   results and vitals scoring (shared widgets, _shared.e2e.md), the "form shown" path of other locations.
+// EDIT: only the foetus 2 reopen (V1). VIEW (end of the save test and the "VIEW:" tests): every saved value is shown (the twins diagnosis comes from
+//   the diagnosis widget, not a span.value), foetus groups, scar details and "Other" specify boxes show their own values, foetus 2/3 are not shown
+//   when empty, and the two VW findings below are tested. The VIEW has no scripts: the EDD/GA block stays hidden by design (ENTER/EDIT only), as do show more/less.
 //
 // Findings:
 //   V1 Medium :102   hasValue() looks for '.fetusDeliveryTime input' (copied from laborDeliverySummary); no such class
@@ -40,8 +43,23 @@ import { EntryFormPage, SectionFormPage } from '../../pages';
 //                    shown in the browser's time zone: EDD is one day early in time zones west of UTC (not Sierra Leone).
 //   V5 Info   :369-373 "twins or triplets" (PIH:DIAGNOSIS = Multiple gestation inside a PIH:Visit Diagnoses group) and the
 //                    "Multiple gestation" complication box (:285) record the same fact twice.
+//   VW1 Medium :408-496 the foetus obs groups carry no foetus number, so VIEW (like EDIT, V1) binds them to the slots itself: when foetus 2 has more
+//                    members than foetus 1, foetus 2's values are shown under "Foetus 1" and foetus 1's under "Foetus 2" (saved 140/Doppler and
+//                    150/Pinard/Breech/posterior, shown 150... in slot 1). Fix: store the foetus number in each group (e.g. a hidden obs set from {0})
+//                    and bind by it. (TESTED, test.fail)
+//   VW2 Medium :574, :599 (V3 in VIEW) the two "Notes" are one concept, so a note typed only in Outcome is shown under Diagnosis and the Outcome
+//                    notes stay blank in VIEW (the first widget takes the first obs). With both filled, the two notes were seen swapped between
+//                    the sections in one of two runs (the obs order is not fixed). Fix: use two different concepts. (TESTED, test.fail)
 
 const FORM = 'ancProgress.xml';
+
+// Coded answers the form labels differently from the concept name (obs display -> text shown in VIEW).
+const VIEW_LABELS: Record<string, string> = {
+  'Antenatal and postnatal care team: Team B': 'B',
+  'Method of gestational age determination: Obstetric ultrasound': 'Ultrasound',
+  'General exam findings: Pallor': 'Pale',
+  'Fetal heart rate monitoring method: Fetal doppler': 'Doppler',
+};
 const DAY_MS = 86400000;
 
 const saveForm = async (page: Page) => {
@@ -270,6 +288,35 @@ test.describe('ancProgress', () => {
     ];
     expect(expected.filter((e) => !displays.includes(e))).toEqual([]);
     expect(await pregnancyEnrollments(api, context.patient.uuid)).toContain('Pregnancy');
+
+    // VIEW: every saved value is shown (the diagnoses come from the diagnosis widget, not a span.value)
+    const view = await ViewFormPage.open(page, FORM, encounters[0].uuid);
+    expect((await viewMismatches(api, view, encounters[0].uuid, VIEW_LABELS)).filter((m) => !m.startsWith('Diagnosis'))).toEqual([]);
+    // (the labels are short: check them as whole selected options too; the two empty values are the hidden EDD block). Sorted: the two Notes
+    // are one concept and HFE gives them to the two widgets in either order (VW2).
+    expect((await view.valueTexts()).filter((t) => t !== '').sort()).toEqual(
+      [
+        '[X] B',
+        '2',
+        '1',
+        '[X] Ultrasound',
+        '120',
+        '80',
+        '80',
+        '[X] Malaria',
+        '[X] Pale',
+        '[X] yes',
+        '[X] twins or triplets',
+        '140',
+        '[X] Doppler',
+        '[X] Cephalic or vertex presentation',
+        '[X] anterior',
+        '[X] normal',
+        'Diagnosis section note',
+        '[X] satisfactory',
+        'Outcome section note',
+      ].sort(),
+    );
   });
 
   // V1 (Medium): hasValue() checks a class that does not exist, so saved foetus 2 data is hidden when the form is reopened.
@@ -293,5 +340,95 @@ test.describe('ancProgress', () => {
     await expect(page.locator('#buttons input.submitButton')).toBeVisible();
     await expect(page.locator('#fetus-hr-2 input')).not.toHaveValue('');
     await expect(page.locator('#fetus-2')).toBeVisible({ timeout: 3000 });
+  });
+
+  // ---- VIEW (viewEncounterWithHtmlForm getAsHtml.action) ----
+  test('VIEW: shows the scar details and only the foetus that has data, and leaves the rest blank', async ({ page, api }) => {
+    await pickLocation(page);
+    await page.locator('#ab-scar').getByLabel('yes', { exact: true }).check();
+    await page.locator('#ab-scar-details input:visible').nth(0).fill('2');
+    await page.locator('#ab-scar-details input:visible').nth(1).fill('Pfannenstiel');
+    await page.locator('#fetus-hr-1 input').fill('140');
+    await page.locator('#fetal_hr_method-1').getByLabel('Doppler').check();
+    await page.locator('#fetus-presentation-1').getByLabel('Other', { exact: true }).check();
+    await page.locator('#other-presentation-1 input').fill('Transverse lie');
+    await page.locator(`[id="ob-us=1"]`).getByLabel('Other', { exact: true }).check();
+    await page.locator('#other-ob-us-find-1 input').fill('Short cord');
+    await page.locator('#placenta-location-1').getByLabel('posterior').check();
+    await saveForm(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    expect(await viewMismatches(api, view, encounter.uuid, VIEW_LABELS)).toEqual([]);
+    const shown = await view.valueTexts();
+    for (const expected of ['[X] yes', '2', 'Pfannenstiel', '140', '[X] Doppler', '[X] Other', 'Transverse lie', 'Short cord', '[X] posterior']) {
+      expect(shown, expected).toContain(expected);
+    }
+    // the "Other" specify boxes of the presentation and the ultrasound finding carry their own text
+    await expect(view.page.locator('#other-presentation-1 .value')).toHaveText('Transverse lie');
+    await expect(view.page.locator('#other-ob-us-find-1 .value')).toHaveText('Short cord');
+    // foetus groups are showIfEmpty="false": foetus 2 and 3 have no heading, no fields and no values
+    await expect(view.page.locator('h6')).toHaveCount(1);
+    await expect(view.page.locator('#fetus-2 .value, #fetus-3 .value, #fetus-2 .emptyValue, #fetus-3 .emptyValue')).toHaveCount(0);
+    // what was not answered is blank: the abdominal exam findings, the complications and the outcome
+    await expect(view.page.locator('#pregnancy-complications .value')).toHaveCount(0);
+    await expect(view.page.locator('#outcome .value')).toHaveCount(0);
+    await expect(view.page.locator('#gen-exam .value')).toHaveCount(0);
+  });
+
+  // VW1 (Medium): the foetus groups carry no foetus number, so HFE binds them to the slots itself: when foetus 2 has more members than foetus 1,
+  // VIEW shows foetus 2's data under "Foetus 1" and foetus 1's under "Foetus 2" (same cause as V1; two groups with the same members stay in order).
+  // Intended: each foetus under its own heading. Remove test.fail() when fixed.
+  test('VIEW: each foetus is shown under its own number (VW1)', async ({ page, api }) => {
+    test.fail();
+    await pickLocation(page);
+    await page.locator('#fetus-hr-1 input').fill('140');
+    await page.locator('#fetal_hr_method-1').getByLabel('Doppler').check();
+    await page.locator('#show-more-fetus-button').click();
+    await page.locator('#fetus-hr-2 input').fill('150');
+    await page.locator('#fetal_hr_method-2').getByLabel('Pinard').check();
+    await page.locator('#fetus-presentation-2').getByLabel('Breech presentation', { exact: true }).check(); // foetus 2 has more members than foetus 1
+    await page.locator('#placenta-location-2').getByLabel('posterior').check();
+    await saveForm(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(view.page.locator('#fetus-hr-1 .value')).toHaveText('140');
+    await expect(view.page.locator('#fetal_hr_method-1 .value')).toHaveText('[X] Doppler');
+    await expect(view.page.locator('#fetus-hr-2 .value')).toHaveText('150');
+    await expect(view.page.locator('#fetal_hr_method-2 .value')).toHaveText('[X] Pinard');
+  });
+
+  // VW2 (Medium): the Diagnosis and Outcome "Notes" are two widgets on one concept (V3), and HFE fills them in order: a note typed only under
+  // Outcome is shown under Diagnosis in VIEW. Intended: shown under Outcome. Remove test.fail() when fixed.
+  test('VIEW: a note typed only under Outcome is shown under Outcome (VW2)', async ({ page, api }) => {
+    test.fail();
+    await pickLocation(page);
+    await page.locator('#outcome textarea:visible').fill('Outcome section note');
+    await saveForm(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(view.page.locator('#outcome .value').filter({ hasText: 'Outcome section note' })).toHaveCount(1);
+    await expect(view.page.locator('#diagnosis .value')).toHaveCount(0);
+  });
+
+  // The EDD and gestational age block is computed by the ENTER/EDIT script only (by design): in VIEW it stays hidden (class "hidden").
+  test('VIEW: with an earlier LMP the calculated EDD block stays hidden and nothing is calculated', async ({ page, api }) => {
+    await createPriorLmp(api, context.patient.uuid, 100);
+    await openForm(page, context);
+    await pickLocation(page);
+    await page.locator('p', { hasText: 'Gravida' }).locator('input').first().fill('2');
+    await saveForm(page);
+    await new EntryFormPage(page, FORM).expectSaved();
+    const encounter = (await getPatientEncounters(api, context.patient.uuid)).find((e) => e.encounterType.uuid !== ANC_INTAKE_ENCOUNTER_TYPE_UUID)!;
+
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    expect(await view.valueTexts()).toContain('2');
+    await expect(view.page.locator('#calculated-edd-and-gestational')).toHaveClass(/hidden/);
+    await expect(view.page.locator('#calculated-gestational-age-value')).toBeEmpty();
   });
 });

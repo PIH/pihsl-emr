@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-heart-failure.xml: heart failure section of the NCD initial (main diagnosis and sub-diagnoses) and
@@ -26,7 +26,8 @@ import type { Page } from '@playwright/test';
 //   "#hf-required-msg", "Required") from sl.js (see _shared V6): no main diagnosis ticked -> "Required" in
 //   #hf-required-msg and save blocked (beforeSubmit returns false). No formula or default.
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19) completes the "Visit Diagnoses" constructs.
-// Not covered here: VIEW mode; the Next / other-section buttons (navigation, _shared); date pickers (referral, surgery).
+// EDIT is covered by the followup save (saved surgery tick) and the V2 reopen test, VIEW by the two save tests and the V2 VIEW test.
+// Not covered here: the Next / other-section buttons (navigation, _shared); date pickers (referral, surgery).
 //
 // Findings:
 //   V1 High   :115-118 answerConceptIds PIH:20167 (concept "Other rheumatic heart disease") and PIH:20168 ("Unknown rheumatic
@@ -37,7 +38,8 @@ import type { Page } from '@playwright/test';
 //                      value to the first widget, which sits in #cardiomyopathy (hidden unless Cardiomyopathy is ticked and
 //                      cleared when hidden), so the text entered under Rheumatic heart disease is not shown when the form is
 //                      reopened and is dropped by the next save. Fix: use a different concept for the rheumatic text.
-//                      TESTED below (test.fail; reopen only, no second save).
+//                      TESTED below (test.fail; reopen only, no second save), and in VIEW (the VIEW prints the rheumatic text in the
+//                      Cardiomyopathy block and leaves the Rheumatic "specify" blank).
 //   V3 Low    :232-239 #unknownHeart ("Unknown suspected, specify", concept "Congenital heart disease comment") is toggled by
 //                      PIH:12231 "Other heart valve disease or congenital heart disease", not by PIH:20004 "Unknown heart failure
 //                      without echocardiogram" (#hfNoEcho, no target): label and trigger do not match (unconfirmed intent).
@@ -168,6 +170,34 @@ test.describe('section-heart-failure: NCD initial', () => {
     expect(displays).toContain('NYHA Class: NYHA Class II');
     expect(displays.some((d) => /dyspnea/i.test(d))).toBeTruthy();
     expect(displays.some((d) => /euvolemi/i.test(d))).toBeTruthy();
+
+    // VIEW: exactly the saved answers, each by the form's own label ("Diagnosis order: Secondary" is written by
+    // CleanDiagnosisConstructAction, not by a field of the form); sub-diagnoses appear in their block, the other blocks are empty
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'Diagnosis: Rheumatic mitral stenosis': '[X] Pure mitral stenosis',
+      'Diagnosis: Atrial septal defect': '[X] Atrial septal defect (ASD)',
+      'Symptom present: Dyspnea': '[X] yes',
+      'NYHA Class: NYHA Class II': '[X] II (Comfortable with moderate exercise)',
+      'Diagnosis order: Secondary': '',
+    });
+    expect(await view.valueTexts()).toEqual([
+      '[X] Rheumatic heart disease',
+      '[X] Congenital heart disease',
+      '[X] Pure mitral stenosis',
+      '[X] Atrial septal defect (ASD)',
+      '[X] Other congenital heart disease',
+      'congenital note',
+      '[X] yes', // dyspnea
+      '[X] Euvolemic',
+      '[X] II (Comfortable with moderate exercise)',
+    ]);
+    await expect(view.page.locator('#rheumaticHeart .value')).toHaveText(['[X] Pure mitral stenosis']);
+    await expect(view.page.locator('#congenitalHeart .value')).toHaveText([
+      '[X] Atrial septal defect (ASD)',
+      '[X] Other congenital heart disease',
+      'congenital note',
+    ]);
+    await expect(view.page.locator('#cardiomyopathy .value, #degenHeart .value, #arrythmia .value')).toHaveCount(0);
   });
 
   // V1 (High): the answerCodes of PIH:20167 / PIH:20168 are swapped, so the "Other rheumatic heart disease" radio
@@ -201,6 +231,23 @@ test.describe('section-heart-failure: NCD initial', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#rheumaticHeart')).toBeVisible();
     await expect(page.locator('#rheumaticHeart input[type=text]')).toHaveValue('rheumatic other text');
+  });
+
+  // V2 in VIEW: the rheumatic text is saved under the Cardiomyopathy concept, so the VIEW prints it in the Cardiomyopathy block
+  // (observed: "Cardiomyopathy if other cardiomyopathy, specify: rheumatic other text", Cardiomyopathy not ticked) and leaves the
+  // Rheumatic block's "specify" blank. Same root cause as V2. Intended: the text is shown under Rheumatic heart disease.
+  test('VIEW shows the "other rheumatic heart disease" text under Rheumatic heart disease (V2)', async ({ page }) => {
+    test.fail();
+    const form = await SectionFormPage.openEdit(page, FORM, section);
+    await page.locator('#hf-main-dx').getByLabel(/^Rheumatic heart disease$/).check();
+    await page.locator('#rheumaticHeart input[type=text]').fill('rheumatic other text');
+    await page.getByLabel('II (Comfortable with moderate exercise)').check();
+    await form.save();
+    await form.expectSaved();
+
+    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
+    await expect(view.page.locator('#rheumaticHeart .value')).toHaveText('rheumatic other text');
+    await expect(view.page.locator('#cardiomyopathy .value')).toHaveCount(0);
   });
 });
 
@@ -301,5 +348,21 @@ test.describe('section-heart-failure: NCD followup', () => {
     await expect(page.locator('#cardiac-surgery-details')).toBeVisible();
     await expect(page.locator('#cardiac-surgery-details').getByLabel('Valvuloplasty')).toBeChecked();
     await expect(page.locator('#hf-uncontrolled-admit')).toBeVisible();
+
+    // VIEW: each answer is on its own row, "Send for admission" is shown, and the surgery tick and its procedure are shown
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, {
+      'NCD clinical status: Not controlled': '[X] uncontrolled',
+      'NYHA Class: NYHA Class III': '[X] III (Comfortable resting)',
+      'Procedure performed: Cardiothoracic surgery': '[X] Cardiac surgery performed',
+    });
+    const v = view.page;
+    await expect(v.locator('#hf-fui-missed .value')).toHaveText('[X] no');
+    await expect(v.locator('#hf-fui-adher .value')).toHaveText('[X] yes');
+    await expect(v.locator('#hf-controlled .value')).toHaveText('[X] uncontrolled');
+    await expect(v.locator('#hf-uncontrolled-admit .value')).toHaveText('[X] yes');
+    await expect(v.locator('p').filter({ hasText: /^\s*On beta-blockers/ }).locator('.value')).toHaveText('[X] yes');
+    await expect(v.locator('#cardiac-surgery-details .value')).toHaveText('[X] Valvuloplasty');
+    await expect(v.locator('#hf-fui-missed-details .value')).toHaveCount(0); // missed doses was "no"
+    expect(await view.valueTexts()).toHaveLength(8);
   });
 });

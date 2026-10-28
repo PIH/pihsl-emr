@@ -1,7 +1,7 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
 import { OUTPATIENT_FOLLOWUP_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
-import { EntryFormPage } from "../../pages";
+import { EntryFormPage, ViewFormPage } from "../../pages";
 
 // outpatient-followup.xml: header form ("Outpatient Followup"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -10,8 +10,11 @@ import { EntryFormPage } from "../../pages";
 // Conditions: ifMode ENTER (encounter-with-sections.xml:12) auto-submits only when provider, location and date all have a value.
 // The provider defaults to the current user, but the form has no location override: the shared default widget starts empty here (2 options),
 // so the form is shown: Next (#next) hidden, Save (#submit) visible, location required (encounter-provider-location-date).
-// Side effects on save: none. Not covered: Next to the section forms, VIEW/EDIT modes, shared provider/location/date behaviour.
+// Side effects on save: none. VIEW is covered by the save test (the header has no content of its own in VIEW: ifMode VIEW include=false on the
+// title, the provider/location/date block and the buttons, so the saved encounter renders blank). Not covered: Next to the section forms, EDIT mode,
+// shared provider/location/date behaviour.
 
+const FORM = "outpatient-followup.xml";
 const LOCATION_SELECT = "#w3";
 
 test.describe("outpatient-followup", () => {
@@ -27,11 +30,7 @@ test.describe("outpatient-followup", () => {
       birthdate: birthdateYearsAgo(30),
     });
 
-    const form = await EntryFormPage.open(
-      page,
-      "outpatient-followup.xml",
-      context,
-    );
+    const form = await EntryFormPage.open(page, FORM, context);
 
     // encounter-with-sections.xml:12: a blank location keeps the form shown and hides Next
     await expect(page.locator(LOCATION_SELECT)).toHaveValue("");
@@ -57,11 +56,7 @@ test.describe("outpatient-followup", () => {
       birthdate: birthdateYearsAgo(30),
     });
 
-    const form = await EntryFormPage.open(
-      page,
-      "outpatient-followup.xml",
-      context,
-    );
+    const form = await EntryFormPage.open(page, FORM, context);
     // the options are real locations: pick by index, never by name
     await page.locator(LOCATION_SELECT).selectOption({ index: 1 });
     await form.save();
@@ -74,5 +69,12 @@ test.describe("outpatient-followup", () => {
         ),
       )
       .toEqual([OUTPATIENT_FOLLOWUP_ENCOUNTER_TYPE_UUID]);
+
+    // VIEW: nothing but the (empty) shell: no saved value, and none of the ENTER/EDIT widgets or buttons
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
+    await expect(view.values).toHaveCount(0);
+    await expect(page.locator("#who-when-where, #buttons, input, select, textarea, button")).toHaveCount(0);
+    await expect(page.locator("h2")).toHaveCount(0);
   });
 });

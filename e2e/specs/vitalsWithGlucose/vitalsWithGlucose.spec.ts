@@ -1,7 +1,7 @@
 import { type Page, type APIRequestContext } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type CustomTestFixtures, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 
 // vitalsWithGlucose.xml: "Vitals with glucose" (vitals.xml without TB screening/mobility/"confused", with a second BP
 // and a "Glucose fingerstick" question: fasting yes/no, FBG, RBG, coded glucose). Reached with a synthetic patient with
@@ -17,14 +17,16 @@ import { EntryFormPage } from '../../pages';
 //   includeIf age < 13 / age > 12    :720, :724   muac_cm max 27 (child) / 56 (female 13+)
 //   includeIf age < 5                :750         z-score obs
 //   includeIf age < 3                :355, :766   head circumference and MUAC/HC ratio box and script
-//   ifMode VIEW (include true/false) :26-:716     view-only vs entry-only blocks; VIEW cannot be tested (no form on a REST encounter)
+//   ifMode VIEW (include true/false) :26-:716     view-only vs entry-only blocks (VIEW is tested: see openViewWithScripts)
 // Scripts: :127 Fahrenheit / lbs / inches converters (V2); :190-229 BMI = kg/(cm/100)^2, one decimal; :275-322 cm -> mm
 //   (x10) and mm -> cm (/10) on exit of muac_cm/muac_mm (V3); :356-395 ratio = (mm/10)/HC; :450-481 glucose toggle on
 //   change of #fasting: Yes (CIEL:1065, "FBG") enables #fbg and disables/hides #rbg and #glucose-coded; No (CIEL:1066,
 //   "RBG") the reverse; no answer hides all three (NavigatorController, Simple UI only).
 // Required: none (no required attribute or class="required"). Encounter location is required (subform).
 // Side effects on save: none (no program, order or disposition). Encounter type 2fd151a2-... (Vitals).
-// Not covered: VIEW and EDIT modes, retro-entry gating, shared provider/location/date behaviour (_shared.e2e.md).
+// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' tests: the saved values, the glucose block with its FBG/RBG labels, and what
+// the VIEW scripts compute (BMI, MUAC/HC ratio) and hide (a vital with no value, SL-337); they need the page's jq, see openViewWithScripts.
+// Not covered: EDIT mode, retro-entry gating, shared provider/location/date behaviour (_shared.e2e.md).
 //
 // Findings:
 //   V1 Low  :15 vs :486  id="vitals-with-glucose" is on both the <htmlform> and the <section> (two elements in the page);
@@ -37,6 +39,11 @@ import { EntryFormPage } from '../../pages';
 //                        (not translated); :590 English answerLabels. Fix: real codes.
 //   V5 Info Standard UI: `ExitHandlers/NavigatorController is not defined` is thrown by :127, :287 and :450, so there
 //                        all three glucose fields stay visible and cm<->mm conversion does not run (Simple UI works).
+//   VW1 Low :208-230,:430-443,:551-570  in VIEW the BMI fieldset stays visible with only its "(Calculated) BMI" heading when the BMI cannot be computed (no
+//                        height or weight, patient over 5): the SL-337 rule (:430) only hides a fieldset that has no .value, and the empty #calculated-bmi span has the
+//                        class "value". Fix: hide the BMI fieldset in the VIEW script when no BMI was computed. TESTED below (test.fail).
+// Note (not a finding): the VIEW prints the glucose block as it is stored and not as it was answered: with FBG saved, the empty RBG value and the unselected
+//   High/Low answers are listed too, because the glucose toggle script is ENTER/EDIT only (tested).
 
 const FORM = 'vitalsWithGlucose.xml';
 const VITALS_ENCOUNTER_TYPE_UUID = '2fd151a2-fbef-43e3-b82d-c3f70f1d7333';
@@ -62,6 +69,30 @@ const savedObs = async (api: APIRequestContext, patientUuid: string) => {
   expect(encounters).toHaveLength(1);
   const obs = await getEncounterObs(api, encounters[0].uuid);
   return { encounterType: encounters[0].encounterType.uuid, displays: obs.map((o) => o.display) };
+};
+
+// The VIEW of a saved encounter with the form's own scripts running (they compute the BMI and the MUAC/HC ratio and hide the empty vitals, :180-:445,
+// VIEW only). ViewFormPage loads the HTML with setContent, which has no jq of its own and runs `jq(fn)` / `jq(document).ready(fn)` before the rest of
+// the body is parsed: so start from a page that has jq (an unrelated section form) and let those callbacks wait one tick. (Duplicated in vitals.spec.ts.)
+const openViewWithScripts = async (page: Page, api: APIRequestContext, context: EntryContext, encounterUuid: string, labels: Record<string, string> = {}) => {
+  await page.goto(EntryFormPage.enterUrl('section-chief-complaint.xml', context));
+  await page.evaluate(() => {
+    const w = window as any;
+    const jq = w.jq;
+    w.jq = Object.assign(function (this: unknown, arg: unknown) {
+      if (arg === document) {
+        return { ready: (fn: () => void) => setTimeout(fn, 0) };
+      }
+      if (typeof arg === 'function') {
+        setTimeout(arg as () => void, 0);
+        return undefined;
+      }
+      return jq.apply(this, arguments);
+    }, jq);
+  });
+  const view = await expectViewShowsSavedObs(page, api, FORM, encounterUuid, labels);
+  await page.waitForTimeout(500); // the scripts run on the next tick
+  return view;
 };
 
 const newPatient = (createEntryContext: CustomTestFixtures['createEntryContext'], gender: 'M' | 'F', age: number) =>
@@ -215,6 +246,14 @@ test.describe('vitalsWithGlucose', () => {
     expect(saved.displays.some((d) => d.includes('7.1'))).toBe(true);
     expect(saved.displays.some((d) => d.startsWith('Fasting blood glucose'))).toBe(false);
     expect(saved.displays.some((d) => d.includes('5.5'))).toBe(false);
+
+    // VIEW: the answer "No" is labelled RBG, the random value and the coded result are values, the discarded FBG is not
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+    await openViewWithScripts(page, api, context, encounter.uuid, { 'Patient fasting for blood glucose test: No': '[X] RBG' });
+    const glucose = page.locator('fieldset', { hasText: 'Glucose fingerstick' });
+    await expect(glucose.locator('.value')).toHaveText(['[X] RBG', '7.1', '[X] Low']); // the second coded answer
+    await expect(glucose.locator('#fbg .value')).toHaveCount(0); // the FBG is empty
+    await expect(glucose).not.toContainText('5.5');
   });
 
   test('Simple UI: MUAC cm and mm fields convert both ways and cm is limited to 56 (female) / 27 (child)', async ({ page, createEntryContext }) => {
@@ -239,5 +278,85 @@ test.describe('vitalsWithGlucose', () => {
     await goToQuestion(page, 'MUAC');
     await blur(page, '#muac_cm', '30');
     await expect(page.locator('span.field-error', { hasText: 'Maximum: 27' })).toBeVisible();
+  });
+
+  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): saved values in span.value, with the scripts of the form running as they do on the visit page.
+  test('VIEW: shows both blood pressures and the fasting glucose under the form\'s FBG/RBG labels, and hides the vitals that were not recorded', async ({
+    page,
+    api,
+    createEntryContext,
+  }) => {
+    const context = await newPatient(createEntryContext, 'M', 30);
+    const form = await EntryFormPage.open(page, FORM, context);
+    await blur(page, '#temperature_c input', '37.5');
+    await blur(page, '#heart_rate input', '80');
+    await blur(page, '#bp_systolic input', '120');
+    await blur(page, '#bp_diastolic input', '80');
+    await blur(page, '#bp_systolic2 input', '130');
+    await blur(page, '#bp_diastolic2 input', '85');
+    await blur(page, '#o2_sat input', '98');
+    await page.locator('#fasting input[type=radio]').first().check(); // Yes = FBG
+    await blur(page, '#fbg input', '5.5');
+    await saveStandard(page);
+    await form.expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    // "FBG" is the form's label of the answer Yes (answerCodes), so the obs "Patient fasting for blood glucose test: Yes" shows as "[X] FBG"
+    const view = await openViewWithScripts(page, api, context, encounter.uuid, { 'Patient fasting for blood glucose test: Yes': '[X] FBG' });
+    // (the empty BMI span of an adult with no height/weight is a span.value too: VW1)
+    expect((await view.valueTexts()).filter((t) => t !== '')).toEqual(['37.5', '80', '120', '80', '130', '85', '98', '[X] FBG', '5.5']);
+    // each pair is shown under its own heading
+    await expect(page.locator('fieldset', { hasText: 'Blood Pressure #1' }).locator('.value')).toHaveText(['120', '80']);
+    await expect(page.locator('fieldset', { hasText: 'Blood Pressure #2' }).locator('.value')).toHaveText(['130', '85']);
+    // the glucose block is printed as stored: FBG answered, the RBG value and the High/Low answers listed empty (the toggle script is ENTER/EDIT only)
+    const glucose = page.locator('fieldset', { hasText: 'Glucose fingerstick' });
+    await expect(glucose.locator('.value')).toHaveText(['[X] FBG', '5.5']);
+    await expect(glucose.locator('.emptyValue')).toHaveCount(4); // RBG answer, RBG value, High, Low
+    // a vital with no value is hidden (SL-337), the others stay
+    for (const empty of ['chief_complaint', 'height_cm', 'weight_kg', 'respiratory_rate']) {
+      await expect(page.locator(`#${empty}`).locator('xpath=ancestor::fieldset[1]'), empty).toBeHidden();
+    }
+    for (const filled of ['temperature_c', 'heart_rate', 'o2_sat']) {
+      await expect(page.locator(`#${filled}`).locator('xpath=ancestor::fieldset[1]'), filled).toBeVisible();
+    }
+    await expect(page.locator('#buttons, input[type=text], input[type=radio], textarea, select')).toHaveCount(0); // read-only
+  });
+
+  test('VIEW: a height and weight give the BMI (computed by the VIEW), and a child under 3 the MUAC/HC ratio', async ({ page, api, createEntryContext }) => {
+    const adult = await newPatient(createEntryContext, 'M', 30);
+    const adultForm = await EntryFormPage.open(page, FORM, adult);
+    await blur(page, '#height_cm input', '170');
+    await blur(page, '#weight_kg input', '70');
+    await saveStandard(page);
+    await adultForm.expectSaved();
+    const [adultEncounter] = await getPatientEncounters(api, adult.patient.uuid);
+    await openViewWithScripts(page, api, adult, adultEncounter.uuid);
+    await expect(page.locator('#calculated-bmi')).toHaveText('24.2'); // 70 / 1.7^2
+
+    const child = await newPatient(createEntryContext, 'M', 2);
+    const childForm = await EntryFormPage.open(page, FORM, child);
+    await blur(page, '#muac_mm input', '140');
+    await blur(page, '#head_cm input', '45');
+    await saveStandard(page);
+    await childForm.expectSaved();
+    const [childEncounter] = await getPatientEncounters(api, child.patient.uuid);
+    await openViewWithScripts(page, api, child, childEncounter.uuid);
+    await expect(page.locator('#calculated-ratio')).toHaveText('0.3'); // (140 / 10) / 45
+    await expect(page.locator('#calculated-bmi-wrapper')).toHaveCount(0); // no BMI under 5
+  });
+
+  // VW1 (Low): the BMI fieldset is not hidden by the VIEW scripts when the BMI cannot be computed. Intended: hidden like the other vitals that were not
+  // recorded. Remove test.fail() when fixed.
+  test('VIEW: no "(Calculated) BMI" heading when the height or weight was not recorded (VW1)', async ({ page, api, createEntryContext }) => {
+    test.fail();
+    const context = await newPatient(createEntryContext, 'M', 30);
+    const form = await EntryFormPage.open(page, FORM, context);
+    await blur(page, '#temperature_c input', '37.5');
+    await saveStandard(page);
+    await form.expectSaved();
+    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
+
+    await openViewWithScripts(page, api, context, encounter.uuid);
+    await expect(page.locator('#calculated-bmi').locator('xpath=ancestor::fieldset[1]')).toBeHidden();
   });
 });
