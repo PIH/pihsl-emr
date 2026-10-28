@@ -167,17 +167,26 @@ function drContactRequiredAndMissing() {
 }
 window.drContactRequiredAndMissing = drContactRequiredAndMissing;
 
+// htmlForm (and the Save button) only exist when entering or editing the form; in view mode (eg. on the
+// visit page) calling it would throw and stop the scripts that follow, such as the order widget's
+function setSubmitButtonEnabled(enabled) {
+    if (typeof htmlForm === "undefined") {
+        return;
+    }
+    if (enabled) {
+        htmlForm.enableSubmitButton();
+    } else {
+        htmlForm.disableSubmitButton();
+    }
+}
+
 function calculatePriority() {
     let globalPriority = evaluateVitals();
     if (globalPriority.value &gt;= 2) {
-        if ( drContactRequiredAndMissing() ) {
-            htmlForm.disableSubmitButton();
-        } else {
-            htmlForm.enableSubmitButton();
-        }
+        setSubmitButtonEnabled(!drContactRequiredAndMissing());
         jq("#confirmMsg").show();
     } else {
-        htmlForm.enableSubmitButton();
+        setSubmitButtonEnabled(true);
         jq("#confirmMsg").hide();
     }
     if (typeof calculateTriagePriority === "function") {
