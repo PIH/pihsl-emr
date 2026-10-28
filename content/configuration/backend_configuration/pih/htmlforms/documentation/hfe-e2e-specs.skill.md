@@ -11,10 +11,28 @@ The CSV describes *what fields exist*. To write E2E tests you also need to know 
 | `documentation/_availability.e2e.md` | site (written **once**) | when each form is offered: shared layers + one table row per form, plus the visit-page sections per encounter type (see "Form availability"). Tells a spec which fixture to build |
 | `documentation/_shared.e2e.md` | site (written **once**) | shared subforms and scripts the forms call (`encounter-with-sections.xml`, `encounter-provider-location-date.xml`, `nextAndSubmitButtons.js`, vital-signs widgets, ...): conditions, JS, and Verify findings for them. Findings in shared code live **only** here |
 | `e2e/specs/<form>/<form>.spec.ts` | form (top-level or `section-*`) | the tests, with the form's documentation as comments (see "Spec skeleton") |
+| `e2e/README.md`, section "Forms tested" | form | one table row: XML file name, form name, form version, form uuid, encounter name, encounter uuid (see "Forms-tested table") |
 
 Note: in the Sierra Leone config `section-*.xml` are standalone view/edit forms wired into the visit page (`encounterTypeConfig.js`), **not** subforms of the entry forms. A section spec creates the parent encounter over REST and opens the section's edit URL directly (`SectionFormPage`), which skips the visit-page gating that `_availability.e2e.md` describes.
 
 Versioned copies (`*_v1.0.xml`, `*_Version3.xml`, ...) are skipped unless the user asks for them.
+
+### Forms-tested table (`e2e/README.md`)
+
+`e2e/README.md` has a "Forms tested" section with two tables, one row per spec: **top-level (entry) forms** and **section forms**, each sorted by XML file name. Add the row when you add a spec, change it when a form is renamed or its encounter type changes, and delete it with the spec. Columns:
+
+| Column | Where it comes from |
+|---|---|
+| XML file | the file the spec opens (`<form>.xml`, the same as the `specs/<form>/` folder name). A print or view variant tested in its own spec (`maternalDischarge-print.xml`) is its own row |
+| Form name | the `formName` attribute of the form's `<htmlform>` element, copied as it is (even when it looks wrong, e.g. `familyPlanningFollowup.xml` is named "Family Planning Initial": that is a finding, not a typo to fix in the table) |
+| Form version | the `formVersion` attribute of the same element |
+| Form uuid | the `formUuid` attribute of the same element, in backticks. A print or view variant has its own |
+| Encounter | the **name** of the encounter type in the form's `formEncounterType`. The attribute holds a uuid; resolve it in the encounter type metadata of a running config (`~/openmrs/<server>/configuration/encountertypes/*.csv`; the repo's `backend_configuration/encountertypes/*.csv` only has `${encounterType.<key>.uuid}` placeholders) |
+| Encounter uuid | the `formEncounterType` attribute itself (the uuid the Encounter name was resolved from), in backticks. |
+
+A `section-*` form has no `formEncounterType`: it edits an encounter another form created. For those, the Encounter column lists the encounter type(s) the spec creates for it with `createEntryContext` / `createSectionEncounter` (the `*_ENCOUNTER_TYPE_UUID` constants of `e2e/core/constants.ts`, resolved to names the same way); a section used by several parents lists them all, in the same order in both columns (separated by `<br>`).
+
+The table is the one place that repeats these XML values; **do not** copy them into the spec (see "Spec skeleton"), and refresh the row when the form's version or uuid changes. Take every value from the XML and the metadata with a script rather than by hand, and check that none comes out empty.
 
 ### Running it (cost control)
 
@@ -28,7 +46,7 @@ The job is large (about 75 current forms in Sierra Leone). Keep it cheap:
 6. **Order:** shared files → `section-*` specs → top-level forms. About 3–5 forms per agent. Tell the user the plan and rough cost before launching more than 2 agents. Get one spec passing end to end before writing the others of the same kind.
 7. **Re-runs:** `inventory.py --only-changed` skips forms whose XML has not changed since their spec was last committed (git; for an uncommitted spec, XML not newer than it). A change in a shared subform or in pihcore needs a manual pass over `_shared.e2e.md` / `_availability.e2e.md`.
 8. **Every run includes the mechanical scan and the shared-subform findings.** Do not write that into the spec ("scan clean"): a form with no findings has no Findings block.
-9. Agents write only their own spec (plus helpers in `e2e/` when told to), never edit XML/CSV/README/skill.
+9. Agents write only their own spec (plus helpers in `e2e/` when told to), never edit XML/CSV/README/skill. The main session adds the rows of the "Forms tested" table in `e2e/README.md` once the agents are done (parallel agents editing one file overwrite each other).
 10. **Running the specs** needs a server with **test data only** that the user has confirmed; the harness creates and purges its own synthetic patients. Never list patients or encounters without a filter, and never print REST responses.
 
 11. **Harness gotchas** (found writing the `section-*` specs):
