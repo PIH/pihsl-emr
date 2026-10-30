@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // ballardScore.xml: Ballard score of a newborn: six neuromuscular and six (male) / six (female) physical maturity signs,
 // each scored by clicking a cell of the score table, with totals, the maturity rating total and the gestational age by
@@ -162,7 +162,7 @@ test.describe('ballardScore', () => {
     await page.locator('#buttons button.submitButton').click();
     const error = page.locator('#total-neuro-score .field-error');
     await expect(error).toContainText('Select score from');
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
 
     await pick(page, 'posture', 2);

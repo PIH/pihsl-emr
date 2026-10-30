@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-plan.xml: outpatient Plan section (clinical management plan, HIV counselling, family planning, X-ray and
 // ultrasound orders, medication orders, disposition and return visit date). The specs use an outpatient initial
@@ -44,7 +44,7 @@ test.describe('section-plan', () => {
   test('saving with the required questions blank does not save', async ({ page }) => {
     // required="true" on HIV counselling :51, family planning :64, disposition :131
     await page.locator('#buttons input.submitButton').click();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     const errors = page.locator('span.field-error:visible', { hasText: 'Required' });
     await expect(errors).toHaveCount(3);
   });

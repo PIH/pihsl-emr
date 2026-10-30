@@ -1,4 +1,5 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getEncounterObs, getPatientEncounters } from "../../commands";
 import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
@@ -33,7 +34,7 @@ test.describe("delivery", () => {
 
     await EntryFormPage.open(page, "delivery.xml", context);
     await submitShellForm(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await expect
       .poll(async () =>
@@ -53,7 +54,7 @@ test.describe("delivery", () => {
     });
     await EntryFormPage.open(page, "delivery.xml", context);
     await submitShellForm(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     await expect.poll(async () => (await getPatientEncounters(api, context.patient.uuid)).length).toBe(1);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);

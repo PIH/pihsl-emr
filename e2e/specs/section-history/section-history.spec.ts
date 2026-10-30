@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type SectionEncounter, type SectionEncounterOptions } from '../../core';
 import { NCD_INITIAL_ENCOUNTER_TYPE_UUID, OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-history.xml: history of an outpatient initial encounter (chief complaint, presenting history, family and past
 // medical history, blood type, hospitalizations, medications). On the visit page it hangs only under Outpatient initial
@@ -73,7 +73,7 @@ test.describe('section-history', () => {
   const stayed = async (page: Page) => {
     await page.locator('#submit').click();
     await expect(page.locator('#submit')).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   };
 
   test('EDIT shows the heading and the Next/Save/Cancel buttons', async ({ page, createSectionEncounter }) => {
@@ -146,7 +146,7 @@ test.describe('section-history', () => {
     await expect(pregnant).toBeHidden();
     await box.check();
     await page.locator('#submit').click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#sexual-activities').getByLabel('Pregnant')).toBeChecked();
@@ -256,7 +256,7 @@ test.describe('section-history', () => {
     await page.getByLabel('A+', { exact: true }).check();
 
     await page.locator('#submit').click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const displays = (await getEncounterObs(api, section.encounter.uuid)).map((o) => o.display.toLowerCase());
     const has = (s: string) => displays.some((d) => d.includes(s));

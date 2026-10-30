@@ -1,6 +1,6 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-hospital.xml: hospitalizations since the last visit (followup) or in the previous 12 months
 // (initial), up to three blocks. The specs use an NCD followup encounter, so the "since last visit"
@@ -62,7 +62,7 @@ test.describe('section-hospital', () => {
     // required="true" on #hospital-stay (:72)
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
   });
 

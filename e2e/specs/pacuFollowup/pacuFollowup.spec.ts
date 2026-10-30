@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // pacuFollowup.xml: "PACU Followup" (post-anaesthesia care unit): service team, diagnoses and procedures, type of anaesthesia, basic
 // vitals, Aldrete discharge score (5 criteria, 0-2 each), PACU events (pain, nausea, vomiting, shivering, ...), blood/fluids, disposition.
@@ -172,7 +172,7 @@ test.describe('pacuFollowup', () => {
     // required location (encounterLocation, :178; the tagged list does not contain the session location)
     await page.locator(SAVE).click();
     await expect(page.locator('#encounterLocation .field-error')).toHaveText(/required/i);
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

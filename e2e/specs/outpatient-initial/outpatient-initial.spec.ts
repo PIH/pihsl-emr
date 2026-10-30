@@ -1,4 +1,5 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
 import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages";
@@ -38,7 +39,7 @@ test.describe("outpatient-initial", () => {
     await expect(page.locator("#next")).toBeHidden();
 
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(
       0,
     );

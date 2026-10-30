@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-hypertension.xml: hypertension section of the NCD initial (type, stage, complications) and followup
@@ -105,7 +105,7 @@ test.describe('section-hypertension: NCD followup', () => {
     // required="true" on htn-fui-missed (:177) and htn-fui-improved (:202)
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(2);
   });
 

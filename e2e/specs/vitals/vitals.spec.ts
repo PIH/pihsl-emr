@@ -1,7 +1,7 @@
 import { type Page, type APIRequestContext } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type CustomTestFixtures, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // vitals.xml: "Vitals" (height, weight, BMI, consciousness, mobility, temperature, pulse, BP, RR, SpO2, MUAC,
 // z-score, head circumference, TB screening). Reached with a synthetic patient who has an active visit and no
@@ -177,7 +177,7 @@ test.describe('vitals', () => {
     await blur(page, '#temperature_c input', '99');
     await saveStandard(page);
     await expect(page.locator('span.field-error', { hasText: 'Cannot be greater than 43' })).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   });
 
   test('saving without a location does not save (required encounter location)', async ({ page, createEntryContext }) => {
@@ -187,7 +187,7 @@ test.describe('vitals', () => {
     await blur(page, '#temperature_c input', '37');
     await saveStandard(page);
     await expect(page.locator('span.field-error', { hasText: 'required' }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   });
 
   test('saves the vitals entered (Standard UI) as one Vitals encounter', async ({ page, api, createEntryContext }) => {
@@ -277,7 +277,7 @@ test.describe('vitals', () => {
     }
     await page.locator('#save-form').click(); // confirmation screen
     await page.locator('button.submitButton:visible').click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const saved = await savedObs(api, context.patient.uuid);
     expect(saved.displays).toEqual(

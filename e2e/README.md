@@ -18,6 +18,8 @@ Use a server with **test data only**. The specs create their own synthetic patie
 
 A full run is about 614 tests: about 16 minutes with `E2E_WORKERS=3` (`E2E_WORKERS=3 npx playwright test`), and roughly twice that with the default single worker. Each test has its own synthetic patient, so workers do not share data, but they share the server: raise the count only if it keeps up. Several `npx playwright test` processes at once (e.g. parallel agents) must each pass their own `--output <dir>`, or they overwrite each other's `test-results`. The specs share one login session (created in `core/global-setup.ts`), so if the machine sleeps during a run the session expires and every later test fails with `create patient: 401`. Keep the machine awake, e.g. `systemd-inhibit --what=sleep:idle npx playwright test`. Run a few specs at a time while iterating (`npx playwright test specs/<form>`).
 
+Every test also fails on an uncaught JavaScript error in its pages (the `failOnJsError` auto fixture in `core/test.ts`); `console.error` output is not counted.
+
 ## Forms tested
 
 One spec per form, in `specs/<xml file name without .xml>/`. *Form name*, *Form version*, *Form uuid* and *Encounter uuid* are the `formName`, `formVersion`, `formUuid` and `formEncounterType` of the form's `<htmlform>` element; *Encounter* is the name of that encounter type. Keep a row here when you add, rename or remove a spec, and update it when the form's version or uuid changes.

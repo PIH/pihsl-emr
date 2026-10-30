@@ -1,8 +1,6 @@
 import { type Page, expect } from '@playwright/test';
+import { VISIT_PAGE_URL, visitPagePath } from './visit-page';
 import type { EntryContext } from '../core';
-
-// Where the form sends the browser after a successful save. Any page that loads without a patient will do.
-const RETURN_URL = '/openmrs/referenceapplication/home.page';
 
 // A top-level form (ancIntake.xml, vitals.xml, ...) creates the encounter itself. On the visit page it
 // is opened from a visit action (see documentation/_availability.e2e.md); the specs open the same
@@ -19,7 +17,7 @@ export class EntryFormPage {
       patientId: patient.uuid,
       visitId: visitUuid,
       definitionUiResource: `file:configuration/pih/htmlforms/${formFile}`,
-      returnUrl: RETURN_URL,
+      returnUrl: visitPagePath(visitUuid),
     });
     return `htmlformentryui/htmlform/enterHtmlFormWithStandardUi.page?${params.toString()}`;
   }
@@ -38,6 +36,6 @@ export class EntryFormPage {
   }
 
   async expectSaved() {
-    await expect(this.page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(this.page).toHaveURL(VISIT_PAGE_URL);
   }
 }

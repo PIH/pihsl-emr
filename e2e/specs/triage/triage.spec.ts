@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // triage.xml: "MCOE Triage" (National Obstetric Triage and Treatment Form): referral, transport, gestational age, vitals with
 // a colour-coded triage priority, a symptom matrix (green/yellow/orange/red), TB screening, rapid tests, PHQ-2, disposition.
@@ -261,7 +261,7 @@ test.describe('triage', () => {
     await page.locator(SAVE).click();
     await expect(page.locator('#role-refer .field-error')).toHaveText('Required');
     await expect(page.locator('#transport .field-error')).toHaveText('Required');
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

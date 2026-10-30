@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // newbornDailyProgress.xml: "Newborn Daily Progress" (one per day of the NICU stay): read-only overview of the birth data
 // recorded earlier in the visit, infant vitals, condition, labs, exam, scores, diagnoses, inputs (feeding, IV, respiration,
@@ -247,7 +247,7 @@ test.describe('newbornDailyProgress', () => {
     await expect(page.locator('#encounterLocation select')).toHaveValue('');
     await saveButton(page).click();
     await expect(page.locator('span.field-error:visible', { hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   });
 
   test('saves weight, exam, apnea, feeding, IV access and outcome, and enrolls the infant in the Infant program', async ({ page, api }) => {

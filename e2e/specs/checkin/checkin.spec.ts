@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, ViewFormPage, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // checkin.xml: "Check-In" (provider, location, date, and the patient's appointments to check in). In production it is opened
 // from the visit page or, with createVisit=true, from the registration page; the specs open enterHtmlFormWithStandardUi inside
@@ -51,7 +51,7 @@ test.describe('checkin', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([CHECKIN_ENCOUNTER_TYPE_UUID]);
@@ -67,7 +67,7 @@ test.describe('checkin', () => {
     await saveButton(page).click();
 
     await expect(page.locator('span.field-error').filter({ hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -80,7 +80,7 @@ test.describe('checkin', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);
 

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // inpatientNewbornVitals.xml: "Vital Signs Newborn Inpatient" (infant vitals, oxygen and fluids, a newborn exam of six yes/no
 // signs, feeding and hematocrit). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an infant born 3 days
@@ -128,7 +128,7 @@ test.describe('inpatientNewbornVitals', () => {
     await page.locator('#examDiv input[type=radio][name=w42]').nth(2).check(); // feeding well
     await expect(saveButton(page)).toBeEnabled();
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([INPATIENT_VITALS_ENCOUNTER_TYPE_UUID]);
@@ -153,7 +153,7 @@ test.describe('inpatientNewbornVitals', () => {
     });
     const texts = await view.valueTexts();
     for (const [id, value] of Object.entries({ bp_systolic: '70', bp_diastolic: '40', heart_rate: '130', respiratory_rate: '45', temperature_c: '37', o2_sat: '98', glucose: '4', hematocrit: '45' })) {
-      await expect(view.page.locator(`#${id} .value`), id).toHaveText(value);
+      await expect(view.valueOf(id), id).toHaveText(value);
     }
     expect(texts).toEqual(['70', '40', '130', '45', '37', '98', '4', '1', '60', '30', '[X] yes', '[X] no', '[X] feeding well', '45']);
     const exam = (await view.page.locator('#examDiv').innerText()).replace(/\s+/g, ' ').replace(/\[\s*\]/g, '[ ]'); // nbsp, "[  ]" for an empty radio

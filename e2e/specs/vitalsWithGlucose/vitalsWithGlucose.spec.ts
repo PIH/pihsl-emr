@@ -1,7 +1,7 @@
 import { type Page, type APIRequestContext } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type CustomTestFixtures, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // vitalsWithGlucose.xml: "Vitals with glucose" (vitals.xml without TB screening/mobility/"confused", with a second BP
 // and a "Glucose fingerstick" question: fasting yes/no, FBG, RBG, coded glucose). Reached with a synthetic patient with
@@ -194,7 +194,7 @@ test.describe('vitalsWithGlucose', () => {
     await blur(page, '#temperature_c input', '37');
     await saveStandard(page);
     await expect(page.locator('span.field-error', { hasText: 'required' }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   });
 
   test('Simple UI: the glucose fields follow the fasting answer', async ({ page, createEntryContext }) => {
@@ -240,7 +240,7 @@ test.describe('vitalsWithGlucose', () => {
     await page.locator('#glucose-coded input[type=radio]').nth(1).check();
     await page.locator('#save-form').click(); // confirmation screen
     await page.locator('button.submitButton:visible').click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const saved = await savedObs(api, context.patient.uuid);
     expect(saved.encounterType).toBe(VITALS_ENCOUNTER_TYPE_UUID);

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // inpatientVitals.xml: "Vital Signs Inpatient" (BP, HR, RR, temperature, SpO2, haemoglobin, glucose, FHR, then oxygen flow rate
 // and total fluid input/output). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an adult woman, so
@@ -109,7 +109,7 @@ test.describe('inpatientVitals', () => {
     await output.fill('300');
     await expect(saveButton(page)).toBeEnabled();
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([INPATIENT_VITALS_ENCOUNTER_TYPE_UUID]);
@@ -123,7 +123,7 @@ test.describe('inpatientVitals', () => {
     // VIEW: every vital, oxygen and fluid value is shown in its own field (:162 VIEW copy of the oxygen/fluid obs)
     const view = await expectViewShowsSavedObs(page, api, FORM, encounters[0].uuid);
     for (const [id, value] of Object.entries(values)) {
-      await expect(view.page.locator(`#${id} .value`), id).toHaveText(value);
+      await expect(view.valueOf(id), id).toHaveText(value);
     }
     expect(await view.valueTexts()).toEqual([...Object.values(values), '2', '500', '300']);
     await expect(view.page.locator('#o2andFluidsDiv')).toHaveCount(0); // ifMode VIEW include=false :140: the ENTER inputs and their wrapper are gone
@@ -138,12 +138,14 @@ test.describe('inpatientVitals', () => {
       await enter(page, id, value);
     }
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
     expect(await view.valueTexts()).toEqual(['118', '76', '11']);
-    await expect(view.page.locator('#heart_rate .value, #temperature_c .value, #o2_sat .value, #glucose .value, #fhr .value')).toHaveCount(0);
-    await expect(view.page.locator('#hemoglobin .value')).toHaveText('11');
+    for (const id of ['heart_rate', 'temperature_c', 'o2_sat', 'glucose', 'fhr']) {
+      await expect(view.valueOf(id), id).toHaveCount(0);
+    }
+    await expect(view.valueOf('hemoglobin')).toHaveText('11');
   });
 });

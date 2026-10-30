@@ -7,6 +7,7 @@ import {
   expectViewShowsSavedObs,
   selectDefaultProvider,
   viewMismatches,
+  VISIT_PAGE_URL,
 } from '../../pages';
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
@@ -99,7 +100,7 @@ test.describe('ayfsFollowup', () => {
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(4);
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -131,7 +132,7 @@ test.describe('ayfsFollowup', () => {
     await expect(page.locator('#other-visit-reason')).toBeVisible();
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect((await obsSummary(api, encounter.uuid)).some((o) => o.endsWith('=Walk-in for advice'))).toBeTruthy();
   });
@@ -181,7 +182,7 @@ test.describe('ayfsFollowup', () => {
       await radioOf(page, 'Symptoms/problems around the genitalia').nth(radio).check(); // answerCodes yes,no
       await selectDefaultProvider(page);
       await page.locator(SAVE).click();
-      await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+      await expect(page).toHaveURL(VISIT_PAGE_URL);
       const [encounter] = await getPatientEncounters(api, context.patient.uuid);
       const obs = (await obsSummary(api, encounter.uuid)).filter((o) => o.startsWith('Urogenital exam findings='));
       expect(obs).toEqual([`Urogenital exam findings=${saved}`]);
@@ -200,7 +201,7 @@ test.describe('ayfsFollowup', () => {
     await checkboxOf(page, 'fp-meth-1873').check(); // Jadelle
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([AYFS_FOLLOWUP_ENCOUNTER_TYPE_UUID]);
@@ -239,7 +240,7 @@ test.describe('ayfsFollowup', () => {
     await page.locator('#outcome-section p input[type=checkbox]').nth(0).check(); // referred to NCD
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     // dates are shown as "dd MMM yyyy"; the diagnoses are shown by the diagnosis widget, not in a span.value (checked below)
@@ -293,7 +294,7 @@ test.describe('ayfsFollowup', () => {
     await checkboxOf(page, 'vr-fp').check();
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await obsSummary(api, encounter.uuid)).toContain('Urogenital exam findings=Abnormal');
 
@@ -314,7 +315,7 @@ test.describe('ayfsFollowup', () => {
     await page.locator('#other-visit-reason textarea').fill('Follow-up question');
     await checkboxOf(page, 'vr-fp').uncheck();
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const obs = await obsSummary(api, encounter.uuid);
     expect(obs.filter((o) => o.startsWith('Urogenital exam findings='))).toEqual(['Urogenital exam findings=Normal']);

@@ -1,4 +1,5 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { POSTNATAL_FOLLOWUP_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
 import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
@@ -35,7 +36,7 @@ test.describe("postnatalFollowup", () => {
 
     await EntryFormPage.open(page, FORM, context);
     await submitShellForm(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await expect
       .poll(async () =>

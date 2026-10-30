@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // newbornAssessment.xml: assessment of a newborn at birth (pregnancy complications, delivery, outcome, birth weight,
 // APGAR, vitals, resuscitation, diagnoses at birth, birth injury, overall condition, disposition). A top-level form: the
@@ -147,7 +147,7 @@ test.describe('newbornAssessment', () => {
     // the tagged location select has no default for this session (location required, encounter-provider-location-date)
     await save(page);
     await expect(page.locator('.field-error:visible').first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

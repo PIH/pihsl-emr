@@ -1,6 +1,6 @@
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 
 // cervicalCancerScreening.xml: "Cervical Cancer Screening" (reproductive history, HIV status, speculum exam, diagnosis,
@@ -71,7 +71,7 @@ test.describe('cervicalCancerScreening', () => {
     const context = await open(page, createEntryContext);
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     await expect
       .poll(async () => (await getPatientEncounters(api, context.patient.uuid)).map((e) => e.encounterType.uuid))
       .toEqual([CERVICAL_SCREENING_ENCOUNTER_TYPE_UUID]);
@@ -120,7 +120,7 @@ test.describe('cervicalCancerScreening', () => {
     await radioOf(page, 'Extends into endocervical canal').nth(1).check(); // no
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     const obs = await getEncounterObs(api, encounter.uuid);
     const lesion = obs.filter((o) => o.concept.display.startsWith('Entire lesion visible'));
@@ -143,7 +143,7 @@ test.describe('cervicalCancerScreening', () => {
     await page.locator('textarea').last().fill('Return in six months');
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([CERVICAL_SCREENING_ENCOUNTER_TYPE_UUID]);
@@ -176,7 +176,7 @@ test.describe('cervicalCancerScreening', () => {
     await radioOf(page, 'Extends into endocervical canal').nth(1).check(); // no
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     await page.goto(
@@ -193,7 +193,7 @@ test.describe('cervicalCancerScreening', () => {
 
     await extends_.nth(0).check(); // change "Extends" to yes
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const obs = await getEncounterObs(api, encounter.uuid);
     const answer = (o: (typeof obs)[number]) => (o.value as { display?: string } | null)?.display;
@@ -237,7 +237,7 @@ test.describe('cervicalCancerScreening', () => {
     await page.locator('#disposition-section textarea').fill('Return in 12 months');
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     // dates are shown as "dd MMM yyyy"; the quadrants and the referral reason carry the form's own labels

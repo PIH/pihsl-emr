@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-diabetes.xml: diabetes section of the NCD initial (diagnosis, complications) and followup
@@ -92,7 +92,7 @@ test.describe('section-diabetes: NCD initial', () => {
     // required="true" on the diagnosis radio (:61)
     const form = await SectionFormPage.openEdit(page, FORM, section);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
   });
 
@@ -203,7 +203,7 @@ test.describe('section-diabetes: NCD followup', () => {
     // required="true": On insulin (:180), Missed doses (:183), Glucometer home (:290), Disease control (:322)
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(4);
   });
 

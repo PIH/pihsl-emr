@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
-import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // checkinMaternal.xml: "Maternal Check-In" (provider, location, date, optional referral to MCOE triage, appointments). In
 // production it is opened from the visit page or the registration page (enableCheckIn SL block, "Check-In Maternal Location"
@@ -70,7 +70,7 @@ test.describe('checkinMaternal', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([MATERNAL_CHECKIN_ENCOUNTER_TYPE_UUID]);
@@ -91,7 +91,7 @@ test.describe('checkinMaternal', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     const view = await ViewFormPage.open(page, FORM, encounter.uuid);
@@ -131,7 +131,7 @@ test.describe('checkinMaternal', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     await ViewFormPage.open(page, FORM, encounter.uuid);

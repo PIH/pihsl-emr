@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, selectDefaultProvider, viewMismatches } from '../../pages';
+import { EntryFormPage, ViewFormPage, selectDefaultProvider, viewMismatches, VISIT_PAGE_URL } from '../../pages';
 
 // maternalDischarge.xml: "Maternal Discharge" (admission date line, diagnoses, clinical history, pregnancy group (read-only), test and hospital
 // summaries, discharge medications, disposition, discharge recommendation, next appointment, Save / Save&Print). The specs open
@@ -185,7 +185,7 @@ test.describe('maternalDischarge', () => {
     await page.locator('#hospital-mgmt textarea').fill('Oxytocin, observation');
     await page.locator('#disposition-section textarea').first().fill('Review at 6 weeks');
     await page.locator('#buttons #save-and-print-button').click(); // save-and-print-button.js appends printForm=true to the return URL
-    await expect(page).toHaveURL(/referenceapplication\/home\.page.*printForm=true/);
+    await expect(page).toHaveURL(new RegExp(`${VISIT_PAGE_URL.source}.*printForm=true`));
 
     const displays = (await getEncounterObs(api, (await dischargeEncounter(api, ctx)).uuid)).map((o) => o.display);
     for (const expected of [
@@ -235,7 +235,7 @@ test.describe('maternalDischarge', () => {
     await openForm(page, ctx);
     await fillDischarge(page, "Mother's dorm");
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const enrollments = await pregnancyStates(api, ctx);
     expect(enrollments).toHaveLength(1);
@@ -253,7 +253,7 @@ test.describe('maternalDischarge', () => {
     await fillDischarge(page, 'Transfer out of hospital');
     await page.locator('#transferExternalLocation select').selectOption({ label: 'Koidu Government Hospital' });
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const view = await openView(page, api, (await dischargeEncounter(api, ctx)).uuid);
     expect(await view.valueTexts()).toEqual(['Transfer out of hospital', 'Koidu Government Hospital']);
@@ -275,7 +275,7 @@ test.describe('maternalDischarge', () => {
     await fillDischarge(page, 'Home');
     await page.locator('#history textarea').fill('Normal delivery');
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const view = await openView(page, api, (await dischargeEncounter(api, ctx)).uuid);
     await expect(view.page.locator('#history').getByText(/history/i).filter({ visible: true })).not.toHaveCount(0); // a legend or a label
   });
@@ -287,7 +287,7 @@ test.describe('maternalDischarge', () => {
     await page.locator('#test-summary textarea').fill('Investigation summary');
     await page.locator('#hospital-mgmt textarea').fill('Management summary');
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const obs = await getEncounterObs(api, (await dischargeEncounter(api, ctx)).uuid);
     const investigation = obs.find((o) => o.value === 'Investigation summary');

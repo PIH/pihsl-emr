@@ -9,6 +9,7 @@ import {
   expectViewShowsSavedObs,
   selectDefaultProvider,
   viewMismatches,
+  VISIT_PAGE_URL,
 } from '../../pages';
 
 // ancProgress.xml: "ANC Progress" (MCOE antenatal progress note): intake, vitals, lab results, pregnancy complications,
@@ -239,7 +240,7 @@ test.describe('ancProgress', () => {
     // encounter-provider-location-date.xml (shared): Location (required) has no default under this session location
     await saveForm(page);
     await expect(page.locator('span.field-error', { hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // gynecologyFollowup.xml: gynecology followup visit (vitals, gynecology exam, planned procedures, diagnoses, rapid tests, lab and
 // drug orders, follow-up clinic and disposition). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit
@@ -146,7 +146,7 @@ test.describe('gynecologyFollowup', () => {
     await open(page);
     await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     const obs = await obsSummary(api, encounters[0].uuid);
@@ -160,7 +160,7 @@ test.describe('gynecologyFollowup', () => {
     await open(page);
     await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, { 'Papanicolaou test status: Completed': '[X] PAP test performed' });
@@ -190,7 +190,7 @@ test.describe('gynecologyFollowup', () => {
     await page.locator('#disposition-section').getByLabel('Mental health', { exact: true }).check();
 
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([GYN_FOLLOWUP_ENCOUNTER_TYPE_UUID]);

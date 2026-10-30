@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, ViewFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 import type { Page } from '@playwright/test';
 
 // section-heart-failure.xml: heart failure section of the NCD initial (main diagnosis and sub-diagnoses) and
@@ -127,7 +127,7 @@ test.describe('section-heart-failure: NCD initial', () => {
     await expect(msg).toHaveText('Required');
     await page.getByLabel('II (Comfortable with moderate exercise)').check();
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(msg).toBeVisible();
 
     const box = page.locator('#hf-main-dx').getByLabel(/^Cardiomyopathy$/);
@@ -142,7 +142,7 @@ test.describe('section-heart-failure: NCD initial', () => {
     const form = await SectionFormPage.openEdit(page, FORM, section);
     await page.locator('#hf-main-dx').getByLabel(/^Cardiomyopathy$/).check();
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
     await expect(page.locator('#hf-required-msg')).toBeHidden();
   });
@@ -276,7 +276,7 @@ test.describe('section-heart-failure: NCD followup', () => {
     // required="true" :473, :332, :413
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(3);
   });
 

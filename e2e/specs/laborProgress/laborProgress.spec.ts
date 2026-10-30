@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // laborProgress.xml: "Labour Progress" (MCOE labour ward note): intake, vitals, lab results, labour complications,
 // labour onset and membranes, physical exam (up to 4 foetuses), induction, abdominal scar and outcome. The specs open
@@ -214,7 +214,7 @@ test.describe('laborProgress', () => {
     // encounter-provider-location-date.xml (shared): Location (required) has no default under this session location
     await saveForm(page);
     await expect(page.locator('span.field-error', { hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -278,7 +278,7 @@ test.describe('laborProgress', () => {
     });
     const at = (selector: string) => view.page.locator(`${selector} .value`);
     for (const [id, value] of Object.entries({ bp_systolic: '120', bp_diastolic: '80', heart_rate: '80', 'fetus-hr-1': '140' })) {
-      await expect(at(`#${id}`), id).toHaveText(value);
+      await expect(view.valueOf(id), id).toHaveText(value);
     }
     await expect(at('#membrane-state')).toHaveText('[X] Ruptured');
     await expect(at('#rupture-details')).toHaveText('[X] Clear'); // :229 section: shown in VIEW with its saved answer

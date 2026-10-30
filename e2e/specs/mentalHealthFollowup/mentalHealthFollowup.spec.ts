@@ -2,7 +2,7 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // mentalHealthFollowup.xml: "Mental Health Follow-up" (encounter type 9d701a81-bb83-40ea-9efc-af50f05575f2), the short counterpart of
 // mentalHealth.xml (housing, presenting features, mental state exam, suicide evaluation, diagnoses, CGI scores with the previous values, the
@@ -214,7 +214,7 @@ test.describe('mentalHealthFollowup', () => {
     for (const section of ['#mh-suicide', '#mh-diagnoses', '#mh-Outcome']) {
       await expect(page.locator(`${section} span.field-error`).filter({ hasText: 'Required' }).first()).toBeVisible();
     }
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // newbornInitial.xml: "Newborn Initial" (NICU admission of a newborn): outborn history, mother's risk factors, vitals (infant
 // widget), condition, exam, MSNS score, reasons for admission/diagnoses, treatment, outcome. The specs open
@@ -165,7 +165,7 @@ test.describe('newbornInitial', () => {
     await expect(page.locator('#encounterLocation select')).toHaveValue('');
     await saveButton(page).click();
     await expect(page.locator('span.field-error:visible', { hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
   });
 
   test('saves history, exam, diagnosis and treatment, and enrolls the infant in the Infant program', async ({ page, api }) => {

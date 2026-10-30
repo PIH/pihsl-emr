@@ -2,7 +2,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // familyPlanningIntake.xml: first family planning visit (disability, service type, vitals, earlier methods with dates,
 // method chosen today, appointment, referrals). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit
@@ -158,7 +158,7 @@ test.describe('familyPlanningIntake', () => {
     await page.locator('#who select').selectOption({ index: 0 });
     await save(page);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -220,7 +220,7 @@ test.describe('familyPlanningIntake', () => {
 
     await selectDefaultProvider(page);
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([FP_INTAKE_ENCOUNTER_TYPE_UUID]);
@@ -289,7 +289,7 @@ test.describe('familyPlanningIntake', () => {
     await page.locator('#fp-method').getByLabel('Vasectomy', { exact: true }).check();
     await selectDefaultProvider(page);
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);

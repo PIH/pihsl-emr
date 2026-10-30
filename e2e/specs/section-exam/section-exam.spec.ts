@@ -2,7 +2,7 @@ import { type Locator, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type SectionEncounter, type SectionEncounterOptions } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-exam.xml: physical exam of the outpatient encounter (11 body-system blocks of Normal / abnormal findings plus a
 // Pediatric Assessment block). Under the Outpatient initial type it hangs next to section-history; it is also used for the
@@ -120,7 +120,7 @@ test.describe('section-exam', () => {
     await expect(box(page, 'general', 'Weight loss')).not.toBeChecked();
     await expect(duration).toHaveValue('3');
     await new SectionFormPage(page, FORM).save();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const saved = (await getEncounterObs(api, section.encounter.uuid)).map((o) => o.display.toLowerCase());
     expect(saved).toContain('sign/symptom duration: 3'); // the duration is saved ...
     expect(saved.some((d) => d.includes('weight loss'))).toBeFalsy(); // ... without the finding

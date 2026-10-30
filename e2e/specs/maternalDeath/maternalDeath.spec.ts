@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // maternalDeath.xml: "Maternal Death" review (health facility block read from the visit's admission, preventable death, quality issues, 3 delays,
 // underlying causes, three action points). The specs open enterHtmlFormWithStandardUi inside a visit they create with a 25-year-old female
@@ -141,7 +141,7 @@ test.describe('maternalDeath', () => {
     await openForm(page, ctx);
     await fillReview(page);
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = (await getPatientEncounters(api, ctx.patient.uuid)).filter((e) => e.encounterType.uuid !== ADMISSION_ENCOUNTER_TYPE);
     expect(encounters).toHaveLength(1);
@@ -173,7 +173,7 @@ test.describe('maternalDeath', () => {
     await openForm(page, ctx);
     await fillReview(page); // one primary cause and one action point: the secondary cause and action points 2/3 stay empty
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
     const obs = await getEncounterObs(api, encounter.uuid);
@@ -203,7 +203,7 @@ test.describe('maternalDeath', () => {
       .first()
       .evaluate((el) => (window as any).jQuery(el).datepicker('setDate', new Date(2030, 0, 1)));
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
     const displays = (await getEncounterObs(api, encounter.uuid)).map((o) => o.display);
@@ -231,7 +231,7 @@ test.describe('maternalDeath', () => {
     await page.locator('.ui-autocomplete li:visible').first().click();
     await actionRow(2).nth(1).fill('Ward sister');
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
     const before = (await getEncounterObs(api, encounter.uuid)).map((o) => o.display);
     expect(before.filter((d) => d.startsWith('Action point set'))).toHaveLength(2);
@@ -253,7 +253,7 @@ test.describe('maternalDeath', () => {
     await actionRow(1).nth(0).fill('Revised protocol');
     await actionRow(3).nth(0).fill('Audit the referral register');
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const after = (await getEncounterObs(api, encounter.uuid)).map((o) => o.display);
     expect(after.filter((d) => d.startsWith('Underlying cause of death set'))).toHaveLength(1);
@@ -274,7 +274,7 @@ test.describe('maternalDeath', () => {
     await openForm(page, ctx);
     await fillReview(page); // primary cause and action point 1 only
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
 
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);

@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // nicuTriage.xml: NICU triage for an infant (vitals, labs, reasons for presentation, delivery history, emergency and
 // priority signs, resuscitation, birth injury, disposition). A top-level form: the specs open
@@ -150,7 +150,7 @@ test.describe('nicuTriage', () => {
     await pickProviderAndLocation(page);
     await save(page);
     await expect(page.locator('.field-error:visible').first()).toHaveText('Required');
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -164,7 +164,7 @@ test.describe('nicuTriage', () => {
     const required = page.locator('#delivery-location-other .field-error');
     await expect(required).toHaveText(/required/i); // written by the click handler
     await save(page);
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
 
     await page.locator('#delivery-location-other input[type=text]').fill('Roadside');

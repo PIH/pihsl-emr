@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // surgicalPostOpNote.xml: "Surgical Note" (service team, description of the operation, ins/outs, plan). A top-level form: the specs
 // open enterHtmlFormWithStandardUi inside a visit they create for a 30-year-old female (documentation/_availability.e2e.md:
@@ -97,7 +97,7 @@ test.describe('surgicalPostOpNote', () => {
     await page.locator(SAVE).click();
     await expect(page.locator('#encounterLocation .field-error')).toHaveText(/required/i);
     await expect(page.locator('p', { has: page.getByText('Attending surgeon') }).locator('.field-error')).toHaveText('Required');
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

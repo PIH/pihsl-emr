@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // gainNewbornRegister.xml: "SCBU Newborn Register" (GAIN): baby and caregiver, referral, delivery, management commenced,
 // APGAR, and the discharge/outcome of the SCBU stay, all on one page. A top-level form: the specs open
@@ -114,7 +114,7 @@ test.describe('gainNewbornRegister', () => {
     await apgar.nth(1).fill('7');
     await page.locator('#outcome-admission').getByLabel('Discharged', { exact: true }).check();
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([SCBU_REGISTER_ENCOUNTER_TYPE_UUID]);
@@ -162,7 +162,7 @@ test.describe('gainNewbornRegister', () => {
     await after(page, 'Weight at time of death').fill('2.1');
     await after(page, 'Name of staff').fill('Nurse Sesay');
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {
@@ -196,7 +196,7 @@ test.describe('gainNewbornRegister', () => {
     await open(page);
     await page.locator('#outcome-admission').getByLabel('Discharged', { exact: true }).check();
     await save(page);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
     await expect(view.page.locator('#scbu-death')).toBeHidden();
