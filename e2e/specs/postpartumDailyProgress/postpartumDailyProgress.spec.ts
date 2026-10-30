@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // postpartumDailyProgress.xml: "Postpartum Daily Progress" (vitals, delivery overview, postpartum exam, mood/bowel/urine checklist,
 // PHQ-2, family planning, health education, summary). The specs open enterHtmlFormWithStandardUi inside a visit they create with a
@@ -51,6 +51,7 @@ const SAVE = '#buttons input.submitButton';
 const openForm = async (page: Page, context: EntryContext) => {
   await EntryFormPage.open(page, FORM, context);
   await expect(page.locator(SAVE)).toBeVisible(); // handlers are bound on document.ready
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ label: 'Postnatal Ward' });
 };
 

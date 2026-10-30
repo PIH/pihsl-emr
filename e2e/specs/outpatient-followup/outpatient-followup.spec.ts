@@ -1,7 +1,7 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
 import { OUTPATIENT_FOLLOWUP_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage } from "../../pages";
+import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages";
 
 // outpatient-followup.xml: header form ("Outpatient Followup"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -59,6 +59,7 @@ test.describe("outpatient-followup", () => {
     const form = await EntryFormPage.open(page, FORM, context);
     // the options are real locations: pick by index, never by name
     await page.locator(LOCATION_SELECT).selectOption({ index: 1 });
+    await selectDefaultProvider(page);
     await form.save();
     await form.expectSaved();
 

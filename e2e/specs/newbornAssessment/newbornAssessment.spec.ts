@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // newbornAssessment.xml: assessment of a newborn at birth (pregnancy complications, delivery, outcome, birth weight,
 // APGAR, vitals, resuscitation, diagnoses at birth, birth injury, overall condition, disposition). A top-level form: the
@@ -42,7 +42,9 @@ const birthdateDaysAgo = (days: number): string => {
 };
 
 // The tagged location list does not contain the session location, so the select starts on "Choose a Location...".
-const chooseLocation = async (page: Page) => {
+// The provider select is blank too when the logged-in user has no Provider account.
+const pickProviderAndLocation = async (page: Page) => {
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ index: 1 });
 };
 
@@ -156,7 +158,7 @@ test.describe('newbornAssessment', () => {
     const enrollmentsUrl = `programenrollment?patient=${context.patient.uuid}&v=custom:(program:(name),location:(name),dateCompleted)`;
     expect(((await (await api.get(enrollmentsUrl)).json()).results as unknown[]).length).toBe(0);
 
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('p', { hasText: 'Gestation age' }).locator('input[type=text]').first().fill('37.4');
     await page.getByLabel('Spontaneous vaginal delivery').check();
     await page.locator('#dead-or-alive').getByLabel('Alive').check();
@@ -200,7 +202,7 @@ test.describe('newbornAssessment', () => {
   });
 
   const fillFullAssessment = async (page: Page) => {
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     // delivery date and time: the date input is a read-only datepicker, set it through the widget
     await page
       .locator('#treatment p.date-one-line')

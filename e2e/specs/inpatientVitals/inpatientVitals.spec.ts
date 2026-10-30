@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // inpatientVitals.xml: "Vital Signs Inpatient" (BP, HR, RR, temperature, SpO2, haemoglobin, glucose, FHR, then oxygen flow rate
 // and total fluid input/output). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an adult woman, so
@@ -25,10 +25,10 @@ const INPATIENT_VITALS_ENCOUNTER_TYPE_UUID = '6b1c3929-f23c-423f-8cad-64b17cf10b
 
 const saveButton = (page: Page) => page.locator('#buttons button.submitButton');
 const fillWhoWhere = async (page: Page) => {
-  for (const select of [page.locator('select[name=w1]'), page.locator('#w3')]) {
-    if (!(await select.inputValue())) {
-      await select.selectOption({ index: 1 });
-    }
+  await selectDefaultProvider(page);
+  const location = page.locator('#w3');
+  if (!(await location.inputValue())) {
+    await location.selectOption({ index: 1 });
   }
 };
 // vital input inside its wrapper span (HFE puts the id on the span)

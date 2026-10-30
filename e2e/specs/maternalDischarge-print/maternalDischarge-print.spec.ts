@@ -2,7 +2,7 @@ import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getPatientEncounters } from '../../commands';
-import { EntryFormPage } from '../../pages';
+import { EntryFormPage, selectDefaultProvider } from '../../pages';
 
 // maternalDischarge-print.xml: print-only rendering of a Maternal Discharge encounter ("Maternity Discharge Form"). It is NOT an entry form and
 // cannot be entered: the visit page renders it in VIEW mode for a saved encounter (encounterTypeConfig.js printFormUrl ->
@@ -36,6 +36,7 @@ const DATE = /\d{2} [A-Z][a-z]{2} \d{4}/;
 const saveDischarge = async (page: Page, context: EntryContext, api: Parameters<typeof getPatientEncounters>[0]): Promise<string> => {
   await EntryFormPage.open(page, FORM, context);
   await expect(page.locator('#buttons input.submitButton')).toBeVisible();
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ index: 1 });
   await page.locator('#encounter-disposition select').selectOption({ label: 'Home' });
   await page.locator('#disposition-section input[type=radio][value=no]').check();

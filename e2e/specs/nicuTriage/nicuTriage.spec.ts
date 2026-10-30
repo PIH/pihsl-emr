@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // nicuTriage.xml: NICU triage for an infant (vitals, labs, reasons for presentation, delivery history, emergency and
 // priority signs, resuscitation, birth injury, disposition). A top-level form: the specs open
@@ -44,7 +44,9 @@ const birthdateDaysAgo = (days: number): string => {
 };
 
 // The tagged location list does not contain the session location, so the select starts on "Choose a Location...".
-const chooseLocation = async (page: Page) => {
+// The Provider select is blank too when the logged-in user has no Provider account.
+const pickProviderAndLocation = async (page: Page) => {
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ index: 1 });
 };
 
@@ -145,7 +147,7 @@ test.describe('nicuTriage', () => {
 
   test('saving without the delivery location is refused with "Required"', async ({ page, api }) => {
     // required="true" on #d-location (:246)
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     await save(page);
     await expect(page.locator('.field-error:visible').first()).toHaveText('Required');
     await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
@@ -157,7 +159,7 @@ test.describe('nicuTriage', () => {
     api,
   }) => {
     // script :44-69
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('#d-location').getByLabel('other', { exact: true }).check();
     const required = page.locator('#delivery-location-other .field-error');
     await expect(required).toHaveText(/required/i); // written by the click handler
@@ -174,7 +176,7 @@ test.describe('nicuTriage', () => {
   });
 
   test('saves the reasons for presentation, delivery location and priority signs', async ({ page, api }) => {
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('input[type=checkbox]').and(page.getByLabel('Jaundice', { exact: true })).check();
     await page.locator('#d-location').getByLabel('KGH/MCOE', { exact: true }).check();
     await page.locator('#avpu').getByLabel('Awake').check();
@@ -197,7 +199,7 @@ test.describe('nicuTriage', () => {
   });
 
   const fillTriage = async (page: Page) => {
-    await chooseLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('#heart_rate input').fill('150');
     await page.locator('#respiratory_rate input').fill('55');
     await page.locator('#temperature_c input').fill('37.2');

@@ -15,8 +15,6 @@ import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 // Side effects on save (pihcore classes, not read here): ApplyDispositionAction, SetOrderAutoExpireDateAction (:7-8).
 // Not covered here: revising, renewing or discontinuing an order and the quantity calculator (they need an active
 // order in an earlier encounter).
-// The order test purges its own order: the fixture's purge (commands/encounter-operations.ts) cannot delete an
-// encounter that still has an order, so a spec that saves an order has to remove it itself.
 // VIEW is covered for the counselling answer and the remarks. The drug-order widget draws its orders in VIEW with JavaScript (it reads
 // them over REST from the page), which the VIEW harness (setContent, no page scripts) does not run, so a saved order is not checked in VIEW.
 // Findings: none.
@@ -75,10 +73,6 @@ test.describe('section-plan-medication', () => {
     const res = await api.get(`order?patient=${section.patient.uuid}&v=custom:(uuid,action)`);
     expect(res.ok()).toBeTruthy();
     const orders = (await res.json()).results as Array<{ uuid: string; action: string }>;
-    // the fixture purges the encounter after the test, which fails while it still has orders: purge them here
-    for (const o of orders) {
-      expect((await api.delete(`order/${o.uuid}?purge=true`)).ok()).toBeTruthy();
-    }
     expect(orders.map((o) => o.action)).toEqual(['NEW']);
   });
 });

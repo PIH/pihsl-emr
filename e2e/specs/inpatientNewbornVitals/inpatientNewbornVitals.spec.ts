@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // inpatientNewbornVitals.xml: "Vital Signs Newborn Inpatient" (infant vitals, oxygen and fluids, a newborn exam of six yes/no
 // signs, feeding and hematocrit). The specs open enterHtmlFormWithStandardUi inside a visit they create, for an infant born 3 days
@@ -30,10 +30,10 @@ const birthdateDaysAgo = (n: number): string => {
 
 const saveButton = (page: Page) => page.locator('#buttons button.submitButton');
 const fillWhoWhere = async (page: Page) => {
-  for (const select of [page.locator('select[name=w1]'), page.locator('#w3')]) {
-    if (!(await select.inputValue())) {
-      await select.selectOption({ index: 1 });
-    }
+  await selectDefaultProvider(page);
+  const location = page.locator('#w3');
+  if (!(await location.inputValue())) {
+    await location.selectOption({ index: 1 });
   }
 };
 const vital = (page: Page, id: string) => page.locator(`#${id} input`);

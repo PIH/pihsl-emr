@@ -6,8 +6,8 @@ import {
   createVisit,
   createVisitWithEncounter,
   deletePatient,
-  purgeClinicalDataForPatient,
-  purgeProgramEnrollments,
+  voidClinicalDataForPatient,
+  voidProgramEnrollments,
   type CreatePatientOptions,
   type TestEncounter,
   type TestPatient,
@@ -58,8 +58,8 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
       });
 
       for (const uuid of created) {
-        await purgeClinicalDataForPatient(api, uuid);
-        await purgeProgramEnrollments(api, uuid);
+        await voidClinicalDataForPatient(api, uuid);
+        await voidProgramEnrollments(api, uuid);
         await deletePatient(api, uuid);
       }
     },
@@ -78,8 +78,8 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
       });
 
       for (const uuid of created) {
-        await purgeClinicalDataForPatient(api, uuid);
-        await purgeProgramEnrollments(api, uuid);
+        await voidClinicalDataForPatient(api, uuid);
+        await voidProgramEnrollments(api, uuid);
         await deletePatient(api, uuid);
       }
     },

@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // triage.xml: "MCOE Triage" (National Obstetric Triage and Treatment Form): referral, transport, gestational age, vitals with
 // a colour-coded triage priority, a symptom matrix (green/yellow/orange/red), TB screening, rapid tests, PHQ-2, disposition.
@@ -38,14 +38,14 @@ import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 //                         runs it twice; harmless today. Fix: drop the copy in triage.xml.
 //   see _shared V2  vital-signs-widget.js enableSubmitButton() on every vitals blur overrides validateForm(): after tabbing out of a vital the
 //                         Save button is enabled with no disposition chosen (the server-side "required" still refuses the save).
-//                         TESTED below (test.fail). see _shared V15 for the TB message: checked here, the rule holds as written (all four).
+//                         TESTED below (test.fixme). see _shared V15 for the TB message: checked here, the rule holds as written (all four).
 
 const FORM = 'triage.xml';
 const SAVE = '#buttons button.submitButton';
 
 // Pick provider and location (both required, both start empty): by index, the options are not read.
 const pickProviderAndLocation = async (page: Page) => {
-  await page.locator('#who select').selectOption({ index: 1 });
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ index: 1 });
 };
 
@@ -230,9 +230,9 @@ test.describe('triage', () => {
   });
 
   // see _shared V2: vital-signs-widget.js re-enables Save on every vitals blur, ignoring validateForm()'s missing disposition.
-  // Tab (no click) is how a keyboard user leaves the field; a mouse click would run validateForm() again. Remove test.fail() when fixed.
+  // Tab (no click) is how a keyboard user leaves the field; a mouse click would run validateForm() again. Remove test.fixme() when fixed.
   test('Save stays disabled after tabbing out of a vital with no disposition (_shared V2)', async ({ page }) => {
-    test.fail();
+    test.fixme();
     await expect(page.locator(SAVE)).toBeDisabled();
     await fillVital(page, 'bp_systolic', '120');
     await expect(page.locator(SAVE)).toBeDisabled();

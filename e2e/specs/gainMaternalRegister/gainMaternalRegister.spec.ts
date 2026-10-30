@@ -1,7 +1,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider } from '../../pages';
 
 // gainMaternalRegister.xml: "Maternity and Delivery Register" (GAIN): one page with admission, labour, delivery, newborn
 // condition, diagnoses, family planning, maternal outcome (disposition) and "Delivery conducted by". A top-level form: the
@@ -79,6 +79,7 @@ test.describe('gainMaternalRegister', () => {
     await open(page);
     await expect(page.locator('#encounterLocation select')).not.toHaveValue('');
     await page.locator('#encounterLocation select').selectOption({ index: 0 });
+    await selectDefaultProvider(page);
     await save(page);
     await expect(page.locator('#encounterLocation span.field-error')).toHaveText('required');
     await expect(page).toHaveURL(/enterHtmlFormWithStandardUi/);
@@ -92,6 +93,7 @@ test.describe('gainMaternalRegister', () => {
     await page.locator('#newborn p', { hasText: '(Birth) Weight' }).locator('input[type=text]').fill('3.2');
     await page.locator('#hcw input[type=text]').first().fill('Auto Midwife');
     await page.locator('#hcw-cadre').getByLabel('Midwife', { exact: true }).check();
+    await selectDefaultProvider(page);
     await save(page);
     await expect(page).toHaveURL(/referenceapplication\/home\.page/);
 
@@ -160,6 +162,7 @@ test.describe('gainMaternalRegister', () => {
     await page.locator('#hcw input[type=text]').first().fill('Auto Midwife');
     await page.locator('#hcw-cadre').getByLabel('Other', { exact: true }).check();
     await page.locator('#other-role input').fill('Traditional birth attendant');
+    await selectDefaultProvider(page);
     await save(page);
     await expect(page).toHaveURL(/referenceapplication\/home\.page/);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
