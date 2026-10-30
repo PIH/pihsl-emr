@@ -34,7 +34,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 const FORM = 'section-liver.xml';
 
@@ -113,7 +113,7 @@ test.describe('section-liver, NCD initial encounter', () => {
     // required="true" on #new-hepb-tto :267
     await openForm(page, createSectionEncounter, NCD_INITIAL_ENCOUNTER_TYPE_UUID);
     await new SectionFormPage(page, FORM).save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
   });
 
@@ -212,7 +212,7 @@ test.describe('section-liver, NCD followup encounter', () => {
     // required="true": missed doses :189 (req), #liver-control :230, #new-hepb-tto :267, #hepB-q :306
     await openForm(page, createSectionEncounter, NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID);
     await new SectionFormPage(page, FORM).save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(4);
   });
 

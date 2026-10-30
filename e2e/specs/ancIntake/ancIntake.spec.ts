@@ -1,7 +1,7 @@
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, submitShellForm, VISIT_PAGE_URL } from '../../pages';
 
 // ancIntake.xml: header form ("ANC First Visit (Initial)"), only the shared encounter-with-sections shell
 // (documentation/_shared.e2e.md). Its content is section-anc-intake.xml, reached via Next (see that spec).
@@ -32,7 +32,8 @@ test.describe('ancIntake', () => {
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
 
     await EntryFormPage.open(page, 'ancIntake.xml', context);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await submitShellForm(page);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await expect
       .poll(async () => (await getPatientEncounters(api, context.patient.uuid)).map((e) => e.encounterType.uuid))
@@ -47,7 +48,8 @@ test.describe('ancIntake', () => {
       birthdate: birthdateYearsAgo(25),
     });
     await EntryFormPage.open(page, 'ancIntake.xml', context);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await submitShellForm(page);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     await expect.poll(async () => (await getPatientEncounters(api, context.patient.uuid)).length).toBe(1);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);

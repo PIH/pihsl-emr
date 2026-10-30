@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // checkin.xml: "Check-In" (provider, location, date, and the patient's appointments to check in). In production it is opened
 // from the visit page or, with createVisit=true, from the registration page; the specs open enterHtmlFormWithStandardUi inside
@@ -21,13 +21,13 @@ import { EntryFormPage, ViewFormPage } from '../../pages';
 const FORM = 'checkin.xml';
 const CHECKIN_ENCOUNTER_TYPE_UUID = '55a0d3ea-a4d7-4e88-8f01-5aceb2d3c61b';
 
-// The session location (MCH OPD) lacks the "Check-In Location" tag, so the Location select starts empty; the provider defaults
-// to the current user when that user has the form's provider role. Pick an option only when the select has no value.
+// The session location (MCH OPD) lacks the "Check-In Location" tag, so the Location select starts empty: pick an option only
+// when it has no value. The provider select is blank when the user has no Provider account: select the default provider.
 const fillWhoWhere = async (page: Page) => {
-  for (const select of [page.locator('select[name=w1]'), page.locator('#w3')]) {
-    if (!(await select.inputValue())) {
-      await select.selectOption({ index: 1 });
-    }
+  await selectDefaultProvider(page);
+  const location = page.locator('#w3');
+  if (!(await location.inputValue())) {
+    await location.selectOption({ index: 1 });
   }
 };
 const saveButton = (page: Page) => page.locator('#buttons input.submitButton, input.submitButton').first();
@@ -51,7 +51,7 @@ test.describe('checkin', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, context.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([CHECKIN_ENCOUNTER_TYPE_UUID]);
@@ -62,11 +62,12 @@ test.describe('checkin', () => {
     // encounter location is mandatory in HFE even though :46 does not say required="true"
     const context = await createEntryContext({ givenName: 'AutoCheckin', familyName: 'Tester', gender: 'F', birthdate: birthdateYearsAgo(30) });
     await EntryFormPage.open(page, FORM, context);
+    await selectDefaultProvider(page);
     await page.locator('#w3').selectOption({ index: 0 });
     await saveButton(page).click();
 
     await expect(page.locator('span.field-error').filter({ hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -79,7 +80,7 @@ test.describe('checkin', () => {
     await EntryFormPage.open(page, FORM, context);
     await fillWhoWhere(page);
     await saveButton(page).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);
 

@@ -2,13 +2,21 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID, MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage, ViewFormPage, expectViewShowsSavedObs, viewMismatches } from '../../pages';
+import {
+  EntryFormPage,
+  SectionFormPage,
+  ViewFormPage,
+  expectViewShowsSavedObs,
+  selectDefaultProvider,
+  viewMismatches,
+  VISIT_PAGE_URL,
+} from '../../pages';
 
 // ancProgress.xml: "ANC Progress" (MCOE antenatal progress note): intake, vitals, lab results, pregnancy complications,
 // general and obstetrical exam (up to 3 foetuses), diagnosis and outcome. The specs open enterHtmlFormWithStandardUi
 // inside a visit they create, so availability (documentation/_availability.e2e.md: mcoeForms, enterMCH, session location
 // tag "Antenatal Progress Location", female >= 10) is not exercised. The session location (MCH OPD) lacks that tag, so
-// the Location select starts blank and is required: every save below picks "Antenatal Ward".
+// the Location select starts blank and is required: every save below picks "Antenatal Ward" and the default provider.
 //
 // Conditions in the form, from documentation inventory (ancProgress.inv.md):
 //   when #ab-scar = Yes                :355  show #ab-scar-details (# of previous c-sections, scar description)
@@ -35,7 +43,7 @@ import { EntryFormPage, SectionFormPage, ViewFormPage, expectViewShowsSavedObs, 
 //                    exists here, so on load foetus 2 and 3 are always hidden. A reopened (EDIT) encounter with data for
 //                    foetus 2/3 hides it until "Show more" is clicked (twins ticked is the only other trigger). Fix: look
 //                    at the foetus inputs, e.g. '#fetus-hr-N input'. Saved groups carry no foetus number, so HFE binds them
-//                    to the slots in obs order (once seen reopened with foetus 1 and 2 swapped).   (TESTED, test.fail)
+//                    to the slots in obs order (once seen reopened with foetus 1 and 2 swapped).   (TESTED, test.fixme)
 //   V2 Low    :469   id="ob-us={0}" ('=' instead of '-') renders ids "ob-us=1".."ob-us=3"; unusable as a CSS id selector.
 //   V3 Low    :574, :599  two "Notes" textareas on the same concept CIEL:161011 (Diagnosis and Outcome sections); both are
 //                    saved as separate obs of one concept, so a reader cannot tell which section a note came from.
@@ -46,10 +54,10 @@ import { EntryFormPage, SectionFormPage, ViewFormPage, expectViewShowsSavedObs, 
 //   VW1 Medium :408-496 the foetus obs groups carry no foetus number, so VIEW (like EDIT, V1) binds them to the slots itself: when foetus 2 has more
 //                    members than foetus 1, foetus 2's values are shown under "Foetus 1" and foetus 1's under "Foetus 2" (saved 140/Doppler and
 //                    150/Pinard/Breech/posterior, shown 150... in slot 1). Fix: store the foetus number in each group (e.g. a hidden obs set from {0})
-//                    and bind by it. (TESTED, test.fail)
+//                    and bind by it. (TESTED, test.fixme)
 //   VW2 Medium :574, :599 (V3 in VIEW) the two "Notes" are one concept, so a note typed only in Outcome is shown under Diagnosis and the Outcome
 //                    notes stay blank in VIEW (the first widget takes the first obs). With both filled, the two notes were seen swapped between
-//                    the sections in one of two runs (the obs order is not fixed). Fix: use two different concepts. (TESTED, test.fail)
+//                    the sections in one of two runs (the obs order is not fixed). Fix: use two different concepts. (TESTED, test.fixme)
 
 const FORM = 'ancProgress.xml';
 
@@ -73,7 +81,9 @@ const openForm = async (page: Page, context: EntryContext) => {
 };
 
 // The Location select is blank and required because the session location has no "Antenatal Progress Location" tag.
-const pickLocation = async (page: Page) => {
+// The Provider select is blank too when the logged-in user has no Provider account.
+const pickProviderAndLocation = async (page: Page) => {
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ label: 'Antenatal Ward' });
 };
 
@@ -230,14 +240,14 @@ test.describe('ancProgress', () => {
     // encounter-provider-location-date.xml (shared): Location (required) has no default under this session location
     await saveForm(page);
     await expect(page.locator('span.field-error', { hasText: /required/i }).first()).toBeVisible();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
   test('saves the progress note and enrolls the patient in the Pregnancy program', async ({ page, api }) => {
     expect(await pregnancyEnrollments(api, context.patient.uuid)).toEqual([]);
 
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     await page.getByRole('radio', { name: 'B', exact: true }).check(); // pregnancy group (shared widget)
     await page.locator('p', { hasText: 'Gravida' }).locator('input').first().fill('2');
     await page.locator('p', { hasText: 'Parity' }).locator('input').first().fill('1');
@@ -320,10 +330,10 @@ test.describe('ancProgress', () => {
   });
 
   // V1 (Medium): hasValue() checks a class that does not exist, so saved foetus 2 data is hidden when the form is reopened.
-  // Intended: foetus 2 is visible (with its saved value) in EDIT. Remove test.fail() when :102 is fixed.
+  // Intended: foetus 2 is visible (with its saved value) in EDIT. Remove test.fixme() when :102 is fixed.
   test('a saved foetus 2 is shown when the encounter is reopened (V1)', async ({ page, api }) => {
-    test.fail();
-    await pickLocation(page);
+    test.fixme();
+    await pickProviderAndLocation(page);
     await page.locator('#fetus-hr-1 input').fill('140');
     await page.locator('#show-more-fetus-button').click();
     await page.locator('#fetus-hr-2 input').fill('150'); // foetus 1 is filled too: HFE binds saved groups to slots in order
@@ -344,7 +354,7 @@ test.describe('ancProgress', () => {
 
   // ---- VIEW (viewEncounterWithHtmlForm getAsHtml.action) ----
   test('VIEW: shows the scar details and only the foetus that has data, and leaves the rest blank', async ({ page, api }) => {
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('#ab-scar').getByLabel('yes', { exact: true }).check();
     await page.locator('#ab-scar-details input:visible').nth(0).fill('2');
     await page.locator('#ab-scar-details input:visible').nth(1).fill('Pfannenstiel');
@@ -379,10 +389,10 @@ test.describe('ancProgress', () => {
 
   // VW1 (Medium): the foetus groups carry no foetus number, so HFE binds them to the slots itself: when foetus 2 has more members than foetus 1,
   // VIEW shows foetus 2's data under "Foetus 1" and foetus 1's under "Foetus 2" (same cause as V1; two groups with the same members stay in order).
-  // Intended: each foetus under its own heading. Remove test.fail() when fixed.
+  // Intended: each foetus under its own heading. Remove test.fixme() when fixed.
   test('VIEW: each foetus is shown under its own number (VW1)', async ({ page, api }) => {
-    test.fail();
-    await pickLocation(page);
+    test.fixme();
+    await pickProviderAndLocation(page);
     await page.locator('#fetus-hr-1 input').fill('140');
     await page.locator('#fetal_hr_method-1').getByLabel('Doppler').check();
     await page.locator('#show-more-fetus-button').click();
@@ -402,10 +412,10 @@ test.describe('ancProgress', () => {
   });
 
   // VW2 (Medium): the Diagnosis and Outcome "Notes" are two widgets on one concept (V3), and HFE fills them in order: a note typed only under
-  // Outcome is shown under Diagnosis in VIEW. Intended: shown under Outcome. Remove test.fail() when fixed.
+  // Outcome is shown under Diagnosis in VIEW. Intended: shown under Outcome. Remove test.fixme() when fixed.
   test('VIEW: a note typed only under Outcome is shown under Outcome (VW2)', async ({ page, api }) => {
-    test.fail();
-    await pickLocation(page);
+    test.fixme();
+    await pickProviderAndLocation(page);
     await page.locator('#outcome textarea:visible').fill('Outcome section note');
     await saveForm(page);
     await new EntryFormPage(page, FORM).expectSaved();
@@ -420,7 +430,7 @@ test.describe('ancProgress', () => {
   test('VIEW: with an earlier LMP the calculated EDD block stays hidden and nothing is calculated', async ({ page, api }) => {
     await createPriorLmp(api, context.patient.uuid, 100);
     await openForm(page, context);
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator('p', { hasText: 'Gravida' }).locator('input').first().fill('2');
     await saveForm(page);
     await new EntryFormPage(page, FORM).expectSaved();

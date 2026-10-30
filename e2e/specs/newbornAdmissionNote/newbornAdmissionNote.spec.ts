@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage } from '../../pages';
+import { EntryFormPage, ViewFormPage, selectDefaultProvider } from '../../pages';
 
 // newbornAdmissionNote.xml: "Admission Note" for a newborn admitted to a ward (required diagnoses only). The specs open
 // enterHtmlFormWithStandardUi inside a visit they create, for an infant (born 3 days ago), so availability
@@ -49,10 +49,11 @@ test.describe('newbornAdmissionNote', () => {
   });
 
   test('Save stays disabled until a location and a diagnosis are given', async ({ page }) => {
-    // script :22-48. The provider defaults to the current user; the location has no default (the session
+    // script :22-48. The provider is blank unless the user has a Provider account (the test picks one); the location has no default (the session
     // location, MCH OPD, is not one of the "Newborn Admission Note Location" options).
     await expect(saveButton(page)).toBeDisabled();
 
+    await selectDefaultProvider(page);
     await page.locator('#encounterLocation select').selectOption({ label: 'NICU' });
     await expect(saveButton(page)).toBeDisabled(); // no diagnosis yet
 
@@ -67,6 +68,7 @@ test.describe('newbornAdmissionNote', () => {
   });
 
   test('saves the admission with a diagnosis and creates one Newborn Admission encounter', async ({ page, api }) => {
+    await selectDefaultProvider(page);
     await page.locator('#encounterLocation select').selectOption({ label: 'NICU' });
     await page.locator('#diagnosis-search').fill('neonatal sepsis');
     await page.locator('.ui-autocomplete li', { hasText: 'P36.9 Neonatal sepsis' }).first().click();
@@ -83,6 +85,7 @@ test.describe('newbornAdmissionNote', () => {
   // VIEW: the diagnoses are not rendered as span.value (encounterDiagnosesByObs prints "<order> Diagnosis" and "(certainty) name [code]" itself),
   // so expectViewShowsSavedObs, which looks for saved values in span.value, does not apply to this form.
   test('VIEW: shows the primary and secondary diagnoses with their certainty, and nothing else', async ({ page, api }) => {
+    await selectDefaultProvider(page);
     await page.locator('#encounterLocation select').selectOption({ label: 'NICU' });
     await page.locator('#diagnosis-search').fill('neonatal sepsis');
     await page.locator('.ui-autocomplete li', { hasText: 'P36.9 Neonatal sepsis' }).first().click();

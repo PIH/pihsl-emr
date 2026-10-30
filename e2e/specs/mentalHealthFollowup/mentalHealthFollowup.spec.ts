@@ -2,14 +2,14 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // mentalHealthFollowup.xml: "Mental Health Follow-up" (encounter type 9d701a81-bb83-40ea-9efc-af50f05575f2), the short counterpart of
 // mentalHealth.xml (housing, presenting features, mental state exam, suicide evaluation, diagnoses, CGI scores with the previous values, the
 // shared PHQ-9/GAD-7 totals, interventions, drug orders, outcome). The specs open enterHtmlFormWithStandardUi inside a visit they create, so
 // availability (documentation/_availability.e2e.md: enableMentalHealthForm, "Task: emr.enterMentalHealthNote", "Mental Health Location" session tag,
 // no assessment or followup in the visit, no prior assessment needed) is not exercised. The session location lacks the form's location tag, so
-// every save picks a location.
+// every save picks a location and the default provider.
 //
 // Conditions in the form, from documentation inventory (mentalHealthFollowup.inv.md):
 //   ifMode VIEW include=false  :81, :163, :515, :551, :703  script, heading, previous-value rows, #buttons (ENTER/EDIT only)
@@ -103,16 +103,18 @@ test.describe('mentalHealthFollowup', () => {
   };
 
   // The location select starts empty (the session location lacks the "Mental Health Location" tag) and is required.
-  const pickLocation = async (page: Page) => {
+  // The provider select is blank too when the logged-in user has no Provider account.
+  const pickProviderAndLocation = async (page: Page) => {
+    await selectDefaultProvider(page);
     const location = page.locator('#encounterLocation select');
     if ((await location.inputValue()) === '') {
       await location.selectOption({ index: 1 });
     }
   };
 
-  // Answers every required field (suicide evaluation x4 "No", a primary diagnosis, assigned CHW "Yes"), picks a location and saves.
+  // Answers every required field (suicide evaluation x4 "No", a primary diagnosis, assigned CHW "Yes"), picks a provider and location and saves.
   const fillRequiredAndSave = async (page: Page) => {
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     for (const radio of await page.locator('#mh-suicide input[type=radio][id$="_1"]').all()) {
       await radio.check();
     }
@@ -207,12 +209,12 @@ test.describe('mentalHealthFollowup', () => {
   test('saving with the required answers blank shows "Required" in each section and saves nothing', async ({ page, api }) => {
     // required :402-433 (suicide evaluation), :468 (primary diagnosis), :681 (assigned CHW)
     await open(page);
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator(SUBMIT).click();
     for (const section of ['#mh-suicide', '#mh-diagnoses', '#mh-Outcome']) {
       await expect(page.locator(`${section} span.field-error`).filter({ hasText: 'Required' }).first()).toBeVisible();
     }
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

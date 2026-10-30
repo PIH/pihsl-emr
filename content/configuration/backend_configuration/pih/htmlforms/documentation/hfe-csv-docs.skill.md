@@ -105,4 +105,4 @@ Upload both at the start of the session. Place the concept mappings at `/root/fu
 
 ## Related skill
 
-For writing Playwright E2E specs for these forms (conditional display, JavaScript, form availability, verify findings), see `hfe-e2e-specs.skill.md` in this directory. That skill starts from the CSVs this skill produces and never changes their schema.
+For writing Playwright E2E specs for these forms (conditional display, JavaScript, form availability, verify findings), see `hfe-e2e-specs.skill.md` in this directory. That skill starts from the CSVs this skill produces and never changes their schema. It also keeps the "Forms tested" table in `e2e/README.md` (form name, version, uuid and encounter type per spec), which is read from the XML, not from these CSVs.

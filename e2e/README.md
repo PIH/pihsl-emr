@@ -14,9 +14,11 @@ cp .env.example .env    # then edit: URL and admin credentials of your server; q
 npx playwright test
 ```
 
-Use a server with **test data only**. The specs create their own synthetic patients and purge them afterwards, but they log in as the admin user and write to the server.
+Use a server with **test data only**. The specs create their own synthetic patients and void them afterwards (nothing is purged, so the user does not need the Purge privileges; the voided patients stay in the database), but they log in as the admin user and write to the server.
 
 A full run is about 614 tests: about 16 minutes with `E2E_WORKERS=3` (`E2E_WORKERS=3 npx playwright test`), and roughly twice that with the default single worker. Each test has its own synthetic patient, so workers do not share data, but they share the server: raise the count only if it keeps up. Several `npx playwright test` processes at once (e.g. parallel agents) must each pass their own `--output <dir>`, or they overwrite each other's `test-results`. The specs share one login session (created in `core/global-setup.ts`), so if the machine sleeps during a run the session expires and every later test fails with `create patient: 401`. Keep the machine awake, e.g. `systemd-inhibit --what=sleep:idle npx playwright test`. Run a few specs at a time while iterating (`npx playwright test specs/<form>`).
+
+Every test also fails on an uncaught JavaScript error in its pages (the `failOnJsError` auto fixture in `core/test.ts`); `console.error` output is not counted.
 
 ## Forms tested
 
@@ -124,7 +126,6 @@ The conditions each spec covers are listed in a comment at the top, taken from t
 
 - Most of these forms use the HFE `<submit>` tag, which renders `input.submitButton` inside `#buttons`, not `#submit`. The session location (MCH OPD) often lacks the form's location tag, so the Location select starts empty and each save test picks one.
 - `vitals` and `vitalsWithGlucose` are opened in production with the Simple UI (`enterHtmlFormWithSimpleUi.page`); the Standard UI does not define `ExitHandlers`, so some scripts only run there.
-- Never save an order from a spec: an encounter with a lab order cannot be purged over REST.
 
 ### VIEW mode
 
@@ -133,8 +134,8 @@ Every spec that saves also opens the read-only rendering of what it saved (`page
 - Saved values are `span.value` (`[X] label` for a selected radio or checkbox), unanswered ones `span.emptyValue`. The shell entry forms of the NCD, ANC and delivery encounters render nothing in VIEW by design (their sections do): the specs assert that.
 - `setContent` runs no jQuery, so show/hide (`when`, `toggle`) and the VIEW scripts (vitals colouring, BMI, the Aldrete total) do not run. A few specs (`pacuFollowup`, `vitals`, `vitalsWithGlucose`) start from a page that has `jq` to run them.
 - The diagnosis widget prints plain text, not `span.value`, so diagnosis obs are not matched by the helper; the specs assert the printed text.
-- Findings only visible in VIEW are numbered `VW<n>` in the spec headers and marked `test.fail()` like the others.
+- Findings only visible in VIEW are numbered `VW<n>` in the spec headers and marked `test.fixme()` like the others.
 
 ### Known form bugs
 
-Tests for behaviour that is currently broken assert the **intended** behaviour and are marked `test.fail()` with the finding id (e.g. `section-hospital` V1). They show as passing while the bug exists and will start failing, prompting you to remove the marker, once the form is fixed. The findings, scripts and side effects of each form are documented in the header comment of its spec; the skill for writing specs is `htmlforms/documentation/hfe-e2e-specs.skill.md`.
+Tests for behaviour that is currently broken assert the **intended** behaviour and are marked `test.fixme()` with the finding id (e.g. `section-hospital` V1). They are skipped, so a run stays green and fast; remove the marker when the form is fixed and the test should pass. Temporarily change `test.fixme()` to `test.fail()` to check whether a bug is still there (it fails the run once the bug is fixed). The findings, scripts and side effects of each form are documented in the header comment of its spec; the skill for writing specs is `htmlforms/documentation/hfe-e2e-specs.skill.md`.

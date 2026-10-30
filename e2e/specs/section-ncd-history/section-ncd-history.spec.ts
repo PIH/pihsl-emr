@@ -7,7 +7,7 @@ import {
   NCD_INITIAL_ENCOUNTER_TYPE_UUID,
 } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-ncd-history.xml: "NCD Patient Card" of the NCD initial encounter (patient details, NCD categories with
 // onset dates, vitals, risk factors, comorbidity, reason for visit, clinical notes). The specs use an NCD initial
@@ -222,7 +222,7 @@ test.describe('section-ncd-history', () => {
     // required="true" on the 11 Patient Details questions (:246-:405)
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(11);
   });
 

@@ -1,7 +1,7 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { type EntryContext, test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // pacuFollowup.xml: "PACU Followup" (post-anaesthesia care unit): service team, diagnoses and procedures, type of anaesthesia, basic
 // vitals, Aldrete discharge score (5 criteria, 0-2 each), PACU events (pain, nausea, vomiting, shivering, ...), blood/fluids, disposition.
@@ -31,10 +31,10 @@ import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
 //   V1 Info :226  the diagnosis search is captioned "Add presumed or confirmed diagnosis (required)" but encounterDiagnosesByObs has no
 //                 required check: the encounter saves without any diagnosis (tested below).
 //   V2 Low  :210  <obs id="admissionDate" ... default="now"> uses the attribute `default`, which <obs> ignores (it is `defaultDatetime`): the Admission
-//                 date/time starts empty and is never saved unless typed (found while checking the VIEW; tested below, test.fail). Fix: defaultDatetime="now".
+//                 date/time starts empty and is never saved unless typed (found while checking the VIEW; tested below, test.fixme). Fix: defaultDatetime="now".
 //   VW1 Low :74-133  the VIEW script writes the Total Score (class "value") even when no Aldrete criterion was saved, so a PACU note without any score
 //                 shows "Total Score 0": a saved-looking value, and 0 is the worst score. Fix: set the total only when at least one criterion obs exists.
-//                 TESTED below (test.fail).
+//                 TESTED below (test.fixme).
 
 const FORM = 'pacuFollowup.xml';
 const SAVE = '#buttons input.submitButton';
@@ -172,7 +172,7 @@ test.describe('pacuFollowup', () => {
     // required location (encounterLocation, :178; the tagged list does not contain the session location)
     await page.locator(SAVE).click();
     await expect(page.locator('#encounterLocation .field-error')).toHaveText(/required/i);
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
@@ -289,9 +289,9 @@ test.describe('pacuFollowup', () => {
   });
 
   // VW1 (Low): the VIEW script sets the total unconditionally. Intended: no total when no Aldrete criterion was saved.
-  // Remove test.fail() when the script only writes the total for a note that has a criterion.
+  // Remove test.fixme() when the script only writes the total for a note that has a criterion.
   test('VIEW: a note without any Aldrete answer shows no total score (VW1)', async ({ page, api }) => {
-    test.fail();
+    test.fixme();
     await chooseLocation(page);
     await page.locator('#bp_systolic input').fill('110');
     await page.locator(SAVE).click();
@@ -303,9 +303,9 @@ test.describe('pacuFollowup', () => {
   });
 
   // V2 (Low): `default="now"` is not an attribute of <obs>. Intended: the admission date/time starts as now (as the encounter date does). Remove
-  // test.fail() when the attribute is fixed.
+  // test.fixme() when the attribute is fixed.
   test('the admission date/time defaults to now (V2)', async ({ page }) => {
-    test.fail();
+    test.fixme();
     await expect(page.locator('#admissionDate input.hasDatepicker')).not.toHaveValue('');
   });
 });

@@ -1,7 +1,8 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { POSTNATAL_FOLLOWUP_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage } from "../../pages";
+import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
 
 // postnatalFollowup.xml: header form ("Postnatal Followup"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -34,7 +35,8 @@ test.describe("postnatalFollowup", () => {
     );
 
     await EntryFormPage.open(page, FORM, context);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await submitShellForm(page);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await expect
       .poll(async () =>

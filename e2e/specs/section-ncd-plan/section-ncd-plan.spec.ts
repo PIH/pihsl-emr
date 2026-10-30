@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-ncd-plan.xml: treatment plan, lab test orders, radiology/EKG/echo findings, medication orders, new clinical
 // impressions (NCD categories) and disposition of the NCD encounter. The specs use an NCD followup encounter
@@ -42,7 +42,7 @@ const openPlan = async (page: Page, section: SectionEncounter) => {
 };
 const savePlan = async (page: Page) => {
   await page.locator('input.submitButton').click();
-  await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+  await expect(page).toHaveURL(VISIT_PAGE_URL);
 };
 
 // Read-only jQuery UI datepicker; setDate also updates the hidden field that is submitted.

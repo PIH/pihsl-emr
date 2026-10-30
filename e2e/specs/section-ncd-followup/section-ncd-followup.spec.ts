@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-ncd-followup.xml: Patient Details, NCD categories and vitals of the NCD followup encounter.
 // The specs open the form URL directly, so the visit-page rule that shows this section only for the full
@@ -79,7 +79,7 @@ test.describe('section-ncd-followup', () => {
     // required="true" on type of visit, social support and missed school (:160)
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
   });
 

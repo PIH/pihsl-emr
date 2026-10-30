@@ -1,7 +1,7 @@
 import { test, expect, type SectionEncounter } from '../../core';
 import { ANC_INTAKE_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 // section-anc-intake.xml: ANC intake history, high-risk factors, vitals, tests and orders. On the visit
 // page it is the "section" of an ANC intake encounter; the specs open the form URL directly
@@ -71,7 +71,7 @@ test.describe('section-anc-intake', () => {
   test('the obstetric history counts are required: saving with them blank does not save', async ({ page }) => {
     const form = new SectionFormPage(page, FORM);
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' }).first()).toBeVisible();
   });
 

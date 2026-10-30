@@ -32,7 +32,11 @@ Versioned copies (`*_v1.0.xml`, `*_Version3.xml`, ...) are skipped unless the us
 
 A `section-*` form has no `formEncounterType`: it edits an encounter another form created. For those, the Encounter column lists the encounter type(s) the spec creates for it with `createEntryContext` / `createSectionEncounter` (the `*_ENCOUNTER_TYPE_UUID` constants of `e2e/core/constants.ts`, resolved to names the same way); a section used by several parents lists them all, in the same order in both columns (separated by `<br>`).
 
-The table is the one place that repeats these XML values; **do not** copy them into the spec (see "Spec skeleton"), and refresh the row when the form's version or uuid changes. Take every value from the XML and the metadata with a script rather than by hand, and check that none comes out empty.
+The table is the one place that repeats these XML values; **do not** copy them into the spec (see "Spec skeleton"), and refresh the row when the form's version or uuid changes. Take every value from the XML and the metadata with a script rather than by hand, and check that none comes out empty. Notes for that script:
+
+- Read the attributes with a regex on the `<htmlform ...>` tag: it needs no `lxml`, and uuids keep the case they have in the XML (some forms have upper-case ones; copy them as they are).
+- For a section form, scan the whole spec for `*_ENCOUNTER_TYPE_UUID` names, in order of first use: a spec can define its own constant (e.g. `DELIVERY_ENCOUNTER_TYPE_UUID` in `section-dx`) that is not in `e2e/core/constants.ts`.
+- A spec that tests a flow rather than a form (the registration wizard) has no XML file: it gets no row. Say so in one sentence under the heading.
 
 ### Running it (cost control)
 
@@ -70,7 +74,7 @@ The job is large (about 75 current forms in Sierra Leone). Keep it cheap:
 // Not covered here: <what a test would need and why it is skipped>
 //
 // Findings (V1.. numbered per file, High -> Low -> Info; see "Verify mode"):
-//   V1 Medium :46-49  problem -> user-visible consequence. Fix: ...   (TESTED below with test.fail)
+//   V1 Medium :46-49  problem -> user-visible consequence. Fix: ...   (TESTED below with test.fixme)
 //   V2 Info   ...
 ```
 then `test.describe` blocks. Each test carries a comment citing the condition it exercises (`// when :182`).
@@ -84,13 +88,13 @@ then `test.describe` blocks. Each test carries a comment citing the condition it
     - Targeted assertions: the specific values worth checking (obs groups, conditional sections, custom answer labels, dates, lookups and computed text such as `$fn`/`<lookup>`), and that what the test did **not** fill is not shown as a value (`toHaveCount(0)` on `.value` inside that block).
     - Select fields by their ids (`controlId`, `id=`), not by structure: `setContent` re-parses the HTML, so a `<tr>` wrapped in a `<span>` is lifted out of its table and `#wrapper .value` finds nothing.
     - `ifMode mode="VIEW" include="false"` blocks (Save/Cancel buttons, ENTER-only widgets) must be absent here; assert that for one of them per form.
-    - A value that was saved but is missing, mislabelled or blank in VIEW is a finding (`VW1`..): write the test for the intended rendering and mark it `test.fail()` like any known bug. Intentional design (a field hidden in VIEW by `ifMode`) is not a finding.
+    - A value that was saved but is missing, mislabelled or blank in VIEW is a finding (`VW1`..): write the test for the intended rendering and mark it `test.fixme()` like any known bug. Intentional design (a field hidden in VIEW by `ifMode`) is not a finding.
     - The helper skips dates and datetimes and the diagnosis obs (`Diagnosis*`, `Visit Diagnoses`: the widget prints them as plain text, assert that text yourself), maps `Disposition categories: Discharged` to "Discharge", matches a short expected text (3 characters or fewer, or a number: "3" matches "3.0") against a whole value only, and treats an empty label (`labels[display] = ''`) as "do not look for this obs" (use it for hidden marker obs and row numbers).
     - `setContent` runs no jQuery, so `when`/`toggle` show/hide and the VIEW scripts (vitals colouring, BMI, totals) do not run: blocks that are only hidden by a script show up in VIEW (a finding when misleading, e.g. a "Death Outcome" heading on a discharged baby). To run a script, start from a page that has `jq` and let `jq(document).ready` wait one tick (see `openViewWithScripts` in the `pacuFollowup` spec).
     - Entry forms that only hold a shell (`ncd-*`, `ancIntake`, `delivery`, `outpatient-*`) render nothing in VIEW (the content is in the section forms): one test asserting no values and a hidden `.htmlform` wrapper is enough.
     - Two questions on one concept (the same defect as SL-1461) show up here as a lone answer under the wrong question, or two texts swapped; HFE's obs-to-field order is not stable, so such a test can be random: compare sorted or leave it out of `test.fail()`.
     - Add "VIEW" to the header's covered/"Not covered here" sentence.
-- **Known bugs** (a Medium/High finding whose behaviour a test can assert): write the test for the **intended** behaviour and mark it `test.fail()` with the V-id in the title and a comment ("remove test.fail() when fixed"). The suite stays green and the bug stays visible; confirm by running once without the marker that it fails for the intended reason.
+- **Known bugs** (a Medium/High finding whose behaviour a test can assert): write the test for the **intended** behaviour and mark it `test.fixme()` with the V-id in the title and a comment ("remove test.fixme() when fixed"). The test is skipped, so the suite stays green and the bug stays listed; confirm by running once with `test.fail()` in place of the marker that it fails for the intended reason.
 - **Findings with no test** (Low/Info, or too costly to reach) stay in the header block only. Findings in shared code are `see _shared V3`, never repeated.
 - Keep the header comment ≤ ~40 lines. Do not write a "Findings" block with nothing in it.
 
@@ -198,7 +202,7 @@ Do not assume the pihcore app loader. Malawi (`pihmalawi-emr`) gates its forms t
 
 ## Verify mode (optional)
 
-Invoked when the user asks to "verify"/"review" a form (or passes `verify`). In addition to the documentation above, review the XML and **report findings with a proposed fix — do not edit forms unless asked**. Put findings in the spec's `Findings` header block (and as `test.fail()` tests where they can be asserted) and summarize in chat. Say plainly when nothing was found.
+Invoked when the user asks to "verify"/"review" a form (or passes `verify`). In addition to the documentation above, review the XML and **report findings with a proposed fix — do not edit forms unless asked**. Put findings in the spec's `Findings` header block (and as `test.fixme()` tests where they can be asserted) and summarize in chat. Say plainly when nothing was found.
 
 **Format — identical in every file.** Every finding has the fields below, sorted High → Low → Info, IDs numbered per file (`V1`, `V2`, ...). In the spec header they are one comment line each (`V1 Medium :46-49 problem -> consequence. Fix: ...`); in `_shared.e2e.md` and chat use this table:
 

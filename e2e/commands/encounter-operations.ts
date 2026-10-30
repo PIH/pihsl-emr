@@ -84,43 +84,21 @@ export const getEncounterObs = async (api: APIRequestContext, encounterUuid: str
   return (await res.json()).results;
 };
 
-// Removes everything the test created for the patient so the patient itself can be purged:
-// orders, obs, then encounters, then visits (purging a patient with any of them left fails on a foreign key).
-// Saving a section form twice voids the first save's obs; those still block purging the encounter, so
-// the obs are listed with includeAll.
-export const purgeClinicalDataForPatient = async (api: APIRequestContext, patientUuid: string): Promise<void> => {
-  // Orders (e.g. a lab or drug order saved by a form) block purging their encounter. The default listing
-  // returns the active ones.
-  const orderRes = await api.get(`order?patient=${patientUuid}&limit=100`);
-  expect(orderRes.ok()).toBeTruthy();
-  for (const order of (await orderRes.json()).results) {
-    expect((await api.delete(`order/${order.uuid}?purge=true`)).ok()).toBeTruthy();
-  }
-
+// Voids what the test created for the patient: encounters (which voids their obs and orders), then visits.
+// Nothing is purged, so the user does not need the Purge privileges. Saving a section form twice voids the first save's
+// obs, so listing the encounters and visits is enough; there is no foreign key to work around.
+export const voidClinicalDataForPatient = async (api: APIRequestContext, patientUuid: string): Promise<void> => {
   const encRes = await api.get(`encounter?patient=${patientUuid}&limit=100`);
   expect(encRes.ok()).toBeTruthy();
   for (const encounter of (await encRes.json()).results) {
-    const obsRes = await api.get(`obs?encounter=${encounter.uuid}&includeAll=true&limit=200`);
-    expect(obsRes.ok()).toBeTruthy();
-    // An obs can be referenced by another one (a group member by its group, an obs edited by a later save through
-    // previousVersion), and the referenced one cannot be purged first. Retry what failed until nothing is left.
-    let remaining: Array<{ uuid: string }> = (await obsRes.json()).results;
-    while (remaining.length > 0) {
-      const failed: Array<{ uuid: string }> = [];
-      for (const o of remaining) {
-        if (!(await api.delete(`obs/${o.uuid}?purge=true`)).ok()) {
-          failed.push(o);
-        }
-      }
-      expect(failed.length, `${failed.length} obs could not be purged`).toBeLessThan(remaining.length);
-      remaining = failed;
-    }
-    expect((await api.delete(`encounter/${encounter.uuid}?purge=true`)).ok()).toBeTruthy();
+    const res = await api.delete(`encounter/${encounter.uuid}`);
+    expect(res.ok(), `void encounter ${encounter.uuid}: ${res.status()} ${await res.text()}`).toBeTruthy();
   }
 
   const visitRes = await api.get(`visit?patient=${patientUuid}&includeInactive=true&limit=100`);
   expect(visitRes.ok()).toBeTruthy();
   for (const visit of (await visitRes.json()).results) {
-    expect((await api.delete(`visit/${visit.uuid}?purge=true`)).ok()).toBeTruthy();
+    const res = await api.delete(`visit/${visit.uuid}`);
+    expect(res.ok(), `void visit ${visit.uuid}: ${res.status()} ${await res.text()}`).toBeTruthy();
   }
 };

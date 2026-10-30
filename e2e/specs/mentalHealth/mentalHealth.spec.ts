@@ -1,7 +1,7 @@
 import { type APIRequestContext, type Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // mentalHealth.xml: "Mental Health Intake" (encounter type a8584ab8-cc2a-11e5-9956-625662870761). A long single-page form:
 // referral, history, mental state exam, suicide evaluation, diagnoses, CGI scores, the PHQ-9/GAD-7 questionnaires, interventions,
@@ -100,7 +100,9 @@ test.describe('mentalHealth', () => {
   };
 
   // The location select starts empty (the session location lacks the "Mental Health Location" tag) and is required.
-  const pickLocation = async (page: Page) => {
+  // The provider select is blank when the logged-in user has no Provider account.
+  const pickProviderAndLocation = async (page: Page) => {
+    await selectDefaultProvider(page);
     const location = page.locator('#encounterLocation select');
     if ((await location.inputValue()) === '') {
       await location.selectOption({ index: 1 });
@@ -113,9 +115,9 @@ test.describe('mentalHealth', () => {
   };
 
   // Answers every required field (family history x3 and suicide evaluation x4 "No", a primary diagnosis, assigned CHW "Yes"), picks a
-  // location and saves.
+  // provider and location and saves.
   const fillRequiredAndSave = async (page: Page) => {
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     for (const radio of await page.locator('#mh_familyhistory input[type=radio][id$="_1"], #mh-suicide input[type=radio][id$="_1"]').all()) {
       await radio.check();
     }
@@ -197,12 +199,12 @@ test.describe('mentalHealth', () => {
   test('saving with the required answers blank shows "Required" in each section and saves nothing', async ({ page, api }) => {
     // required :440-458 (family history), :670-699 (suicide evaluation), :734 (primary diagnosis), :925 (assigned CHW)
     await open(page);
-    await pickLocation(page);
+    await pickProviderAndLocation(page);
     await page.locator(SUBMIT).click();
     for (const section of ['#mh_familyhistory', '#mh-suicide', '#mh-diagnoses', '#mh-Outcome']) {
       await expect(page.locator(`${section} span.field-error`).filter({ hasText: 'Required' }).first()).toBeVisible();
     }
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 

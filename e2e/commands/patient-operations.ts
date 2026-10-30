@@ -44,8 +44,8 @@ export const createPatient = async (api: APIRequestContext, opts: CreatePatientO
 };
 
 export const deletePatient = async (api: APIRequestContext, uuid: string): Promise<void> => {
-  const res = await api.delete(`patient/${uuid}?purge=true`);
-  expect(res.ok(), `purge patient: ${res.status()}`).toBeTruthy();
+  const res = await api.delete(`patient/${uuid}`);
+  expect(res.ok(), `void patient: ${res.status()}`).toBeTruthy();
 };
 
 // Birthdate for a patient who is `years` old today. The date is two days before the birthday: the browser

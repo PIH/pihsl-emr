@@ -1,7 +1,8 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { ANC_FOLLOWUP_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getEncounterObs, getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage } from "../../pages";
+import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
 
 // ancFollowup.xml: header form ("Prenatal Followup"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -32,7 +33,8 @@ test.describe("ancFollowup", () => {
     );
 
     await EntryFormPage.open(page, "ancFollowup.xml", context);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await submitShellForm(page);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     await expect
       .poll(async () =>
@@ -51,7 +53,8 @@ test.describe("ancFollowup", () => {
       birthdate: birthdateYearsAgo(25),
     });
     await EntryFormPage.open(page, "ancFollowup.xml", context);
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await submitShellForm(page);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
     await expect.poll(async () => (await getPatientEncounters(api, context.patient.uuid)).length).toBe(1);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);

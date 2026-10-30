@@ -36,7 +36,7 @@ import { type Locator, type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID, NCD_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
+import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 const FORM = 'section-sickle-cell.xml';
 
@@ -114,7 +114,7 @@ test.describe('section-sickle-cell, NCD initial encounter', () => {
     // required="true" on #scd-test-method :62 and #scd-hydroxy-q :308
     await openForm(page, createSectionEncounter, NCD_INITIAL_ENCOUNTER_TYPE_UUID);
     await new SectionFormPage(page, FORM).save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(2);
   });
 
@@ -215,7 +215,7 @@ test.describe('section-sickle-cell, NCD followup encounter', () => {
     // :279, #scd-hydroxy-q :308
     await openForm(page, createSectionEncounter, NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID);
     await new SectionFormPage(page, FORM).save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(5);
   });
 

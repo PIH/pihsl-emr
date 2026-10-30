@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, viewMismatches } from '../../pages';
+import { EntryFormPage, ViewFormPage, selectDefaultProvider, viewMismatches, VISIT_PAGE_URL } from '../../pages';
 
 // maternalAdmission.xml: "Maternal Admission" (admitting clinician / admitted to / date, reason for admission as encounter diagnoses,
 // free-text summary). The specs open enterHtmlFormWithStandardUi inside a visit they create with a 25-year-old female
@@ -56,13 +56,14 @@ test.describe('maternalAdmission', () => {
 
   test('saves the admission diagnosis and summary, and leaves the visit open with no program enrolment', async ({ page, api }) => {
     await openForm(page, ctx);
+    await selectDefaultProvider(page);
     await page.locator('#encounterLocation select').selectOption({ index: 1 });
     await page.locator('#diagnosis-search').fill('malaria');
     await page.locator('.ui-autocomplete li').first().click();
     await expect(page.locator('#encounter-diagnoses-target > *')).toHaveCount(1);
     await page.locator('textarea').last().fill('Admitted in active labour');
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const encounters = await getPatientEncounters(api, ctx.patient.uuid);
     expect(encounters.map((e) => e.encounterType.uuid)).toEqual([ADMISSION_ENCOUNTER_TYPE]);

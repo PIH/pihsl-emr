@@ -3,7 +3,45 @@ import { type APIRequestContext, type Page, expect } from '@playwright/test';
 // VIEW mode of a form, rendered the way the visit page does it: the encounter and the form go to
 // viewEncounterWithHtmlForm/getAsHtml.action, which returns the form's HTML with every saved value in a
 // span.value and every unanswered or unselected one in a span.emptyValue. (There is no standalone VIEW page
-// in htmlformentryui, so the HTML is loaded into the test page with setContent.)
+// in htmlformentryui, so the HTML is loaded into the test page.)
+//
+// The form's own scripts run too (the BMI of vitals.xml is computed by them), so the page they run in must look like the
+// pages that normally host the VIEW. Inserting HTML keeps the window of whatever page the test is on: a form's globals
+// from an earlier EDIT would clash ("Identifier 'priorities' has already been declared") and a page without jQuery
+// would throw "jq is not defined". So the test page first goes to a blank page of the server's origin, which is a fresh
+// window, and gets the globals the scripts expect (jQuery, underscore, `jq`, `htmlForm`, the PIH helpers). They are the scripts the
+// enter page loads, in its order and served by the server itself, so they are the same as in the app. The analytics,
+// angular and bootstrap scripts are left out.
+const BLANK_PAGE = '/openmrs/e2e-view-blank.html';
+const UI = '/openmrs/ms/uiframework/resource';
+const PIH = `${UI}/file/pih/scripts/global`;
+const VIEW_SCRIPTS = [
+  `${UI}/uicommons/scripts/handlebars/handlebars.min.js`,
+  `${UI}/uicommons/scripts/underscore-min.js`,
+  `${UI}/uicommons/scripts/jquery-1.12.4.min.js`,
+  `${UI}/uicommons/scripts/jquery.toastmessage.js`,
+  `${UI}/uicommons/scripts/emr.js`, // var jq = jQuery
+  `${UI}/uicommons/scripts/jquery-ui-1.9.2.custom.min.js`,
+  `${UI}/uicommons/scripts/jquery.simplemodal.1.4.4.min.js`,
+  `${UI}/uicommons/scripts/moment.js`,
+  `${PIH}/expandable.js`,
+  `${PIH}/sl.js`,
+  `${PIH}/checkboxRadio.js`,
+  `${PIH}/htmlFormFunctions.js`,
+  `${PIH}/setRequiredIfVisible.js`,
+  `${PIH}/pihServices.js`,
+  `${PIH}/setupDrugOrderQuantityCalculations.js`,
+  `${PIH}/mch.js`,
+  `${UI}/htmlformentryui/scripts/htmlForm.js`, // window.htmlForm (enableSubmitButton, ...)
+  `${UI}/pihapps/scripts/labs/renderLabOrdersByCategory.js`,
+  '/openmrs/moduleResources/htmlformentry/htmlFormEntry.js',
+  '/openmrs/moduleResources/htmlformentry/htmlForm.js',
+  '/openmrs/moduleResources/htmlformentry/orderWidget.js',
+  `${PIH}/hideIfEmpty.js`,
+  `${PIH}/nextAndSubmitButtons.js`,
+  `${PIH}/renderOrderWidgetAsCheckboxes.js`,
+];
+
 export class ViewFormPage {
   constructor(readonly page: Page) {}
 
@@ -15,13 +53,34 @@ export class ViewFormPage {
     expect(res.ok(), `view ${formFile}: ${res.status()}`).toBeTruthy();
     const body = (await res.json()) as { html?: string };
     expect(body.html, `the VIEW of ${formFile} rendered`).toBeTruthy();
-    await page.setContent(`<html><body>${body.html}</body></html>`);
+
+    const origin = new URL(res.url()).origin;
+    const blank = `**${BLANK_PAGE}`;
+    await page.route(blank, (route) => route.fulfill({ contentType: 'text/html', body: '<html><body></body></html>' }));
+    await page.goto(origin + BLANK_PAGE);
+    await page.unroute(blank);
+    for (const script of VIEW_SCRIPTS) {
+      await page.addScriptTag({ url: origin + script });
+    }
+    // Like the visit page, insert the HTML with jQuery: it runs the form's scripts once all of the HTML is in the
+    // document, so a jq(document).ready() in the form's head finds the elements below it. (setContent runs the
+    // scripts while the HTML is still being parsed.)
+    await page.evaluate((html) => (window as unknown as { jq: (s: string) => { html: (h: string) => void } }).jq('body').html(html), body.html!);
     return new ViewFormPage(page);
   }
 
   // Every saved value shown by the form.
+  // vital-signs-widget.js takes the "value" class off the vitals it colour-codes (.vitals-values), so they are matched by
+  // their parent.
   get values() {
-    return this.page.locator('span.value');
+    return this.page.locator('span.value, .vitals-values > span:not(.emptyValue, .units, .append-to-value)');
+  }
+
+  // The saved value of the obs whose span has this id (HFE puts the id on the span around the value). The units next to
+  // it and the placeholder of an unanswered obs are not matched, and neither is the "value" class, which
+  // vital-signs-widget.js takes off.
+  valueOf(id: string) {
+    return this.page.locator(`#${id} > span:not(.emptyValue, .units, .append-to-value)`);
   }
 
   // The text of every saved value, whitespace collapsed ("[X] yes" for a selected radio or checkbox).

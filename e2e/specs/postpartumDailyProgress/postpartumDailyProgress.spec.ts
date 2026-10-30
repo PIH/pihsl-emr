@@ -2,7 +2,7 @@ import type { APIRequestContext, Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { MCH_OPD_LOCATION_UUID } from '../../core/constants';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, expectViewShowsSavedObs } from '../../pages';
+import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // postpartumDailyProgress.xml: "Postpartum Daily Progress" (vitals, delivery overview, postpartum exam, mood/bowel/urine checklist,
 // PHQ-2, family planning, health education, summary). The specs open enterHtmlFormWithStandardUi inside a visit they create with a
@@ -51,6 +51,7 @@ const SAVE = '#buttons input.submitButton';
 const openForm = async (page: Page, context: EntryContext) => {
   await EntryFormPage.open(page, FORM, context);
   await expect(page.locator(SAVE)).toBeVisible(); // handlers are bound on document.ready
+  await selectDefaultProvider(page);
   await page.locator('#encounterLocation select').selectOption({ label: 'Postnatal Ward' });
 };
 
@@ -218,7 +219,7 @@ test.describe('postpartumDailyProgress', () => {
     await fillText(page, '#condom-count input >> nth=0', '5');
     await page.locator('#outcome-condition input').nth(0).check(); // Satisfactory
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page\?encounterId=/);
+    await expect(page).toHaveURL(new RegExp(`${VISIT_PAGE_URL.source}\\?encounterId=`));
 
     const encounters = await getPatientEncounters(api, ctx.patient.uuid);
     expect(encounters).toHaveLength(1);
@@ -283,7 +284,7 @@ test.describe('postpartumDailyProgress', () => {
     await page.locator('#outcome-condition input').nth(0).check();
     await page.locator('textarea').last().fill('Recovering well');
     await page.locator(SAVE).click();
-    await expect(page).toHaveURL(/referenceapplication\/home\.page\?encounterId=/);
+    await expect(page).toHaveURL(new RegExp(`${VISIT_PAGE_URL.source}\\?encounterId=`));
     const [encounter] = await getPatientEncounters(api, ctx.patient.uuid);
 
     const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, {

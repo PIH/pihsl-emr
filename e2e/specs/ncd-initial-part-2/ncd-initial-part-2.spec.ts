@@ -1,7 +1,8 @@
 import { test, expect, birthdateYearsAgo } from "../../core";
+import { VISIT_PAGE_URL } from '../../pages';
 import { NCD_INITIAL_2_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getEncounterObs, getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage } from "../../pages";
+import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages";
 
 // ncd-initial-part-2.xml: header form ("NCD Initial (Part 2)"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -43,7 +44,7 @@ test.describe("ncd-initial-part-2", () => {
     await expect(page.locator("#next")).toBeHidden();
 
     await form.save();
-    await expect(page).not.toHaveURL(/referenceapplication\/home\.page/);
+    await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(
       0,
     );
@@ -66,6 +67,7 @@ test.describe("ncd-initial-part-2", () => {
       FORM,
       context,
     );
+    await selectDefaultProvider(page);
     // the options are real locations: pick by index, never by name
     await page.locator(LOCATION_SELECT).selectOption({ index: 1 });
     await form.save();
@@ -93,6 +95,7 @@ test.describe("ncd-initial-part-2", () => {
     });
 
     const form = await EntryFormPage.open(page, FORM, context);
+    await selectDefaultProvider(page);
     await page.locator(LOCATION_SELECT).selectOption({ index: 1 });
     await form.save();
     await form.expectSaved();
