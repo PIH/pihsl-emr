@@ -182,10 +182,11 @@
                         <span id="primaryCause">
                             <obsgroup groupingConceptId="PIH:21678"
                                       showIfEmpty="false">
-                                <obs conceptId="PIH:Underlying cause of death"
+                                <obs id="primary-cause" conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="primeCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" defaultValue="PIH:primary" controlId="primary"/>
+                                    <!-- set in beforeSubmit only when a cause is selected (SL-1480) -->
+                                    <obs id="primary-order" conceptId="CIEL:159946" controlId="primary"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -197,10 +198,11 @@
                         <span id="secondaryCause">
                             <obsgroup groupingConceptId="PIH:21678"
                                       showIfEmpty="false">
-                                <obs conceptId="PIH:Underlying cause of death"
+                                <obs id="secondary-cause" conceptId="PIH:Underlying cause of death"
                                      answerClasses="Diagnosis,Finding,Symptom,Symptom/Finding" style="autocomplete" controlId="secondCause" />
                                 <span class="small hidden">
-                                    <obs conceptId="CIEL:159946" defaultValue="PIH:secondary" controlId="secondary"/>
+                                    <!-- set in beforeSubmit only when a cause is selected (SL-1480) -->
+                                    <obs id="secondary-order" conceptId="CIEL:159946" controlId="secondary"/>
                                 </span>
                             </obsgroup>
                         </span>
@@ -241,20 +243,21 @@
                                 <td>
                                     {0}
                                     <span class="small hidden">
-                                        <obs id="action-order-{0}" conceptId="CIEL:165416" defaultValue="{0}" controlId="order-{0}"/>
+                                        <!-- set in beforeSubmit only when the action point has data (SL-1480) -->
+                                    <obs id="action-order-{0}" conceptId="CIEL:165416" controlId="order-{0}"/>
                                     </span>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:21672" controlId="action-desc-{0}" style="text"/>
+                                    <obs id="ap-desc-{0}" conceptId="PIH:21672" controlId="action-desc-{0}" style="text"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:6592" controlId="action-person-{0}" style="text"/>
+                                    <obs id="ap-person-{0}" conceptId="PIH:6592" controlId="action-person-{0}" style="text"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:11131" controlId="s-date-{0}" allowFutureDates="true"/>
+                                    <obs id="ap-start-{0}" conceptId="PIH:11131" controlId="s-date-{0}" allowFutureDates="true"/>
                                 </td>
                                 <td>
-                                    <obs conceptId="PIH:12748" controlId="e-date-{0}" allowFutureDates="true"/>
+                                    <obs id="ap-end-{0}" conceptId="PIH:12748" controlId="e-date-{0}" allowFutureDates="true"/>
                                 </td>
                             </tr>
                         </obsgroup>
@@ -267,6 +270,37 @@
     <br/>
 
     <ifMode mode="VIEW" include="false">
+        <script type="text/javascript">
+            // SL-1480: the hidden diagnosis order (CIEL:159946) and action point sequence (CIEL:165416)
+            // obs used to have a defaultValue, so these obs groups were saved even when nothing was
+            // entered. Only fill them when another field of the same group has a value; otherwise
+            // clear them so the whole group is empty and not saved (or voided when editing).
+            jq(function() {
+                var primaryConceptId = '<lookup expression="fn.getConcept('PIH:primary').id"/>';
+                var secondaryConceptId = '<lookup expression="fn.getConcept('PIH:secondary').id"/>';
+
+                function hasValue(obsId) {
+                    // autocomplete obs keep the selected concept in a hidden "_hid" input next to the text field;
+                    // getValue() returns the typed text, even if no answer was picked
+                    var field = getField(obsId + '.value');
+                    var hidden = field.length ? jq('#' + field.attr('id') + '_hid') : jq();
+                    var value = hidden.length ? hidden.val() : getValue(obsId + '.value');
+                    return value !== undefined &amp;&amp; value !== null &amp;&amp; String(value).trim() !== '';
+                }
+                function syncSequence(seqId, answerIds, sequence) {
+                    setValue(seqId + '.value', answerIds.some(hasValue) ? sequence : '');
+                }
+                beforeSubmit.push(function() {
+                    syncSequence('primary-order', ['primary-cause'], primaryConceptId);
+                    syncSequence('secondary-order', ['secondary-cause'], secondaryConceptId);
+                    for (var i = 1; i &lt;= 3; i++) {
+                        syncSequence('action-order-' + i,
+                            ['ap-desc-' + i, 'ap-person-' + i, 'ap-start-' + i, 'ap-end-' + i], i);
+                    }
+                    return true;
+                });
+            });
+        </script>
         <div id="buttons">
             <submit submitClass="confirm right" submitCode="mirebalais.save"/>
             <button type="button" class="cancel"><uimessage code="emr.cancel"/></button>

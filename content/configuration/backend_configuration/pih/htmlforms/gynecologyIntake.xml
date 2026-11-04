@@ -43,6 +43,38 @@
     </script>
 
     <ifMode mode="VIEW" include="false">
+        <script type="text/javascript">
+            // SL-1480: the hidden sequence obs (CIEL:1937) used to have a defaultValue, so every
+            // procedure obs group was saved even when nothing was entered. Only fill the sequence
+            // when the visible answer of the same group has a value; otherwise clear it so the
+            // whole group is empty and not saved (or voided when editing).
+            jq(function() {
+                function hasValue(obsId) {
+                    // autocomplete obs keep the selected concept in a hidden "_hid" input next to the text field;
+                    // getValue() returns the typed text, even if no answer was picked
+                    var field = getField(obsId + '.value');
+                    var hidden = field.length ? jq('#' + field.attr('id') + '_hid') : jq();
+                    var value = hidden.length ? hidden.val() : getValue(obsId + '.value');
+                    return value !== undefined &amp;&amp; value !== null &amp;&amp; String(value).trim() !== '';
+                }
+                function syncSequence(seqId, answerId, sequence) {
+                    setValue(seqId + '.value', hasValue(answerId) ? sequence : '');
+                }
+                beforeSubmit.push(function() {
+                    syncSequence('cryo-seq', 'cryo-ans', 6);
+                    for (var i = 1; i &lt;= 5; i++) {
+                        syncSequence('hist-seq-' + i, 'hist-ans-' + i, i);
+                    }
+                    for (var j = 1; j &lt;= 3; j++) {
+                        syncSequence('plan-seq-' + j, 'plan-ans-' + j, j);
+                    }
+                    return true;
+                });
+            });
+        </script>
+    </ifMode>
+
+    <ifMode mode="VIEW" include="false">
         <h2>
             <label>
                 <uimessage code="Gynecology Initial"/>
@@ -334,10 +366,11 @@
                     <p>
                         <obsgroup groupingConceptId="CIEL:1938" showIfEmpty="false">
                             <span class="small hidden">
-                                <!-- NOTE: Using 6 so it doesn't conflict with the other procedures -->
-                                <obs conceptId="CIEL:1937" defaultValue="6"></obs>
+                                <!-- NOTE: Using 6 so it doesn't conflict with the other procedures.
+                                     Set in beforeSubmit only when the checkbox is checked (SL-1480) -->
+                                <obs id="cryo-seq" conceptId="CIEL:1937"></obs>
                             </span>
-                            <obs conceptId="CIEL:1651" style="checkbox"
+                            <obs id="cryo-ans" conceptId="CIEL:1651" style="checkbox"
                                  answerConceptId="CIEL:162812"/>
                         </obsgroup>
                     </p>
@@ -417,9 +450,10 @@
                 <repeat with="['1'],['2'],['3'],['4'],['5']">
                     <obsgroup groupingConceptId="PIH:10492" showIfEmpty="false">
                         <span class="small hidden">
-                            <obs conceptId="CIEL:1937" defaultValue="{0}"></obs>
+                            <!-- set in beforeSubmit only when a procedure is selected (SL-1480) -->
+                            <obs id="hist-seq-{0}" conceptId="CIEL:1937"></obs>
                         </span>
-                        <obs conceptId="CIEL:1651" answerConceptSetIds="PIH:WH procedures"
+                        <obs id="hist-ans-{0}" conceptId="CIEL:1651" answerConceptSetIds="PIH:WH procedures"
                              style="autocomplete"/>
                     </obsgroup>
                 </repeat>
@@ -439,9 +473,10 @@
                 <repeat with="['1'],['2'],['3']">
                     <obsgroup groupingConceptId="PIH:21483" showIfEmpty="false">
                         <span class="small hidden">
-                            <obs conceptId="CIEL:1937" defaultValue="{0}"></obs>
+                            <!-- set in beforeSubmit only when a procedure is selected (SL-1480) -->
+                            <obs id="plan-seq-{0}" conceptId="CIEL:1937"></obs>
                         </span>
-                        <obs conceptId="PIH:10751" answerConceptSetIds="PIH:WH procedures"
+                        <obs id="plan-ans-{0}" conceptId="PIH:10751" answerConceptSetIds="PIH:WH procedures"
                              style="autocomplete"/>
                     </obsgroup>
                 </repeat>
