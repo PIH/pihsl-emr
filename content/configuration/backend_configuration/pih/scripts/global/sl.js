@@ -55,3 +55,69 @@ function updateLastCheckboxRequired(containerSelector, requiredMsgId, requiredMs
   // Add the updateLastCheckboxRequired function to the beforeSubmit array to call it before form submission.
   beforeSubmit.push(updateLastCheckbox);
 }
+
+/**
+ * SL-1485: when a new HTML form encounter is saved with Disposition = Death, go to the "Mark Patient Deceased" page
+ * (coreapps/markPatientDead.page) so the clinician can record the cause of death.
+ *
+ * The <encounterDisposition/> tag renders the Death date as an obs with id "dateOfDeath" (see
+ * pih-dispositions-sierraLeone*.json) and only shows it when Death is selected, so a visible
+ * #dateOfDeath means Death is the selected disposition. The encounter is saved first and the
+ * ApplyDispositionAction marks the patient dead; the deceased page then pre-fills that death date.
+ * The date/time entered on the form is also passed as defaultDeathDate, for forms that do not run
+ * the disposition actions.
+ */
+(function () {
+  function pad(n) {
+    return ('0' + n).slice(-2);
+  }
+
+  function deathDateTime() {
+    var date = typeof getValue === 'function' ? getValue('dateOfDeath.value.date') : null;
+    if (!date) {
+      return null;
+    }
+    var hours = parseInt(jq('#dateOfDeath select.hfe-hours').val(), 10) || 0;
+    var minutes = parseInt(jq('#dateOfDeath select.hfe-minutes').val(), 10) || 0;
+    return date + ' ' + pad(hours) + ':' + pad(minutes) + ':00';
+  }
+
+  jq(function () {
+    if (typeof htmlForm === 'undefined' || typeof htmlForm.getBeforeSubmit !== 'function'
+      || jq('#htmlform').length === 0 || jq('#dateOfDeath').length === 0) {
+      return;
+    }
+    // only redirect when a new encounter is entered; editing an existing encounter (the form then has
+    // a hidden "encounterId" input) keeps the normal return page, even if its disposition is Death
+    if (jq('#htmlform input[name="encounterId"]').val()) {
+      return;
+    }
+
+    var originalReturnUrl;
+
+    htmlForm.getBeforeSubmit().push(function () {
+      if (originalReturnUrl === undefined) {
+        // read lazily: the form page sets the returnUrl after this script has run
+        originalReturnUrl = htmlForm.getReturnUrl();
+      }
+      // O3 integration: the form runs in an iframe and posts a message to its parent instead of navigating
+      if (originalReturnUrl && originalReturnUrl.indexOf('post-message:') === 0) {
+        return true;
+      }
+
+      var patientId = jq('#htmlform input[name="personId"]').val();
+      if (patientId && jq('#dateOfDeath').is(':visible')) {
+        var params = { patientId: patientId, defaultDead: true };
+        var deathDate = deathDateTime();
+        if (deathDate) {
+          params.defaultDeathDate = deathDate;
+        }
+        htmlForm.setReturnUrl(emr.pageLink('coreapps', 'markPatientDead', params));
+      } else {
+        // the user may have switched away from Death after a failed submission
+        htmlForm.setReturnUrl(originalReturnUrl);
+      }
+      return true;
+    });
+  });
+})();
