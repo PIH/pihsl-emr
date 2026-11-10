@@ -12,10 +12,10 @@
   ~ Copyright (C) OpenMRS, LLC.  All Rights Reserved.
   -->
 
-<htmlform formUuid="dffa9543-2cf0-4b9e-9306-0aebeb7a1835"
-          formName="Family Planning Initial"
+<htmlform formUuid="ec502050-c987-4aad-8ca5-628fd7871233"
+          formName="Family Planning Followup"
           formEncounterType="5a1d1710-98b0-4e5f-8f6b-c9cef0c8cf05"
-          formVersion="1.0">
+          formVersion="1.1">
 
     <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.ReopenVisitAction"/>
 
