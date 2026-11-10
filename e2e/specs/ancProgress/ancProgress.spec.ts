@@ -352,7 +352,7 @@ test.describe('ancProgress', () => {
     await expect(page.locator('#fetus-2')).toBeVisible({ timeout: 3000 });
   });
 
-  // ---- VIEW (viewEncounterWithHtmlForm getAsHtml.action) ----
+  // ---- VIEW (on the visit page) ----
   test('VIEW: shows the scar details and only the foetus that has data, and leaves the rest blank', async ({ page, api }) => {
     await pickProviderAndLocation(page);
     await page.locator('#ab-scar').getByLabel('yes', { exact: true }).check();

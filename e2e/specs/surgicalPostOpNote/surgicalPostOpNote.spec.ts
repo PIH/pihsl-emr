@@ -19,7 +19,7 @@ import { EntryFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pa
 //
 // Scripts: :217-227 auto-sizes the textareas on keyup ("avoid scrollbars and facilitate printing"): it listens on #post-op-surgical-note (V1).
 // Side effects on save: none (no postSubmissionAction, program, disposition or order).
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test (and the save test): the obs groups (IVF, transfusion), the dates and
+// VIEW (on the visit page) is covered by the 'VIEW:' test (and the save test): the obs groups (IVF, transfusion), the dates and
 // the provider/location. Not covered here: EDIT, the pregnancy-group line, the ivf/antibiotic volumes beyond one.
 //
 // Findings:

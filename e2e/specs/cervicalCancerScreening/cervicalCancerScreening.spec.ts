@@ -253,9 +253,9 @@ test.describe('cervicalCancerScreening', () => {
     for (const expected of ['2', '03 May 2026', '[X] positive', '[X] on ART', '[X] Q1', '[X] Q3', '[X] VIA positive', '[X] Cryotherapy', 'Return in 12 months', `09 Apr ${apptYear}`]) {
       expect(shown, expected).toContain(expected);
     }
-    // the VIA answers: "Entire lesion seen" and "Extends into endocervical canal" are separate obs (V1), "Covers more than 75%" was not answered
-    await expect(view.page.locator('p', { hasText: 'Entire lesion seen' }).locator('.value')).toHaveText('[X] yes');
-    await expect(view.page.locator('p', { hasText: 'Extends into endocervical canal' }).locator('.value')).toHaveText('[X] no');
+    // "Covers more than 75%" was not answered. The rows of "Entire lesion seen" and "Extends into endocervical canal" are not asserted here: while V1 is
+    // unfixed both answers are obs of the same concept and the VIEW shows an arbitrary one of them (kgh-ci showed "yes", a local server "no"). The EDIT test
+    // (test.fixme, SL-1462) asserts them in their own rows once the fix is released.
     await expect(view.page.locator('p', { hasText: 'Covers more than 75% of cervix' }).locator('.value')).toHaveCount(0);
     // nothing was ticked for the other quadrants, the HIV answers, the treatment or the other referrals
     for (const unexpected of ['[X] negative', '[X] unknown', '[X] Q2', '[X] Q4', '[X] not on ART']) {

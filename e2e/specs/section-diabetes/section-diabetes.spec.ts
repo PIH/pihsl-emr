@@ -21,7 +21,7 @@ import type { Page } from '@playwright/test';
 //   when Loss of sensation    :419 show #foot-numb-message (on each of the 4 foot checkboxes; V1)
 // Scripts: only setUpNextAndSubmitButtons() (see _shared); no validation, message, formula or default.
 // Side effects on save: postSubmissionAction CleanDiagnosisConstructAction (:19) completes the diagnosis constructs.
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered for both encounter types: the diagnosis table only for NCD initial, the indicators only
+// VIEW (on the visit page) is covered for both encounter types: the diagnosis table only for NCD initial, the indicators only
 // for NCD followup, saved values in span.value, no scripts at all (so every conditional block is rendered, empty).
 // Not covered here: the Next / other-section buttons (navigation, _shared).
 //
@@ -171,13 +171,13 @@ test.describe('section-diabetes: NCD initial', () => {
       expect(shown, expected).toContain(expected);
     }
     // the other diagnoses are listed unselected, the unanswered questions have no value, the followup block is not rendered (includeIf :152)
-    await expect(page.locator('.emptyValue', { hasText: /Type 1 DM/ })).toHaveCount(1);
-    await expect(page.locator('.emptyValue', { hasText: /Gestational DM/ })).toHaveCount(1);
+    await expect(view.root.locator('.emptyValue', { hasText: /Type 1 DM/ })).toHaveCount(1);
+    await expect(view.root.locator('.emptyValue', { hasText: /Gestational DM/ })).toHaveCount(1);
     expect(shown).not.toContain('[X] Neuropathy');
-    await expect(page.locator('p.list-inline', { hasText: 'Improvement since last visit' }).locator('.value')).toHaveCount(0);
-    await expect(page.getByText('Diabetes followup indicators')).toHaveCount(0);
-    await expect(page.getByText('Disease control')).toHaveCount(0);
-    await expect(page.locator('#buttonsTopRow, input:not([type=hidden]), textarea, select')).toHaveCount(0); // read-only
+    await expect(view.root.locator('p.list-inline', { hasText: 'Improvement since last visit' }).locator('.value')).toHaveCount(0);
+    await expect(view.root.getByText('Diabetes followup indicators')).toHaveCount(0);
+    await expect(view.root.getByText('Disease control')).toHaveCount(0);
+    await expect(view.root.locator('#buttonsTopRow, input:not([type=hidden]), textarea, select')).toHaveCount(0); // read-only
   });
 });
 
@@ -327,7 +327,7 @@ test.describe('section-diabetes: NCD followup', () => {
     await form.expectSaved();
 
     const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, VIEW_LABELS);
-    const answer = (label: string) => page.locator('p.list-inline-wide', { hasText: label }).locator('.value');
+    const answer = (label: string) => view.root.locator('p.list-inline-wide', { hasText: label }).locator('.value');
     await expect(answer('On insulin')).toHaveText('[X] no');
     await expect(answer('Missed doses in past week')).toHaveText('[X] yes');
     await expect(answer('Indications for ACE inhibitors')).toHaveText('[X] yes');
@@ -336,16 +336,16 @@ test.describe('section-diabetes: NCD followup', () => {
     await expect(answer('Glucometer (home)')).toHaveText('[X] no');
     // "controlled" is the answer, "uncontrolled" is only listed unselected
     await expect(answer('Disease control')).toHaveText('[X] controlled');
-    await expect(page.locator('.emptyValue', { hasText: /^\s*\[\s*\]\s*uncontrolled\s*$/ })).toHaveCount(1);
+    await expect(view.root.locator('.emptyValue', { hasText: /^\s*\[\s*\]\s*uncontrolled\s*$/ })).toHaveCount(1);
     expect(await view.valueTexts()).toEqual(expect.arrayContaining(['3', 'Hyperkalaemia']));
     // not answered: the other indicators, fundoscopy and foot examination
     await expect(answer('Patient condition improved')).toHaveCount(0);
     await expect(answer('Understands treatment')).toHaveCount(0);
-    await expect(page.locator('p.side-by-side', { hasText: 'Fundoscopy performed' }).locator('.value')).toHaveCount(0);
-    await expect(page.locator('p.list-inline', { hasText: 'Foot examination performed' }).locator('.value')).toHaveCount(0);
+    await expect(view.root.locator('p.side-by-side', { hasText: 'Fundoscopy performed' }).locator('.value')).toHaveCount(0);
+    await expect(view.root.locator('p.list-inline', { hasText: 'Foot examination performed' }).locator('.value')).toHaveCount(0);
     // the diagnosis table is for the initial encounters only (includeIf :37)
-    await expect(page.getByText('Type 1 DM')).toHaveCount(0);
-    await expect(page.getByText('Suggested treatment')).toHaveCount(0);
+    await expect(view.root.getByText('Type 1 DM')).toHaveCount(0);
+    await expect(view.root.getByText('Suggested treatment')).toHaveCount(0);
   });
 
   // VW1 (Low): VIEW has no scripts, so the <when>-controlled message is always printed. Intended: only with "Numbness of foot" ticked.

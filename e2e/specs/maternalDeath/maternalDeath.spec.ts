@@ -66,7 +66,7 @@ const createAdmission = async (api: APIRequestContext, ctx: EntryContext) => {
       patient: ctx.patient.uuid,
       encounterType: ADMISSION_ENCOUNTER_TYPE,
       location: MCH_OPD_LOCATION_UUID,
-      encounterDatetime: new Date().toISOString(),
+      encounterDatetime: new Date(Date.now() - 60_000).toISOString(),
       visit: ctx.visitUuid,
     },
   });

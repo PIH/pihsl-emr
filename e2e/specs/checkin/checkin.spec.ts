@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
+import { EntryFormPage, VisitPage, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // checkin.xml: "Check-In" (provider, location, date, and the patient's appointments to check in). In production it is opened
 // from the visit page or, with createVisit=true, from the registration page; the specs open enterHtmlFormWithStandardUi inside
@@ -10,12 +10,14 @@ import { EntryFormPage, ViewFormPage, selectDefaultProvider, VISIT_PAGE_URL } fr
 //
 // Conditions in the form, from documentation inventory (checkin.inv.md):
 //   ifMode VIEW include=false :26   the whole entry form (details fieldset, appointments, Save)
-//   ifMode VIEW (include true)  :75  VIEW-only section with the hidden #most-recent-encounter-title (ENTER must not render it; the last
-//                                    test renders the VIEW of a saved check-in)
+//   ifMode VIEW (include true)  :75  VIEW-only section with the hidden #most-recent-encounter-title (ENTER must not render it)
 // Scripts: none in this file (provider/location/date behaviour is in the shared subform, _shared.e2e.md).
 // Side effects on save: none from the form itself (the <appointments> tag only acts on appointments the patient has).
-// VIEW (last test): the check-in has no obs, so the VIEW shows no values; by design (comment at :74: "just display answers to obs, not provider,
-// date, location") it has no provider, location, date, appointments or entry fields either, only the hidden marker.
+// Visit-page display: the visit page does NOT show this form's VIEW (:75 is therefore not tested). The Check-In entry of encounterTypeConfig.js
+// (// checkIn, 55a0d3ea-...) has `shortTemplate: checkInShort.page`, `longTemplate: defaultHtmlFormEncounterLong.page` and
+// `templateModelUrl: /module/htmlformentry/encounter.json?...` (HFE's field list, not getAsHtml.action): the encounter is a collapsed card with the
+// encounter type, date, "by <provider>" and the type-of-visit obs (this form saves none), and expanding it lists one label + .obs-value row per saved
+// field (none for this form). The VIEW test (last test) asserts that card and the empty list.
 // Not covered here: ticking and saving an appointment (needs an appointment in the Appointments module), EDIT mode.
 
 const FORM = 'checkin.xml';
@@ -71,7 +73,7 @@ test.describe('checkin', () => {
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
 
-  test('VIEW: a saved check-in renders only the hidden most-recent-encounter marker (:75), no values and no entry form', async ({
+  test('the visit page shows a saved check-in as a card with no saved values, and none of the form', async ({
     page,
     api,
     createEntryContext,
@@ -84,13 +86,13 @@ test.describe('checkin', () => {
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);
 
-    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
-    expect(await view.valueTexts()).toEqual([]);
-    await expect(page.locator('span.emptyValue')).toHaveCount(0);
-    await expect(page.locator('section#checkin')).toHaveCount(1);
-    await expect(page.locator('#most-recent-encounter-title')).toHaveCount(1);
-    await expect(page.locator('#most-recent-encounter-title')).toBeHidden();
-    // the :26 entry form (details fieldset, appointments, Save) is not rendered
-    await expect(page.locator('select, input, button, fieldset, .appointment-checkbox')).toHaveCount(0);
+    const visit = await VisitPage.open(page, context.visitUuid);
+    const entry = visit.encounterOfType(CHECKIN_ENCOUNTER_TYPE_UUID);
+    await expect(entry).toHaveCount(1);
+    await expect(entry.locator('.encounter-name').first()).toContainText('Check-in');
+    await expect(entry.locator('.row.col-12 .encounter-card-summary').first()).toHaveText(''); // checkInShort: no type-of-visit obs saved
+    const long = await visit.expand(entry);
+    await expect(long.locator('.obs-value')).toHaveCount(0); // defaultHtmlFormEncounterLong: one row per saved field, none here
+    await expect(long.locator('#most-recent-encounter-title, section#checkin, select, input, fieldset')).toHaveCount(0); // none of the form's own HTML
   });
 });

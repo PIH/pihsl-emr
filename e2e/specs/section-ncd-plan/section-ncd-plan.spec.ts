@@ -163,6 +163,6 @@ test.describe('section-ncd-plan', () => {
     ]);
     await expect(view.page.locator('#apptDate .value')).toHaveText(apptText);
     await expect(view.page.locator('#test-orders .value, #encounter-disposition .value')).toHaveCount(0);
-    await expect(view.page.locator('input.submitButton, button.cancel')).toHaveCount(0); // ifMode :400
+    await expect(view.root.locator('input.submitButton, button.cancel')).toHaveCount(0); // ifMode :400
   });
 });

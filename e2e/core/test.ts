@@ -33,6 +33,9 @@ export interface CustomTestFixtures {
   attachDiagnostics: void;
   // Auto fixture: fails the test on any uncaught JavaScript error in its pages.
   failOnJsError: void;
+  // Uncaught JavaScript errors that failOnJsError tolerates: each pattern is tested against "<page url>\n<stack>". For an error a spec documents as a bug of the form
+  // that cannot be avoided in the UI it opens (see vitals.spec.ts, V6); keep the pattern as narrow as possible.
+  allowedJsErrors: RegExp[];
   // Creates a synthetic patient with a visit and an empty encounter of the given type. Everything it
   // creates is purged after the test.
   createSectionEncounter: (opts: SectionEncounterOptions) => Promise<SectionEncounter>;
@@ -52,7 +55,7 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
 
   // When a test fails, attaches what the browser saw of the server: every failed /openmrs request (such as the
   // `create visit: 400`), the form submit request and its response (the `errors` name the widget the server rejected),
-  // the console errors and warnings, and the API user's providers (a form without a provider cannot be saved). Declared
+  // the console errors and warnings, and the uuids of the API user's providers (a form without a provider cannot be saved). Declared
   // before failOnJsError so that it is torn down after it, when the test's status is final.
   attachDiagnostics: [
     async ({ context, api }, use, testInfo) => {
@@ -88,8 +91,9 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
       let user = '(not read)';
       try {
         const session = await (await api.get('session')).json();
-        const providers = await (await api.get(`provider?user=${session.user.uuid}&v=custom:(uuid,display)`)).json();
-        user = `${session.user.display}: ${JSON.stringify(providers.results)}`;
+        const providers = await (await api.get(`provider?user=${session.user.uuid}&v=custom:(uuid)`)).json();
+        // uuids only: names are staff data and must not end up in logs or CI output
+        user = `user ${session.user.uuid}, provider uuids: ${JSON.stringify(providers.results.map((p: { uuid: string }) => p.uuid))}`;
       } catch (e) {
         user = `(failed: ${e})`;
       }
@@ -109,8 +113,10 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
   // Fails every test on an uncaught JavaScript exception in any of its pages (including popups). Listening on the
   // context means a page that fails during navigation is covered too. console.error is not counted: a failed
   // request logs one too, and the forms log harmless ones.
+  allowedJsErrors: [[], { option: true }],
+
   failOnJsError: [
-    async ({ context }, use) => {
+    async ({ context, allowedJsErrors }, use) => {
       const errors: string[] = [];
       context.on('weberror', (webError) => {
         const error = webError.error();
@@ -119,7 +125,10 @@ export const test = base.extend<CustomTestFixtures, CustomWorkerFixtures>({
 
       await use();
 
-      expect(errors, 'uncaught JavaScript errors in the page').toEqual([]);
+      expect(
+        errors.filter((error) => !allowedJsErrors.some((allowed) => allowed.test(error))),
+        'uncaught JavaScript errors in the page',
+      ).toEqual([]);
     },
     { auto: true },
   ],

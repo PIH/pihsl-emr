@@ -77,7 +77,7 @@ const recordEarlierEncounter = async (api: APIRequestContext, context: EntryCont
       patient: context.patient.uuid,
       encounterType: NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID,
       location: MCH_OPD_LOCATION_UUID,
-      encounterDatetime: new Date().toISOString(),
+      encounterDatetime: new Date(Date.now() - 60_000).toISOString(),
       visit: context.visitUuid,
       obs,
     },
@@ -384,7 +384,7 @@ test.describe('newbornDailyProgress', () => {
     const placed = new Date();
     placed.setDate(placed.getDate() - 1);
     const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][placed.getMonth()];
-    await expect(page.locator('#ivf .value')).toHaveText([
+    await expect(view.root.locator('#ivf .value')).toHaveText([
       `${`${placed.getDate()}`.padStart(2, '0')} ${month} ${placed.getFullYear()}`,
       '[X] Hand',
       '4',
@@ -392,20 +392,20 @@ test.describe('newbornDailyProgress', () => {
       '100',
     ]);
     // the transfusion groups: the volume is shown with the fluid it was given with (Packed red blood cells, the second of the four)
-    await expect(page.locator('#transfusion-details .four-columns > div').nth(1).locator('.value')).toHaveText(['[X] Packed red blood cells', '40']);
+    await expect(view.root.locator('#transfusion-details .four-columns > div').nth(1).locator('.value')).toHaveText(['[X] Packed red blood cells', '40']);
     for (const other of [0, 2, 3]) {
-      await expect(page.locator('#transfusion-details .four-columns > div').nth(other).locator('.value')).toHaveCount(0);
+      await expect(view.root.locator('#transfusion-details .four-columns > div').nth(other).locator('.value')).toHaveCount(0);
     }
     // CPAP shows its pressure and the oxygen flow rate stays empty; only the ticked resuscitation method is a value
-    await expect(page.locator('#cpap .value')).toHaveText(['6']);
-    await expect(page.locator('#oxy2 .value')).toHaveCount(0);
-    await expect(page.locator('#type-resuscitation .value')).toHaveText(['[X] Bag valve mask ventilation']);
+    await expect(view.root.locator('#cpap .value')).toHaveText(['6']);
+    await expect(view.root.locator('#oxy2 .value')).toHaveCount(0);
+    await expect(view.root.locator('#type-resuscitation .value')).toHaveText(['[X] Bag valve mask ventilation']);
     // the surgery question and the other birth-plan boxes were left empty
-    await expect(page.locator('#treatment-support .value')).toHaveText(['[X] Prophylactic eye drops', '[X] Vitamin D', 'Continue phototherapy']);
-    await expect(page.locator('#treatment-support .emptyValue').filter({ hasText: 'Umbilical cord care' })).toHaveCount(1); // given earlier in the visit, not now
+    await expect(view.root.locator('#treatment-support .value')).toHaveText(['[X] Prophylactic eye drops', '[X] Vitamin D', 'Continue phototherapy']);
+    await expect(view.root.locator('#treatment-support .emptyValue').filter({ hasText: 'Umbilical cord care' })).toHaveCount(1); // given earlier in the visit, not now
     // ENTER-only content is absent although the visit holds the data: the Overview, the "[ x ] <date>" markers, the heading, the buttons
-    await expect(page.locator('#Overview, #treatment-support .prior-obs-value, .apgar, #lastWeightKg')).toHaveCount(0);
-    await expect(page.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
+    await expect(view.root.locator('#Overview, #treatment-support .prior-obs-value, .apgar, #lastWeightKg')).toHaveCount(0);
+    await expect(view.root.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
   });
 
   // VW1 (Medium): the umbilical cord comment (:455) and the eye comment (:482) are two inputs of one concept (CIEL:168722; V1). A saved obs

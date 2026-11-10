@@ -26,10 +26,11 @@ import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../
 //   checkWithoutComments message (past history); a ticked relative / box without text -> "Please specify". The same
 //   check runs in beforeSubmit and blocks the save. setUpNextAndSubmitButtons() wires #next / #submit (see _shared).
 // Side effects on save: none (no program enrollment, orders or post-submission action).
-// EDIT is covered by the NCD Pregnant round-trip; VIEW by that test (the Pregnant tick) and by the last test (the saved items only,
-//   nothing for the rest).
-// EDIT is covered by the NCD Pregnant round-trip; VIEW by that test (the Pregnant tick) and by the last test (the saved items only,
-//   nothing for the rest).
+// EDIT is covered by the NCD Pregnant round-trip; VIEW (the visit page's section pihcore-history, templateModelUrl section-history.xml, for Outpatient
+//   initial) by the last test (the saved items only, nothing for the rest).
+// Visit-page display: for an NCD initial encounter the visit page does NOT show this form's VIEW: the sierra_leone NCD initial entry of
+//   encounterTypeConfig.js lists section-ncd-history (pihcore-ncd-history) in its place (V4), so the Pregnant tick saved here has no VIEW that users
+//   see; the NCD Pregnant test therefore checks the EDIT round-trip only, and the form's own VIEW of the NCD branches is not tested.
 // Not covered here: the hospitalization table, current medications, diagnostic tests and the other NCD-only fields (plain obs).
 //
 // Findings:
@@ -130,7 +131,7 @@ test.describe('section-history', () => {
     });
   }
 
-  test('NCD initial: the Pregnant checkbox shows #pregnant and is saved ticked on reopen (EDIT) and shown in VIEW', async ({
+  test('NCD initial: the Pregnant checkbox shows #pregnant and is saved ticked on reopen (EDIT)', async ({
     page,
     createSectionEncounter,
     api,
@@ -151,11 +152,7 @@ test.describe('section-history', () => {
     await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#sexual-activities').getByLabel('Pregnant')).toBeChecked();
     await expect(page.locator('#pregnant')).toBeVisible();
-
-    // VIEW: the ticked Pregnant is shown in the sexual-activities section, and no family-planning method is
-    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid, { 'Pregnancy status: Yes': '[X] Pregnant' });
-    await expect(view.page.locator('#sexual-activities .value')).toHaveText(['[X] Pregnant']);
-    await expect(view.page.locator('[id="Pill-fp"] .value')).toHaveCount(0);
+    expect((await getEncounterObs(api, section.encounter.uuid)).map((o) => o.display)).toContain('Pregnancy status: Yes');
   });
 
   test('NCD initial: a man has no Pregnant checkbox', async ({ page, createSectionEncounter }) => {

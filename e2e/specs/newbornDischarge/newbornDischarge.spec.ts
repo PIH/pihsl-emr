@@ -81,7 +81,7 @@ const obsSummary = async (api: APIRequestContext, encounterUuid: string): Promis
 // eye ointment and cord care (CIEL:1651), vitamin K (PIH:SUPPLEMENT RECEIVED). Created over REST just before the form
 // opens, so it is "before the current encounter" and "in the visit".
 const createPriorEncounter = async (api: APIRequestContext, context: EntryContext): Promise<void> => {
-  const now = new Date().toISOString();
+  const now = new Date(Date.now() - 60_000).toISOString();
   const res = await api.post('encounter', {
     data: {
       patient: context.patient.uuid,
@@ -347,33 +347,33 @@ test.describe('newbornDischarge', () => {
     const urinated = new Date();
     urinated.setDate(urinated.getDate() - 1);
     const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][urinated.getMonth()];
-    await expect(page.locator('#pee-time .value')).toHaveText([`${`${urinated.getDate()}`.padStart(2, '0')} ${month} ${urinated.getFullYear()}`, '9:05 AM']);
+    await expect(view.root.locator('#pee-time .value')).toHaveText([`${`${urinated.getDate()}`.padStart(2, '0')} ${month} ${urinated.getFullYear()}`, '9:05 AM']);
     // the disposition is plain text (not "[X]"), and the transfer/death fields that belong to other dispositions hold no value
-    await expect(page.locator('#disposition .value')).toHaveText('Home');
+    await expect(view.root.locator('#disposition .value')).toHaveText('Home');
 
     // what was not filled is an empty option: the treatments given earlier in the visit (the prior-value markers are ENTER only,
     // :254-279) are not marked as given now, and the other exam answers are not selected
-    const empty = (await page.locator('span.emptyValue').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
+    const empty = (await view.root.locator('span.emptyValue').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
     for (const expected of ['[ ] Umbilical cord care', '[ ] Vitamin K', '[ ] Dry', '[ ] Jaundice', '[ ] Anuria (No urination)', '[ ] Formula', '[ ] Deteriorated']) {
       expect(empty, expected).toContain(expected);
     }
-    await expect(page.locator('#treatment .value')).toHaveText(['[X] Prophylactic eye ointment', '[X] Vitamin D']);
-    await expect(page.locator('#treatment .prior-obs-value')).toHaveCount(0);
-    await expect(page.locator('#Overview')).toHaveCount(0);
-    await expect(page.getByText('Date & time of delivery')).toHaveCount(0);
-    await expect(page.getByText('Type of delivery')).toHaveCount(0);
+    await expect(view.root.locator('#treatment .value')).toHaveText(['[X] Prophylactic eye ointment', '[X] Vitamin D']);
+    await expect(view.root.locator('#treatment .prior-obs-value')).toHaveCount(0);
+    await expect(view.root.locator('#Overview')).toHaveCount(0);
+    await expect(view.root.getByText('Date & time of delivery')).toHaveCount(0);
+    await expect(view.root.getByText('Type of delivery')).toHaveCount(0);
 
     // VIEW-only parts: the post-ductal difference is an empty span.value that viewPostDuctDiff() (script :54-68) fills from the two
     // saturations (the difference is not saved): 98 - 90; and the appointment is replaced by a link
-    await expect(page.locator('span#postductalDifference.value')).toHaveText('8');
-    await expect(page.locator('#preDuctalO2 .value')).toHaveText('98');
-    await expect(page.locator('#postDuctalO2 .value')).toHaveText('90');
-    await expect(page.locator('#postductalDifference').locator('xpath=ancestor::*[@id="postductalDiffDiv"]')).toHaveCount(1);
-    await expect(page.locator('#postductalDiffDiv input')).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'View Appointments' })).toHaveAttribute('href', '/openmrs/spa/home/appointments');
-    await expect(page.locator('p.schedule-appointment-none')).toHaveText('No appointment scheduled');
+    await expect(view.root.locator('span#postductalDifference.value')).toHaveText('8');
+    await expect(view.root.locator('#preDuctalO2 .value')).toHaveText('98');
+    await expect(view.root.locator('#postDuctalO2 .value')).toHaveText('90');
+    await expect(view.root.locator('#postductalDifference').locator('xpath=ancestor::*[@id="postductalDiffDiv"]')).toHaveCount(1);
+    await expect(view.root.locator('#postductalDiffDiv input')).toHaveCount(0);
+    await expect(view.root.getByRole('link', { name: 'View Appointments' })).toHaveAttribute('href', '/openmrs/spa/home/appointments');
+    await expect(view.root.locator('p.schedule-appointment-none')).toHaveText('No appointment scheduled');
     // no visible field, button or heading (the order widget keeps a hidden template with a "Calculate Quantity" button)
-    await expect(page.locator('h2, #buttons, input:visible, select:visible, textarea:visible, button:visible')).toHaveCount(0);
+    await expect(view.root.locator('h2, #buttons, input:visible, select:visible, textarea:visible, button:visible')).toHaveCount(0);
   });
 
   // VW1 (Medium): the umbilical cord comment (:395) and the eye comment (:422) are two inputs of one concept (CIEL:168722). A saved obs is

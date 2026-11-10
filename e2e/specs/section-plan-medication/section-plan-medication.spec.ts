@@ -16,7 +16,7 @@ import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 // Not covered here: revising, renewing or discontinuing an order and the quantity calculator (they need an active
 // order in an earlier encounter).
 // VIEW is covered for the counselling answer and the remarks. The drug-order widget draws its orders in VIEW with JavaScript (it reads
-// them over REST from the page), which the VIEW harness (setContent, no page scripts) does not run, so a saved order is not checked in VIEW.
+// them over REST from the page), so a saved order is not asserted in VIEW.
 // Findings: none.
 
 const FORM = 'section-plan-medication.xml';

@@ -23,8 +23,8 @@ import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../
 //   setUpNextAndSubmitButtons() (see _shared.e2e.md). :105-109 hideIfEmpty runs in VIEW only.
 // Side effects on save: none (obs only).
 // VIEW is covered by the last two tests (per-block values; weight-loss group, comment and peds block); the hideIfEmpty script (:105-109)
-//   needs the page's jQuery and is not run by the harness (the VIEW HTML is loaded with setContent), so the blocks that stay empty are checked
-//   to hold no value instead. Not covered here: the "Other" comment fields of each block (plain obs).
+//   runs when the visit page inserts the HTML (VIEW is tested on the visit page: the section's entry has templateModelUrl section-exam.xml), but
+//   the tests check that the blocks that stay empty hold no value, not that they are hidden. Not covered here: the "Other" comment fields of each block (plain obs).
 //
 // Findings:
 //   V1 Low  :126-127  ticking Normal in the General block unticks "Weight loss" but leaves its Duration / Units filled; the

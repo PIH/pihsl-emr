@@ -68,7 +68,7 @@ const recordEarlierEncounter = async (api: APIRequestContext, context: EntryCont
       patient: context.patient.uuid,
       encounterType: NEWBORN_INITIAL_ENCOUNTER_TYPE_UUID,
       location: MCH_OPD_LOCATION_UUID,
-      encounterDatetime: new Date().toISOString(),
+      encounterDatetime: new Date(Date.now() - 60_000).toISOString(),
       visit: context.visitUuid,
       obs,
     },
@@ -297,24 +297,24 @@ test.describe('newbornInitial', () => {
     }
 
     // conditional answers: the delivery location "other" and its text, and the one selected radio of each group
-    await expect(page.locator('#d-location .value')).toHaveText(['[X] other']);
-    await expect(page.locator('#d-location .emptyValue')).toHaveCount(4);
-    await expect(page.locator('#delivery-location-other .value')).toHaveText('Roadside');
-    await expect(page.locator('#transport .value')).toHaveText(['[X] motorbike']);
-    await expect(page.locator('#other-transport .value')).toHaveCount(0); // the transport "other" text was not given
-    await expect(page.locator('#air .value')).toHaveText(['[X] CPAP']);
-    await expect(page.locator('#cpap .value')).toHaveText('6');
-    await expect(page.locator('#oxy2 .value')).toHaveCount(0);
+    await expect(view.root.locator('#d-location .value')).toHaveText(['[X] other']);
+    await expect(view.root.locator('#d-location .emptyValue')).toHaveCount(4);
+    await expect(view.root.locator('#delivery-location-other .value')).toHaveText('Roadside');
+    await expect(view.root.locator('#transport .value')).toHaveText(['[X] motorbike']);
+    await expect(view.root.locator('#other-transport .value')).toHaveCount(0); // the transport "other" text was not given
+    await expect(view.root.locator('#air .value')).toHaveText(['[X] CPAP']);
+    await expect(view.root.locator('#cpap .value')).toHaveText('6');
+    await expect(view.root.locator('#oxy2 .value')).toHaveCount(0);
     // what was not ticked or typed is not a value: the maternal complications, the other exam answers, the other labs
-    await expect(page.locator('#mother .value')).toHaveText(['[X] Preeclampsia', '[X] Malaria']);
-    await expect(page.locator('.exam').nth(0).locator('.value')).toHaveText(['[X] Dry', 'Cord comment']);
-    await expect(page.locator('.exam').nth(1).locator('.value')).toHaveText(['[X] Clear']);
-    await expect(page.locator('#labs .value')).toHaveText(['14', '[X] Positive']);
+    await expect(view.root.locator('#mother .value')).toHaveText(['[X] Preeclampsia', '[X] Malaria']);
+    await expect(view.root.locator('.exam').nth(0).locator('.value')).toHaveText(['[X] Dry', 'Cord comment']);
+    await expect(view.root.locator('.exam').nth(1).locator('.value')).toHaveText(['[X] Clear']);
+    await expect(view.root.locator('#labs .value')).toHaveText(['14', '[X] Positive']);
     // the diagnoses that were not ticked (obsgroup showIfEmpty=false) are not listed
-    await expect(page.locator('#dx .value')).toHaveText(['[X] Anaemia', '[X] Birth asphyxia', '[X] Neonatal sepsis', 'Dx summary text']);
-    await expect(page.getByText('Macrosomia')).toHaveCount(0);
+    await expect(view.root.locator('#dx .value')).toHaveText(['[X] Anaemia', '[X] Birth asphyxia', '[X] Neonatal sepsis', 'Dx summary text']);
+    await expect(view.root.getByText('Macrosomia')).toHaveCount(0);
     // ENTER-only content is absent: the heading, the last-weight lookup span and the buttons
-    await expect(page.locator('h2, #lastWeightKg, #buttons, input, select, textarea, button')).toHaveCount(0);
+    await expect(view.root.locator('h2, #lastWeightKg, #buttons, input, select, textarea, button')).toHaveCount(0);
   });
 
   // VW1 (Medium): the umbilical cord comment (:549) and the eye comment (:576) are two inputs of one concept (CIEL:168722). HFE binds

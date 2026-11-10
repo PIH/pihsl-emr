@@ -28,7 +28,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //     (Admission shows a required location select) and the vitals widget does not require "contact the doctor" (drContactRequiredAndMissing).
 //   evaluateIsolationStatus(): duplicate of tb-symptom-screening-widget.js: #isolationMsg shows when all four TB radios are "yes".
 // Side effects on save: none beyond the obs (no postSubmissionAction, no program, no order; Disposition is only recorded).
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test and the save test: the status bar, title and provider/location/date
+// VIEW (on the visit page) is covered by the 'VIEW:' test and the save test: the status bar, title and provider/location/date
 // are not rendered in VIEW (ifMode VIEW include=false :285), so the VIEW has no triage priority; the page scripts do not run in it.
 // Not covered here: the vitals colours per range, the lab results / rapid tests and PHQ-2 (shared), the file upload, Admission / Transfer
 // dispositions (saved), EDIT mode.

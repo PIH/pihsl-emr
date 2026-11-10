@@ -28,8 +28,8 @@ import { EntryFormPage, ViewFormPage, expectViewShowsSavedObs, selectDefaultProv
 // Side effects on save: none (no program, no order). The save button is a plain <button onclick="submitHtmlForm()">:
 // there is no #submit (use #buttons button.submitButton).
 // VIEW (:72-104, last test and the end of the save test): every saved score and total is shown, the unscored rows are blank, only the genitals row of the
-// patient's sex is rendered, and the highlight script marks the saved cell of each scored row. The script needs jq, which the VIEW test page (the HTML
-// loaded with setContent) does not have: the test loads the server's jQuery and runs highlightSavedScores itself.
+// patient's sex is rendered, and the highlight script marks the saved cell of each scored row. VIEW is tested on the visit page (the Ballard Score entry of
+// encounterTypeConfig.js has a templateModelUrl without definitionUiResource, so it shows the form the encounter was saved with); the page runs the script.
 // Not covered here: EDIT re-highlighting.
 //
 // Findings (the duplicate id="encounterDate" in the inventory is not real: the parameter replaces the shared widget):
@@ -245,15 +245,7 @@ test.describe('ballardScore', () => {
     // the genitals row of the other sex is not rendered at all
     await expect(view.page.locator('#mat-genitals-male-score')).toHaveCount(0);
 
-    // the highlight script: it needs jq (not loaded in this page), so load the server's jQuery and run its row highlighter
-    await view.page.addScriptTag({ url: `${process.env.E2E_BASE_URL}/ms/uiframework/resource/uicommons/scripts/jquery-1.12.4.min.js` });
-    await view.page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const w = window as any;
-      w.jq = w.jQuery;
-      w.highlightSavedScores('neuro-score', 'neuro-score-input');
-      w.highlightSavedScores('mat-score', 'mat-score-input');
-    });
+    // the highlight script (:73-104, VIEW only) runs when the visit page inserts the HTML: no helper runs it here
     const cell = (sign: string, score: number) => view.page.locator(`td.clickable-td[onclick="selectScore('${sign}', ${score}, this);"]`);
     for (const [sign, score] of [['posture', 4], ['square-window', 3], ['mat-skin', 3], ['mat-genitals-female', 1]] as const) {
       await expect(cell(sign, score), `${sign} ${score}`).toHaveCSS('background-color', 'rgb(255, 243, 224)');

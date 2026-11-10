@@ -26,3 +26,7 @@ export const NCD_INITIAL_1_ENCOUNTER_TYPE_UUID = '48c413c4-e7f6-491a-8431-900451
 export const NCD_INITIAL_2_ENCOUNTER_TYPE_UUID = '43423212-6f70-4df8-a9f7-2aef88df1ee2';
 export const NCD_FOLLOWUP_1_ENCOUNTER_TYPE_UUID = 'e02a8c32-4f14-4ff7-a4e9-2f087d9a1cf7';
 export const NCD_FOLLOWUP_2_ENCOUNTER_TYPE_UUID = '6a3afa6f-8f78-44a9-80c9-3f4f3b6ad8f2';
+// formEncounterType of the patientRegistration-* forms (rs, contact, social, localAddress); resolved on kgh-ci: "Patient Registration"
+export const PATIENT_REGISTRATION_ENCOUNTER_TYPE_UUID = '873f968a-73a8-4f9c-ac78-9f4778b751b6';
+// formEncounterType of labResults.xml; resolved on kgh-ci: "Lab Results"
+export const LAB_RESULTS_ENCOUNTER_TYPE_UUID = '4d77916a-0620-11e5-a6c0-1697f925ec7b';

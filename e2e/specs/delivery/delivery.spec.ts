@@ -2,7 +2,7 @@ import { test, expect, birthdateYearsAgo } from "../../core";
 import { VISIT_PAGE_URL } from '../../pages';
 import { MCH_DELIVERY_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getEncounterObs, getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
+import { EntryFormPage, VisitPage, submitShellForm } from "../../pages";
 
 // delivery.xml: header form ("MCH Delivery"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -11,8 +11,12 @@ import { EntryFormPage, ViewFormPage, submitShellForm } from "../../pages";
 // Conditions: ifMode ENTER (encounter-with-sections.xml:12) auto-submits when provider, location and date all have a value.
 // The provider defaults to the current user and the location to the session location (tags="Maternal and Child Location", present on MCH OPD),
 // so a fresh ENTER saves an encounter with no obs and redirects.
-// Side effects on save: none. VIEW (last test): the shell renders nothing at all: the who/when/where block, the heading and the buttons are ifMode VIEW include=false,
-// and the .htmlform wrapper stays display:none because the script that shows it runs only in ENTER/EDIT. The saved data is rendered by section-delivery (see its spec).
+// Side effects on save: none.
+// Visit-page display: the visit page does NOT show this form's VIEW (the shell renders nothing anyway: the who/when/where block, the
+// heading and the buttons are ifMode VIEW include=false). The "MCH Delivery" entry of encounterTypeConfig.js (// delivery, sierra_leone)
+// has `shortTemplate`/`longTemplate: defaultEncounterShort.page` and no templateModelUrl of its own: it lists the encounter with its
+// `sections` (pihcore-delivery, pihcore-diagnosis, pihcore-plan-medication), each with the VIEW of its own section form (see the section-* specs).
+// The VIEW test asserts that list; the form's own VIEW is therefore not tested.
 // Not covered: Next to the section form, EDIT mode, shared provider/location/date behaviour.
 
 test.describe("delivery", () => {
@@ -45,7 +49,7 @@ test.describe("delivery", () => {
       .toEqual([MCH_DELIVERY_ENCOUNTER_TYPE_UUID]);
   });
 
-  test("VIEW: the shell renders no values, no fields and no buttons", async ({ page, api, createEntryContext }) => {
+  test("the visit page lists the saved encounter with its sections (the shell form has no VIEW of its own)", async ({ page, api, createEntryContext }) => {
     const context = await createEntryContext({
       givenName: "AutoDelivery",
       familyName: "Tester",
@@ -59,12 +63,12 @@ test.describe("delivery", () => {
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);
 
-    // the VIEW renders (getAsHtml answers 200 with the form's HTML) but there is nothing to show: no obs, and the provider,
-    // location and date block, the heading and the buttons are all ENTER/EDIT only
-    const view = await ViewFormPage.open(page, "delivery.xml", encounter.uuid);
-    expect(await view.valueTexts()).toEqual([]);
-    await expect(page.locator("span.emptyValue")).toHaveCount(0);
-    await expect(page.locator("#who-when-where, select, input, button, h2")).toHaveCount(0);
-    await expect(page.locator(".htmlform")).toBeHidden();
+    const visit = await VisitPage.open(page, context.visitUuid);
+    const entry = visit.encounterOfType(MCH_DELIVERY_ENCOUNTER_TYPE_UUID);
+    await expect(entry).toHaveCount(1);
+    await visit.expand(entry);
+    for (const section of ["pihcore-delivery", "pihcore-diagnosis", "pihcore-plan-medication"]) {
+      await expect(visit.section(section), `section ${section} of the MCH Delivery entry`).toBeVisible();
+    }
   });
 });

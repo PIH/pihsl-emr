@@ -32,6 +32,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //                        block (#scbu-death, empty fields), and every "if other, specify" block (#other-referrer, #other-delivery-place,
 //                        #other-facility) with a blank ____ line when the answer is not Other. Fix: wrap the conditional blocks in
 //                        <includeIf> on the obs value (or hide them with a VIEW-only CSS rule). TESTED (VIEW, test.fixme).
+// UNREACHABLE: no profile of this repo offers this form (component mchGAINNewborn is never enabled in an SL profile: _availability.e2e.md "Not reachable"). Tests open it by direct URL.
 
 const FORM = 'gainNewbornRegister.xml';
 const SCBU_REGISTER_ENCOUNTER_TYPE_UUID = '3790ecc6-bc63-48f8-9104-f81dc90ee21c';
@@ -49,7 +50,7 @@ const obsSummary = async (api: APIRequestContext, encounterUuid: string): Promis
     return `${o.concept.display}=${typeof v === 'object' && v !== null ? v.display : v}`;
   });
 
-test.describe('gainNewbornRegister', () => {
+test.describe('gainNewbornRegister @unreachable', () => {
   let context: EntryContext;
 
   const open = async (page: Page) => {

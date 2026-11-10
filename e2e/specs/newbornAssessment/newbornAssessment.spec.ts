@@ -289,21 +289,21 @@ test.describe('newbornAssessment', () => {
     delivered.setDate(delivered.getDate() - 2);
     const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][delivered.getMonth()];
     const day = `${delivered.getDate()}`.padStart(2, '0');
-    await expect(page.locator('#treatment p.date-one-line').first().locator('.value')).toHaveText([`${day} ${month} ${delivered.getFullYear()}`, '2:30 PM']);
+    await expect(view.root.locator('#treatment p.date-one-line').first().locator('.value')).toHaveText([`${day} ${month} ${delivered.getFullYear()}`, '2:30 PM']);
 
     // the unselected answers are shown as empty options, not as values
-    const empty = (await page.locator('span.emptyValue').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
+    const empty = (await view.root.locator('span.emptyValue').allInnerTexts()).map((t) => t.replace(/\s+/g, ' ').trim());
     for (const expected of ['[ ] F', '[ ] FSB', '[ ] MSB', '[ ] No', '[ ] Adrenaline administered']) {
       expect(empty, expected).toContain(expected);
     }
     // nothing was ticked in the pregnancy complications; the diagnoses (obsgroup showIfEmpty=false) that were not ticked are not listed
-    await expect(page.locator('#preg-complications .value')).toHaveCount(0);
-    await expect(page.locator('#preg-complications .emptyValue').first()).toBeVisible();
+    await expect(view.root.locator('#preg-complications .value')).toHaveCount(0);
+    await expect(view.root.locator('#preg-complications .emptyValue').first()).toBeVisible();
     for (const dx of ['Placental abnormality', 'Birth asphyxia', 'Meconium aspiration', 'Intra-uterine foetal demise']) {
-      await expect(page.getByText(dx)).toHaveCount(0);
+      await expect(view.root.getByText(dx)).toHaveCount(0);
     }
     // ENTER-only content is absent: the heading, the helper text, the APGAR table and the buttons
-    await expect(page.locator('h2, #alive-details table, #buttons, input, select, textarea, button')).toHaveCount(0);
-    await expect(page.getByText('Decimal represents number of days')).toHaveCount(0);
+    await expect(view.root.locator('h2, #alive-details table, #buttons, input, select, textarea, button')).toHaveCount(0);
+    await expect(view.root.getByText('Decimal represents number of days')).toHaveCount(0);
   });
 });
