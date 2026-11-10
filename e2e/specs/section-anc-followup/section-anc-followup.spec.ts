@@ -19,7 +19,7 @@ import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 // Scripts: setUpNextAndSubmitButtons() (:65-70) wires #next/#submit; no rule, message or default of its own.
 // Side effects on save: PregnancyProgramEnrollmentAction (:7) enrolls the patient in the Pregnancy program (tested),
 // CleanDiagnosisConstructAction and ApplyDispositionAction (:6, :8). No required field; blank save succeeds.
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test (a form filled across the sections) and by the other save tests;
+// VIEW (on the visit page) is covered by the 'VIEW:' test (a form filled across the sections) and by the other save tests;
 // the page scripts do not run in it (the "Visit date" and the calculated GA/EDD blocks stay blank), the saved values are shown in span.value.
 // Not covered here: orders (see section-plan-medication.spec.ts for the shared widget), the appointment widget (only "No appointment scheduled"),
 // the disposition's transfer/death extras, the last-vitals box (see _shared V3: it never appears here).
@@ -105,7 +105,7 @@ test.describe('section-anc-followup', () => {
     expect(enrollments.some((e) => /pregnancy/i.test(e.program.name))).toBeTruthy();
   });
 
-  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): every saved value in a span.value, the rest in span.emptyValue or blank. The widget prints
+  // VIEW (on the visit page): every saved value in a span.value, the rest in span.emptyValue or blank. The widget prints
   // the diagnoses (and the danger signs, which are saved as "Visit Diagnoses" constructs) in plain spans, so the diagnosis obs and the hidden
   // order/certainty obs are mapped to '' ("nothing to look for") and the diagnosis lines are asserted below instead.
   test('VIEW: shows what was saved (checkboxes, radios, tests, EDD, diagnosis, disposition) and nothing for the unanswered questions', async ({

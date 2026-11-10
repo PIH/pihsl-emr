@@ -254,20 +254,20 @@ test.describe('nicuTriage', () => {
       expect(shown, expected).toContain(expected);
     }
     // the delivery location is one selected radio, and the other answers (labelled by answerCodes) are empty options
-    await expect(page.locator('#d-location .value')).toHaveText(['[X] other']);
-    await expect(page.locator('#d-location .emptyValue')).toHaveText([/home/, /in-transit/, /health clinic/, /KGH\/MCOE/]);
-    await expect(page.locator('#delivery-location-other .value')).toHaveText('Roadside');
-    await expect(page.locator('#malformation-details .value')).toHaveText('Cleft palate');
-    await expect(page.locator('#tox .value')).toHaveText('Lead');
-    await expect(page.locator('#birthInjury .value')).toHaveText('[X] Yes');
-    await expect(page.locator('#birthInjury .emptyValue')).toHaveText(/\[\s+\]\s*No/);
+    await expect(view.root.locator('#d-location .value')).toHaveText(['[X] other']);
+    await expect(view.root.locator('#d-location .emptyValue')).toHaveText([/home/, /in-transit/, /health clinic/, /KGH\/MCOE/]);
+    await expect(view.root.locator('#delivery-location-other .value')).toHaveText('Roadside');
+    await expect(view.root.locator('#malformation-details .value')).toHaveText('Cleft palate');
+    await expect(view.root.locator('#tox .value')).toHaveText('Lead');
+    await expect(view.root.locator('#birthInjury .value')).toHaveText('[X] Yes');
+    await expect(view.root.locator('#birthInjury .emptyValue')).toHaveText(/\[\s+\]\s*No/);
     // what was not filled is shown as empty options or blanks, never as a value: the other levels of consciousness, the malaria
     // test, the other reasons for presentation, and the priority signs other than Low birth weight and Toxicity
-    await expect(page.locator('#avpu .value')).toHaveCount(1);
-    await expect(page.locator('#avpu .emptyValue')).toHaveCount(3);
-    await expect(page.locator('#labTests .value')).toHaveText(['[X] Awake', '14', '42']);
-    await expect(page.locator('#assessment .value')).toHaveCount(13); // exactly what was ticked or typed in the Assessment section
+    await expect(view.root.locator('#avpu .value')).toHaveCount(1);
+    await expect(view.root.locator('#avpu .emptyValue')).toHaveCount(3);
+    await expect(view.root.locator('#labTests .value')).toHaveText(['[X] Awake', '14', '42']);
+    await expect(view.root.locator('#assessment .value')).toHaveCount(13); // exactly what was ticked or typed in the Assessment section
     // ENTER-only content is absent: the heading, the buttons and every field
-    await expect(page.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
+    await expect(view.root.locator('h2, #buttons, input, select, textarea, button')).toHaveCount(0);
   });
 });

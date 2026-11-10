@@ -12,7 +12,7 @@ import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../
 //   when risk factor = Previous c-section  :183  show #c-section-details
 //   when #us-performed checked             :368  show #us-findings
 //   ifMode VIEW                :582  "view/edit appointments" link above the appointment widget
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test and the save test; the page scripts do not run in it.
+// VIEW (on the visit page, section section-anc-intake) is covered by the 'VIEW:' test and the save test; the form's scripts run there as for a user.
 // Not covered here: the LMP > 305 days validation (V1, Medium: Save does nothing and gives no message),
 // which needs the shared estimated-delivery-date widget.
 
@@ -93,7 +93,7 @@ test.describe('section-anc-intake', () => {
     await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
   });
 
-  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): every saved value in a span.value, every unselected option in a span.emptyValue.
+  // VIEW (on the visit page): every saved value in a span.value, every unselected option in a span.emptyValue.
   // A risk factor is labelled by the form ("Previous c-section") and not by its concept ("High risk pregnancy due to previous caesarian section").
   test('VIEW: shows what was saved (history, risk factors with their labels, tests, habits, disposition) and nothing for the unanswered questions', async ({
     page,

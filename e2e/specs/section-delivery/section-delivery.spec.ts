@@ -12,7 +12,7 @@ import { SectionFormPage, expectViewShowsSavedObs } from '../../pages';
 //   when HCW cadre = Other     :510  show #other-role
 //   js :78,89                  GA/EDD block hidden unless the patient has an LMP obs
 //   js :106-131                #fetus-2 / #fetus-3 hidden, Show more / Show less buttons
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test: the infant groups, the form's own answer labels, no third infant.
+// VIEW (on the visit page) is covered by the 'VIEW:' test: the infant groups, the form's own answer labels, no third infant.
 // Not covered: the post-submission actions (program transition), which need a pregnancy enrollment.
 
 // Sections inside the form: delivery-intake, labor, delivery-section (infants 1-3), delivery-findings, hcw,
@@ -110,7 +110,7 @@ test.describe('section-delivery', () => {
     await expect(page.locator('#fetus-2')).toBeVisible();
   });
 
-  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): the infants are obs groups with showIfEmpty="false", so an infant without data is not
+  // VIEW (on the visit page): the infants are obs groups with showIfEmpty="false", so an infant without data is not
   // shown at all; the answers the form labels itself (Alive / FSB / MSB, M / F, "2nd degree", the HCW cadre, the disposition) are not the concept names.
   test('VIEW: shows what was saved per infant (and no third infant), with the form\'s own answer labels', async ({ page, api }) => {
     const setDateTime = async (row: number, hour: string, minute: string) => {

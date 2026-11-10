@@ -23,8 +23,9 @@ import { EntryFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pa
 //   #levelOfConsciousness_162643, #activity_170351) and the sum into #totalScore. Unanswered criteria count 0, nothing is required.
 // Side effects on save: ApplyDispositionAction (:19) acts on the disposition (Transfer within hospital, Death, ...): the save tests leave the
 //   disposition empty, so no action runs. No program, no order.
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' tests, including the per-criterion scores and the total the VIEW script
-// computes from the saved obs (it needs the page's jq: see openViewWithScripts).
+// VIEW (on the visit page: the PACU Followup entry of encounterTypeConfig.js has a templateModelUrl without definitionUiResource, so it shows the form
+// the encounter was saved with) is covered by the 'VIEW:' tests, including the per-criterion scores and the total the VIEW script computes from the
+// saved obs when the visit page inserts the HTML.
 // Not covered here: EDIT, vitals colours (shared), a saved disposition (side effects), the diagnosis search, the provider fields.
 //
 // Findings:
@@ -75,36 +76,6 @@ const VIEW_LABELS: Record<string, string> = {
   'Type of transfusion fluid: Whole blood': '',
   'Systolic: 110': '', // the vitals widget script (vital-signs-widget.js, VIEW only) removes "value" from a vital to colour-code its cell instead
   'Diastolic: 70': '',
-};
-
-// The VIEW of the saved encounter, with the page's own script running (viewEncounterWithHtmlForm runs it in the visit page). The Aldrete scores and the
-// total are written by it from the saved obs (:74-133, VIEW only). ViewFormPage loads the HTML with setContent, which has no jq of its own and runs
-// `jq(document).ready(fn)` before the rest of the body is parsed: so start from a page that has jq (an unrelated section form) and let ready wait one tick.
-const openViewWithScripts = async (
-  page: Page,
-  api: APIRequestContext,
-  context: EntryContext,
-  encounterUuid: string,
-  labels: Record<string, string> = {},
-) => {
-  await page.goto(EntryFormPage.enterUrl('section-chief-complaint.xml', context));
-  await page.evaluate(() => {
-    const w = window as any;
-    const jq = w.jq;
-    w.jq = Object.assign(function (this: unknown, arg: unknown) {
-      if (arg === document) {
-        return { ready: (fn: () => void) => setTimeout(fn, 0) };
-      }
-      if (typeof arg === 'function') {
-        setTimeout(arg as () => void, 0);
-        return undefined;
-      }
-      return jq.apply(this, arguments);
-    }, jq);
-  });
-  const view = await expectViewShowsSavedObs(page, api, FORM, encounterUuid, labels);
-  await page.waitForTimeout(500); // the scripts run on the next tick
-  return view;
 };
 
 test.describe('pacuFollowup', () => {
@@ -247,9 +218,9 @@ test.describe('pacuFollowup', () => {
     await new EntryFormPage(page, FORM).expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    const view = await openViewWithScripts(page, api, context, encounter.uuid, VIEW_LABELS);
-    await expect(page.locator('#bp_systolic')).toHaveText('110'); // the vitals widget script moves "value" off the vitals (it colour-codes them instead)
-    await expect(page.locator('#bp_diastolic')).toHaveText('70');
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, VIEW_LABELS);
+    await expect(view.root.locator('#bp_systolic')).toHaveText('110'); // the vitals widget script moves "value" off the vitals (it colour-codes them instead)
+    await expect(view.root.locator('#bp_diastolic')).toHaveText('70');
     const shown = await view.valueTexts();
     for (const expected of [
       location, // the encounter location, as the form's select showed it
@@ -274,18 +245,18 @@ test.describe('pacuFollowup', () => {
     }
     // the VIEW script: the points of each criterion next to its answer, and their sum
     for (const [criterion, points] of [0, 1, 2, 3, 4].map((c) => [c, [2, 1, 0, 2, 1][c]])) {
-      await expect(page.locator(CRITERIA[criterion].cell), CRITERIA[criterion].name).toHaveText(String(points));
-      await expect(page.locator(CRITERIA[criterion].cell)).toHaveClass(/\bvalue\b/);
+      await expect(view.root.locator(CRITERIA[criterion].cell), CRITERIA[criterion].name).toHaveText(String(points));
+      await expect(view.root.locator(CRITERIA[criterion].cell)).toHaveClass(/\bvalue\b/);
     }
-    await expect(page.locator('#totalScore')).toHaveText('6');
-    await expect(page.locator('#totalScore')).toHaveClass(/\bvalue\b/);
+    await expect(view.root.locator('#totalScore')).toHaveText('6');
+    await expect(view.root.locator('#totalScore')).toHaveClass(/\bvalue\b/);
     // the other anaesthesia types are only listed, the events that were not answered have no value
-    await expect(page.locator('.emptyValue', { hasText: 'Regional spinal anesthesia' })).toHaveCount(1);
+    await expect(view.root.locator('.emptyValue', { hasText: 'Regional spinal anesthesia' })).toHaveCount(1);
     for (const event of ['Shivering', 'Feeding started', 'Urinary catheter removed']) {
-      await expect(page.locator('p.list-inline', { hasText: event }).locator('.value'), event).toHaveCount(0);
+      await expect(view.root.locator('p.list-inline', { hasText: event }).locator('.value'), event).toHaveCount(0);
     }
-    await expect(page.locator('#admissionDate .value')).toHaveText([admissionDate, '7:30 AM']); // a datetime obs: printed as "dd MMM yyyy", "h:mm AM/PM"
-    await expect(page.locator('#buttons, h2, textarea, select, input[type=text], input[type=radio], input[type=checkbox]')).toHaveCount(0); // read-only
+    await expect(view.root.locator('#admissionDate .value')).toHaveText([admissionDate, '7:30 AM']); // a datetime obs: printed as "dd MMM yyyy", "h:mm AM/PM"
+    await expect(view.root.locator('#buttons, h2, textarea, select, input[type=text], input[type=radio], input[type=checkbox]')).toHaveCount(0); // read-only
   });
 
   // VW1 (Low): the VIEW script sets the total unconditionally. Intended: no total when no Aldrete criterion was saved.
@@ -298,8 +269,8 @@ test.describe('pacuFollowup', () => {
     await new EntryFormPage(page, FORM).expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    await openViewWithScripts(page, api, context, encounter.uuid, VIEW_LABELS);
-    await expect(page.locator('#totalScore')).not.toHaveClass(/\bvalue\b/);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, VIEW_LABELS);
+    await expect(view.root.locator('#totalScore')).not.toHaveClass(/\bvalue\b/);
   });
 
   // V2 (Low): `default="now"` is not an attribute of <obs>. Intended: the admission date/time starts as now (as the encounter date does). Remove

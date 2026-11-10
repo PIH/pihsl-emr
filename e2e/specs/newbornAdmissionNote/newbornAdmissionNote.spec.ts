@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, selectDefaultProvider } from '../../pages';
+import { EntryFormPage, VisitPage, selectDefaultProvider } from '../../pages';
 
 // newbornAdmissionNote.xml: "Admission Note" for a newborn admitted to a ward (required diagnoses only). The specs open
 // enterHtmlFormWithStandardUi inside a visit they create, for an infant (born 3 days ago), so availability
@@ -18,9 +18,11 @@ import { EntryFormPage, ViewFormPage, selectDefaultProvider } from '../../pages'
 // Not covered here: includePriorDiagnosesFromMostRecentEncounterWithDispositionOfType="ADMIT" (:68, needs an earlier
 //   admission with disposition), provider-role validation (shared), the "date" part of the check (jq('#when input')
 //   always has a value; the selector also matches the duplicate #when of the shared subform, see _shared V10), EDIT mode.
-// VIEW (last test): the heading and the diagnoses are shown ("Primary Diagnosis" / "(Confirmed) Neonatal sepsis [P36.9]", the same for the Secondary one);
-//   the provider, location and date are not (shared subform, ifMode VIEW include=false) and no value is a span.value (so the shared
-//   expectViewShowsSavedObs does not apply).
+// Visit-page display: the visit page does NOT show this form's VIEW. The form saves an Admission encounter (260566e1-...), whose entry in
+//   encounterTypeConfig.js (// admission) has `shortTemplate: defaultEncounterShort.page`, `longTemplate: admissionLong.page` and no
+//   templateModelUrl: the long view lists the encounter's diagnoses (primary first, as "<diagnosis>, <order>, <certainty>") and nothing else
+//   (the heading, provider, location and date of the form are not shown by it). The VIEW test (last test) asserts that; the form's own VIEW
+//   is therefore not tested.
 
 const FORM = 'newbornAdmissionNote.xml';
 const NEWBORN_ADMISSION_ENCOUNTER_TYPE_UUID = '260566e1-c909-4d61-a96f-c1019291a09d';
@@ -82,9 +84,8 @@ test.describe('newbornAdmissionNote', () => {
     expect(displays.some((d) => d.includes('sepsis'))).toBeTruthy();
   });
 
-  // VIEW: the diagnoses are not rendered as span.value (encounterDiagnosesByObs prints "<order> Diagnosis" and "(certainty) name [code]" itself),
-  // so expectViewShowsSavedObs, which looks for saved values in span.value, does not apply to this form.
-  test('VIEW: shows the primary and secondary diagnoses with their certainty, and nothing else', async ({ page, api }) => {
+  // The visit page lists the diagnoses of the Admission encounter with admissionLong.page.
+  test('the visit page shows the primary and secondary diagnoses with their certainty, and nothing else', async ({ page, api }) => {
     await selectDefaultProvider(page);
     await page.locator('#encounterLocation select').selectOption({ label: 'NICU' });
     await page.locator('#diagnosis-search').fill('neonatal sepsis');
@@ -97,17 +98,14 @@ test.describe('newbornAdmissionNote', () => {
     await new EntryFormPage(page, FORM).expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
-    const diagnoses = page.locator('#data-collection p');
-    await expect(diagnoses).toHaveCount(2);
-    await expect(diagnoses.nth(0).locator('small')).toHaveText('Primary Diagnosis');
-    await expect(diagnoses.nth(0).locator('span')).toHaveText('(Confirmed) Neonatal sepsis [P36.9]');
-    await expect(diagnoses.nth(1).locator('small')).toHaveText('Secondary Diagnosis');
-    await expect(diagnoses.nth(1).locator('span')).toHaveText('(Presumed) Jaundice [R17]');
-    // the heading is shown; the provider, location and date block and the buttons are ENTER/EDIT only (shared subform, :74)
-    await expect(page.getByRole('heading', { name: 'Admission Note' })).toBeVisible();
-    await expect(page.locator('select, input, button, #buttons')).toHaveCount(0);
-    expect(await view.valueTexts()).toEqual([]);
-    await expect(page.locator('span.emptyValue')).toHaveCount(0);
+    const visit = await VisitPage.open(page, context.visitUuid);
+    const entry = visit.encounterOfType(NEWBORN_ADMISSION_ENCOUNTER_TYPE_UUID);
+    await expect(entry).toHaveCount(1);
+    await visit.expand(entry);
+    const long = entry.locator(':scope > .visit-element .content'); // admissionLong.page has no .encounter-summary-long
+    // primary first, then the others: "<diagnosis>, <order>, <certainty>"
+    await expect(long.locator(':scope > div').filter({ hasText: 'Neonatal sepsis' })).toHaveText(/Neonatal sepsis.*, Primary, Confirmed/);
+    await expect(long.locator(':scope > div').filter({ hasText: 'Jaundice' })).toHaveText(/Jaundice.*, Secondary, Presumed/);
+    await expect(long.locator(':scope > div').filter({ hasText: /sepsis|Jaundice/i })).toHaveCount(2);
   });
 });

@@ -16,8 +16,9 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //   table-driven test: a summed score >= 2 shows #confirmMsg and disables Save until #contactDr is ticked (see _shared V2, V4, V9);
 //   the FHR block #fhrDiv is hidden only at some wards (_shared), visible at the session location.
 // Side effects on save: none (no program, order or disposition). Encounter type 6b1c3929-... (Vital Signs Inpatient).
-// VIEW is covered by the save test and by one test with only BP and haemoglobin: every saved value is in a span.value of its own field, and the
-// fields left empty show nothing. (The page script that colours the vitals in VIEW needs the app's jq: not exercised by setContent.)
+// VIEW (on the visit page: the Inpatient Vitals entry of encounterTypeConfig.js has a templateModelUrl without definitionUiResource, so it shows the
+// form the encounter was saved with) is covered by the save test and by one test with only BP and haemoglobin: every saved value is in a span.value of
+// its own field, and the fields left empty show nothing.
 // Not covered here: EDIT mode, the retro-entry privilege, ward-dependent FHR hiding (needs another login location).
 
 const FORM = 'inpatientVitals.xml';
@@ -126,8 +127,8 @@ test.describe('inpatientVitals', () => {
       await expect(view.valueOf(id), id).toHaveText(value);
     }
     expect(await view.valueTexts()).toEqual([...Object.values(values), '2', '500', '300']);
-    await expect(view.page.locator('#o2andFluidsDiv')).toHaveCount(0); // ifMode VIEW include=false :140: the ENTER inputs and their wrapper are gone
-    await expect(view.page.locator('#buttons, input')).toHaveCount(0);
+    await expect(view.root.locator('#o2andFluidsDiv')).toHaveCount(0); // ifMode VIEW include=false :140: the ENTER inputs and their wrapper are gone
+    await expect(view.root.locator('#buttons, input')).toHaveCount(0);
   });
 
   // VIEW of a partly filled form: only the entered vitals are values, the other fields show nothing as a value.

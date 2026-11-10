@@ -2,7 +2,7 @@ import { test, expect, birthdateYearsAgo } from "../../core";
 import { VISIT_PAGE_URL } from '../../pages';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages";
+import { EntryFormPage, VisitPage, selectDefaultProvider } from "../../pages";
 
 // outpatient-initial.xml: header form ("Outpatient Initial"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -11,9 +11,13 @@ import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages"
 // Conditions: ifMode ENTER (encounter-with-sections.xml:12) auto-submits only when provider, location and date all have a value.
 // The provider defaults to the current user, but the form has no location override: the shared default widget starts empty here (2 options),
 // so the form is shown: Next (#next) hidden, Save (#submit) visible, location required (encounter-provider-location-date).
-// Side effects on save: none. VIEW is covered by the save test (the header has no content of its own in VIEW: ifMode VIEW include=false on the
-// title, the provider/location/date block and the buttons, so the saved encounter renders blank). Not covered: Next to the section forms, EDIT mode,
-// shared provider/location/date behaviour.
+// Side effects on save: none.
+// Visit-page display: the visit page does NOT show this form's VIEW (the shell renders nothing anyway: the who/when/where block, the
+// heading and the buttons are ifMode VIEW include=false). The "Outpatient Initial" entry of encounterTypeConfig.js (// sierraLeoneOutpatientInitial)
+// has `shortTemplate`/`longTemplate: defaultEncounterShort.page` and no templateModelUrl of its own: it lists the encounter with its
+// `sections` (pihcore-history, physical-exam, pihcore-diagnosis, pihcore-plan), each with the VIEW of its own section form (see the section-* specs).
+// The VIEW test asserts that list; the form's own VIEW is therefore not tested.
+// Not covered: Next to the section form(s), EDIT mode, shared provider/location/date behaviour.
 
 const FORM = "outpatient-initial.xml";
 const LOCATION_SELECT = "#w3";
@@ -72,11 +76,13 @@ test.describe("outpatient-initial", () => {
       )
       .toEqual([OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID]);
 
-    // VIEW: nothing but the (empty) shell: no saved value, and none of the ENTER/EDIT widgets or buttons
-    const [encounter] = await getPatientEncounters(api, context.patient.uuid);
-    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
-    await expect(view.values).toHaveCount(0);
-    await expect(page.locator("#who-when-where, #buttons, input, select, textarea, button")).toHaveCount(0);
-    await expect(page.locator("h2")).toHaveCount(0);
+    // the visit page does not show a VIEW of this form: it lists the encounter with its sections
+    const visit = await VisitPage.open(page, context.visitUuid);
+    const entry = visit.encounterOfType(OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID);
+    await expect(entry).toHaveCount(1);
+    await visit.expand(entry);
+    for (const section of ["pihcore-history", "physical-exam", "pihcore-diagnosis", "pihcore-plan"]) {
+      await expect(visit.section(section), `section ${section} of the Outpatient Initial entry`).toBeVisible();
+    }
   });
 });

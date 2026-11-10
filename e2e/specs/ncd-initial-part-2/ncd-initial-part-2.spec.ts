@@ -2,7 +2,7 @@ import { test, expect, birthdateYearsAgo } from "../../core";
 import { VISIT_PAGE_URL } from '../../pages';
 import { NCD_INITIAL_2_ENCOUNTER_TYPE_UUID } from "../../core/constants";
 import { getEncounterObs, getPatientEncounters } from "../../commands";
-import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages";
+import { EntryFormPage, VisitPage, selectDefaultProvider } from "../../pages";
 
 // ncd-initial-part-2.xml: header form ("NCD Initial (Part 2)"), only the shared encounter-with-sections shell (documentation/_shared.e2e.md);
 // its content is in the section-* forms reached via Next. The specs open enterHtmlFormWithStandardUi inside a visit
@@ -11,9 +11,12 @@ import { EntryFormPage, ViewFormPage, selectDefaultProvider } from "../../pages"
 // Conditions: ifMode ENTER (encounter-with-sections.xml:12) auto-submits only when provider, location and date all have a value.
 // The provider defaults to the current user, but the location select is tagged "NCD Consult Location" and the session location (MCH OPD) lacks it,
 // so the form is shown: Next (#next) hidden, Save (#submit) visible, location required (encounter-provider-location-date).
-// Side effects on save: none. VIEW (last test): the entry form shows nothing at all. Its only content is the shared who/when/where block,
-// which is ifMode VIEW include=false (encounter-provider-location-date.xml), the buttons and the heading are too, and the wrapper stays
-// display:none because the script that shows it runs only in ENTER/EDIT. The saved data is rendered by the section forms (see their specs).
+// Side effects on save: none.
+// Visit-page display: the visit page does NOT show this form's VIEW (the shell renders nothing anyway: the who/when/where block, the
+// heading and the buttons are ifMode VIEW include=false). The "NCD Initial (Part 2)" entry of encounterTypeConfig.js (// For SL, NCD Initial Part 2, sierra_leone)
+// has `shortTemplate`/`longTemplate: defaultEncounterShort.page` and no templateModelUrl of its own: it lists the encounter with its
+// `sections`, each with the VIEW of its own section form (see the section-* specs). The VIEW test asserts that list; the form's own
+// VIEW is therefore not tested.
 // Not covered: Next to the section forms, EDIT mode, shared provider/location/date behaviour.
 
 const FORM = "ncd-initial-part-2.xml";
@@ -82,7 +85,7 @@ test.describe("ncd-initial-part-2", () => {
       .toEqual([NCD_INITIAL_2_ENCOUNTER_TYPE_UUID]);
   });
 
-  test("VIEW: the entry form renders no values, no fields and no buttons", async ({
+  test("the visit page lists the saved encounter with its sections (the shell form has no VIEW of its own)", async ({
     page,
     api,
     createEntryContext,
@@ -102,12 +105,12 @@ test.describe("ncd-initial-part-2", () => {
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
     expect(await getEncounterObs(api, encounter.uuid)).toHaveLength(0);
 
-    // the VIEW renders (getAsHtml answers 200 with the form's HTML) but there is nothing to show: no obs, and the
-    // provider, location and date block, the heading and the buttons are all ENTER/EDIT only
-    const view = await ViewFormPage.open(page, FORM, encounter.uuid);
-    expect(await view.valueTexts()).toEqual([]);
-    await expect(page.locator("span.emptyValue")).toHaveCount(0);
-    await expect(page.locator("#who-when-where, select, input, button, h2")).toHaveCount(0);
-    await expect(page.locator(".htmlform")).toBeHidden();
+    const visit = await VisitPage.open(page, context.visitUuid);
+    const entry = visit.encounterOfType(NCD_INITIAL_2_ENCOUNTER_TYPE_UUID);
+    await expect(entry).toHaveCount(1);
+    await visit.expand(entry);
+    for (const section of ["pihcore-ncd-overview", "pihcore-diabetes", "pihcore-hypertension", "pihcore-heart-failure", "pihcore-lung", "pihcore-kidney", "pihcore-liver", "pihcore-palliative", "pihcore-sickle-cell", "pihcore-other-ncds", "pihcore-diagnosis", "pihcore-ncd-plan"]) {
+      await expect(visit.section(section), `section ${section} of the NCD Initial (Part 2) entry`).toBeVisible();
+    }
   });
 });

@@ -108,7 +108,7 @@ const enrollPregnancy = async (api: APIRequestContext, patientUuid: string) => {
 
 // A Labour Progress encounter in the visit with labour start, induced = Yes and induction method = oxytocin.
 const createLabourProgress = async (api: APIRequestContext, patientUuid: string, visitUuid: string) => {
-  const now = new Date().toISOString();
+  const now = new Date(Date.now() - 60_000).toISOString();
   const res = await api.post('encounter', {
     data: {
       patient: patientUuid,
@@ -360,7 +360,7 @@ test.describe('laborDeliverySummary', () => {
           data: {
             person: section.patient.uuid,
             encounter: section.encounter.uuid,
-            obsDatetime: new Date().toISOString(),
+            obsDatetime: new Date(Date.now() - 60_000).toISOString(),
             concept: await conceptUuid(api, 'CIEL:151750'),
             value: await conceptUuid(api, 'CIEL:1066'),
           },

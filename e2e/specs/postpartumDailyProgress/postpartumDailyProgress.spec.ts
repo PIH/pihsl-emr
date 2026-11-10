@@ -30,7 +30,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //            the delivery was by caesarean (tested). In EDIT it also shows #csWoundStatus when one of its boxes is ticked.
 // Side effects on save: PregnancyProgramPostpartumTransitionAction (:21): the open Antenatal state of the Pregnancy program ends and Delivered
 // starts (tested); with no enrolment it enrols the patient in Delivered (observed).
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' test and the save test: saved values in span.value, the obs groups, the
+// VIEW (on the visit page) is covered by the 'VIEW:' test and the save test: saved values in span.value, the obs groups, the
 // form's own answer labels, no Overview section (ifMode VIEW include=false :207); the page scripts do not run in it (the C/S wound block is only shown by the
 // VIEW script :67). Not covered here: EDIT, vitals scoring and PHQ-2 (shared), the pregnancy-group, FHR hiding by session location.
 //
@@ -74,7 +74,7 @@ const conceptUuid = async (api: APIRequestContext, ref: string): Promise<string>
 
 // A Labour and Delivery encounter in the visit with a "Newborn details" group (type of delivery, date of confinement).
 const createDelivery = async (api: APIRequestContext, ctx: EntryContext, methodRef: string) => {
-  const now = new Date().toISOString();
+  const now = new Date(Date.now() - 60_000).toISOString();
   const res = await api.post('encounter', {
     data: {
       patient: ctx.patient.uuid,

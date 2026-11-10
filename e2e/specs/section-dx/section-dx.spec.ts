@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect, type SectionEncounter } from '../../core';
 import { OUTPATIENT_INITIAL_ENCOUNTER_TYPE_UUID } from '../../core/constants';
 import { getEncounterObs } from '../../commands';
-import { SectionFormPage, ViewFormPage, viewMismatches } from '../../pages';
+import { SectionFormPage, VisitPage } from '../../pages';
 
 // section-dx.xml: "Clinical impressions": coded diagnoses (encounterDiagnosesByObs widget) and a free-text clinical note.
 // It hangs under several parents (Outpatient initial/followup, NCD initial/followup, MCH delivery; see
@@ -18,8 +18,11 @@ import { SectionFormPage, ViewFormPage, viewMismatches } from '../../pages';
 // Side effects on save: the widget writes obs, not Encounter Diagnosis rows: a "Visit Diagnoses" obs group (diagnosis,
 //   certainty, order) per diagnosis; GET encounter ... diagnoses is empty. Not covered: other widget options, since the
 //   tag has no attributes besides selectedDiagnosesTarget.
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the two save tests: the widget prints each diagnosis as
-//   "<Primary|Secondary> Diagnosis (<certainty>) <name> [<code>]" in a plain span (no span.value), the clinical note is a span.value.
+// Visit-page display: the visit page does NOT show this form's VIEW. The section "pihcore-diagnosis" (primaryCareDx in encounterTypeConfig.js) has
+//   a templateModelUrl naming section-dx.xml, but its `longTemplate` is `dxLong.page` and its `shortTemplate` `dxSectionShort.page`, which render the
+//   encounter's own obs instead of the form's HTML: the collapsed line lists the diagnoses ("Pneumonia"), and expanding it shows the diagnoses as
+//   "<diagnosis>, <order>, <certainty>" (p.diagnosis, primary first) and the clinical note under "Free text comments". The VIEW tests assert that
+//   (VisitPage); the form's own VIEW is therefore not tested.
 // Not covered here: a free-text (non-coded) diagnosis.
 //
 // Findings:
@@ -59,10 +62,13 @@ test.describe('section-dx', () => {
     await form.expectSaved();
     expect(await getEncounterObs(api, section.encounter.uuid)).toHaveLength(0);
 
-    // VIEW: no diagnosis line and no note value
-    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
-    await expect(view.values).toHaveCount(0);
-    await expect(page.locator('#data-collection', { hasText: 'Diagnosis' })).toHaveCount(0);
+    // visit page (dxLong.page): no diagnosis line and no note
+    const visit = await VisitPage.openOfEncounter(page, section.encounter.uuid);
+    const dx = await visit.expandableSection('pihcore-diagnosis');
+    await expect(dx).toHaveCount(1);
+    const long = await visit.expand(dx);
+    await expect(long.locator('p.diagnosis')).toHaveCount(0);
+    await expect(long.locator('.comments-div .right-column p')).toHaveText('');
   });
 
   test('saves a confirmed primary diagnosis and the clinical note, and shows them again on reopen (EDIT)', async ({
@@ -89,15 +95,14 @@ test.describe('section-dx', () => {
     await expect(page.locator('#encounter-diagnoses-target .diagnosis.primary')).toContainText('Pneumonia');
     await expect(page.locator('#encounter-diagnoses-target').getByLabel('Confirmed')).toBeChecked();
 
-    // VIEW: the widget prints each diagnosis as "<order> Diagnosis: (<certainty>) <name> [<code>]" in a plain span (not a span.value),
-    // so only the clinical note is a value and the three diagnosis obs are checked on that line instead
-    const view = await ViewFormPage.open(page, FORM, section.encounter.uuid);
-    expect(await view.valueTexts()).toEqual(['Fever and cough for three days']);
-    expect((await viewMismatches(api, view, section.encounter.uuid)).filter((m) => !m.startsWith('Diagnosis'))).toEqual([]);
-    const diagnosis = page.locator('#data-collection p', { hasText: 'Primary Diagnosis' });
-    await expect(diagnosis).toHaveCount(1);
-    await expect(diagnosis.locator('span')).toHaveText('(Confirmed) Pneumonia [J18.9]');
-    await expect(page.locator('#data-collection p', { hasText: 'Secondary Diagnosis' })).toHaveCount(0);
-    await expect(page.locator('h3, #buttons, textarea, input')).toHaveCount(0);
+    // visit page: the collapsed section lists the diagnosis, the long view (dxLong.page) the diagnosis with its order and certainty, and the note
+    const visit = await VisitPage.openOfEncounter(page, section.encounter.uuid);
+    const dx = await visit.expandableSection('pihcore-diagnosis');
+    await expect(dx).toHaveCount(1);
+    await expect(dx.locator('.obs-span').first()).toContainText('Pneumonia');
+    const long = await visit.expand(dx);
+    await expect(long.locator('p.diagnosis')).toHaveCount(1);
+    await expect(long.locator('p.diagnosis')).toHaveText(/Pneumonia.*, Primary, Confirmed/);
+    await expect(long.locator('.comments-div .right-column p')).toHaveText('Fever and cough for three days');
   });
 });

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, birthdateYearsAgo, type EntryContext } from '../../core';
 import { getEncounterObs, getPatientEncounters } from '../../commands';
-import { EntryFormPage, ViewFormPage, selectDefaultProvider, viewMismatches, VISIT_PAGE_URL } from '../../pages';
+import { EntryFormPage, VisitPage, selectDefaultProvider, VISIT_PAGE_URL } from '../../pages';
 
 // maternalAdmission.xml: "Maternal Admission" (admitting clinician / admitted to / date, reason for admission as encounter diagnoses,
 // free-text summary). The specs open enterHtmlFormWithStandardUi inside a visit they create with a 25-year-old female
@@ -17,8 +17,12 @@ import { EntryFormPage, ViewFormPage, selectDefaultProvider, viewMismatches, VIS
 // Scripts: none.
 // Side effects on save: none (no postSubmissionAction, no enrolment, no disposition). The encounter type is also what the Maternal
 // Death form looks up in the visit to show where/when the patient was admitted (see maternalDeath.spec.ts).
-// VIEW is covered by the save test (the saved diagnosis and summary are shown, nothing else). Not covered here: EDIT, the diagnosis certainty/order
-// controls, app-loader availability.
+// Visit-page display: the visit page does NOT show this form's VIEW. The form saves an Admission encounter (260566e1-...), whose entry in
+// encounterTypeConfig.js (// admission) has `shortTemplate: defaultEncounterShort.page`, `longTemplate: admissionLong.page` and no templateModelUrl:
+// the collapsed card shows the type, date, "by <provider>" and, when it differs from the visit's, the location; the long view lists the
+// encounter's diagnoses (primary first, as "<diagnosis>, <order>, <certainty>") and nothing else. The VIEW test (end of the save test) asserts
+// that; the form's own VIEW is therefore not tested. The free-text summary is not shown by that template, a field it never shows (not a finding).
+// Not covered here: EDIT, the diagnosis certainty/order controls, app-loader availability.
 
 const FORM = 'maternalAdmission.xml';
 const ADMISSION_ENCOUNTER_TYPE = '260566e1-c909-4d61-a96f-c1019291a09d';
@@ -78,13 +82,14 @@ test.describe('maternalAdmission', () => {
     const enrollments = (await (await api.get(`programenrollment?patient=${ctx.patient.uuid}&v=custom:(uuid)`)).json()).results;
     expect(enrollments).toHaveLength(0);
 
-    // VIEW: the free-text summary is a value; the diagnosis is rendered by encounterDiagnosesByObs as plain text "(Presumed) Malaria [B54]", not as a
-    // span.value, so the diagnosis obs (order, certainty, diagnosis) are left out of the generic check
-    const view = await ViewFormPage.open(page, FORM, encounters[0].uuid);
-    expect((await viewMismatches(api, view, encounters[0].uuid)).filter((m) => !m.startsWith('Diagnosis'))).toEqual([]);
-    expect(await view.valueTexts()).toEqual(['Admitted in active labour']);
-    await expect(view.page.locator('#data-collection')).toContainText(/Primary Diagnosis.*\(Presumed\) Malaria/);
-    await expect(view.page.locator('#diagnosis-search')).toHaveCount(0);
-    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :62
+    // what the visit page shows for the encounter: the card, and the diagnoses in the long view (admissionLong.page); not the summary
+    const visit = await VisitPage.open(page, ctx.visitUuid);
+    const entry = visit.encounterOfType(ADMISSION_ENCOUNTER_TYPE);
+    await expect(entry).toHaveCount(1);
+    await expect(entry.locator('.encounter-name').first()).toContainText('Admission');
+    await visit.expand(entry);
+    const long = entry.locator(':scope > .visit-element .content'); // admissionLong.page has no .encounter-summary-long
+    await expect(long).toContainText('Malaria, Primary, Presumed');
+    await expect(long).not.toContainText('Admitted in active labour');
   });
 });

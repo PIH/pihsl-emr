@@ -16,7 +16,7 @@ npx playwright test
 
 Use a server with **test data only**. The specs create their own synthetic patients and void them afterwards (nothing is purged, so the user does not need the Purge privileges; the voided patients stay in the database), but they log in as the admin user and write to the server.
 
-A full run is about 614 tests: about 16 minutes with `E2E_WORKERS=3` (`E2E_WORKERS=3 npx playwright test`), and roughly twice that with the default single worker. Each test has its own synthetic patient, so workers do not share data, but they share the server: raise the count only if it keeps up. Several `npx playwright test` processes at once (e.g. parallel agents) must each pass their own `--output <dir>`, or they overwrite each other's `test-results`. The specs share one login session (created in `core/global-setup.ts`), so if the machine sleeps during a run the session expires and every later test fails with `create patient: 401`. Keep the machine awake, e.g. `systemd-inhibit --what=sleep:idle npx playwright test`. Run a few specs at a time while iterating (`npx playwright test specs/<form>`).
+A full run is about 614 tests: about 16 minutes with `E2E_WORKERS=3` (`E2E_WORKERS=3 npx playwright test`), and roughly twice that with the default single worker. Each test has its own synthetic patient, so workers do not share data, but they share the server: raise the count only if it keeps up. Several `npx playwright test` processes at once (e.g. parallel agents) must each pass their own `--output <dir>`, or they overwrite each other's `test-results`. The specs share one login session (created in `core/global-setup.ts`), so if the machine sleeps during a run the session expires and every later test fails with `create patient: 401`. Keep the machine awake, e.g. `systemd-inhibit --what=sleep:idle npx playwright test`. Run a few specs at a time while iterating (`npx playwright test specs/<form>`). On a slow server (for example a local one under load) set `E2E_TIMEOUT_FACTOR=2`: it multiplies the test, expect and action timeouts. When the server's API user is not the default provider of `.env` (`E2E_DEFAULT_PROVIDER_NAME`, the kgh provider), set that variable too, or the specs that check the preselected provider fail.
 
 Every test also fails on an uncaught JavaScript error in its pages (the `failOnJsError` auto fixture in `core/test.ts`); `console.error` output is not counted.
 
@@ -46,20 +46,21 @@ One spec per form, in `specs/<xml file name without .xml>/`. *Form name*, *Form 
 | `gynecologyIntake.xml` | Gynecology Initial | 1.0 | `b456c65f-4d3b-4d1d-b1f5-952e78fa0121` | Gynecology Initial | `34700f4f-c3df-4cfc-863a-bd8b92a0a485` |
 | `inpatientNewbornVitals.xml` | Vital Signs Newborn Inpatient | 1.0 | `e1e64fc8-ccf2-40ee-8ebb-7cb659d1d236` | Inpatient Vitals | `6b1c3929-f23c-423f-8cad-64b17cf10b99` |
 | `inpatientVitals.xml` | Vital Signs Inpatient | 1.0 | `ce487212-2263-4a5d-a1c1-3879a3e9a141` | Inpatient Vitals | `6b1c3929-f23c-423f-8cad-64b17cf10b99` |
+| `labResults.xml` | Lab results | 2.0 | `5e1b0c3a-3acf-4e50-aab1-738a3a282dea` | Lab Results | `4d77916a-0620-11e5-a6c0-1697f925ec7b` |
 | `laborDeliverySummary.xml` | Labour and Delivery Summary | 1.0 | `51f7451f-1d27-4907-aafb-a20ba3894048` | Labor and Delivery Summary | `fec2cc56-e35f-42e1-8ae3-017142c1ca59` |
 | `laborProgress.xml` | Labour Progress | 1.0 | `837fec21-38f2-4deb-aa3a-d93a79a5a7ab` | Labour Progress | `ac5ec970-31b7-4659-9141-284bfbc13c69` |
 | `maternalAdmission.xml` | Maternal Admission | 1.0 | `2eceee55-4308-41b5-8d76-d5197cf57818` | Admission | `260566e1-c909-4d61-a96f-c1019291a09d` |
 | `maternalDeath.xml` | Maternal Death | 1.0 | `25485cdd-5cb3-4d91-abc4-029718254954` | Maternal Death | `415b342e-9e4d-4496-bac4-7b6ffb8619f0` |
-| `maternalDischarge.xml` | Maternal Discharge | 1.1 | `ccd256b4-a861-4ec2-88f8-6d56927a09b2` | Maternal Discharge | `2110a810-db62-4914-ba95-604b96010164` |
 | `maternalDischarge-print.xml` | Maternal Discharge (Print) | 1.0 | `a5377e3a-228e-4186-b6f5-a86d0ba0d136` | Maternal Discharge | `2110a810-db62-4914-ba95-604b96010164` |
+| `maternalDischarge.xml` | Maternal Discharge | 1.1 | `ccd256b4-a861-4ec2-88f8-6d56927a09b2` | Maternal Discharge | `2110a810-db62-4914-ba95-604b96010164` |
 | `mentalHealth.xml` | Mental Health Intake | 2.0 | `55399407-F739-4647-B940-A68CC45483F4` | Mental Health Consult | `a8584ab8-cc2a-11e5-9956-625662870761` |
 | `mentalHealthFollowup.xml` | Mental Health Follow-up | 2.0 | `55DA9EF7-DCBE-4B9F-9A77-C905862BD565` | Mental Health Follow-up | `9d701a81-bb83-40ea-9efc-af50f05575f2` |
-| `ncd-followup.xml` | NCD Followup | 2.0 | `4969ab47-6212-46dd-ac49-11c75b2e04d9` | NCD Followup Consult | `5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c` |
 | `ncd-followup-part-1.xml` | NCD Followup (Part 1) | 2.0 | `ab30cec8-b1f9-4383-90a7-03411337ebfb` | NCD Followup Part 1 only | `e02a8c32-4f14-4ff7-a4e9-2f087d9a1cf7` |
 | `ncd-followup-part-2.xml` | NCD Followup (Part 2) | 1.0 | `4daeb7ca-6ba5-48fc-8a92-478a67f75ad5` | NCD Followup Part 2 only | `6a3afa6f-8f78-44a9-80c9-3f4f3b6ad8f2` |
-| `ncd-initial.xml` | NCD Initial | 2.0 | `c5ccc0dd-a15c-408c-98dd-97b696a6465a` | NCD Initial Consult | `ae06d311-1866-455b-8a64-126a9bd74171` |
+| `ncd-followup.xml` | NCD Followup | 2.0 | `4969ab47-6212-46dd-ac49-11c75b2e04d9` | NCD Followup Consult | `5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c` |
 | `ncd-initial-part-1.xml` | NCD Initial (Part 1) | 2.0 | `94371e9b-69dc-4c34-a2f0-290cd5070187` | NCD Initial Part 1 only | `48c413c4-e7f6-491a-8431-900451fe8a32` |
 | `ncd-initial-part-2.xml` | NCD Initial (Part 2) | 2.0 | `7179edaf-9006-49cd-8f12-862ec494f75b` | NCD Initial Part 2 only | `43423212-6f70-4df8-a9f7-2aef88df1ee2` |
+| `ncd-initial.xml` | NCD Initial | 2.0 | `c5ccc0dd-a15c-408c-98dd-97b696a6465a` | NCD Initial Consult | `ae06d311-1866-455b-8a64-126a9bd74171` |
 | `newbornAdmissionNote.xml` | Newborn Admission | 1.0 | `AA165115-CAB7-46DA-9B49-917091EE5540` | Admission | `260566e1-c909-4d61-a96f-c1019291a09d` |
 | `newbornAssessment.xml` | Newborn Assessment | 1.0 | `17e93a76-32d1-4435-a5e3-3068e305c2d7` | Newborn Assessment | `6444b8d4-407d-444d-aa15-d6dff204ed83` |
 | `newbornDailyProgress.xml` | Newborn Daily Progress | 1.1 | `3eddc127-3417-4878-9210-88c55040535f` | Newborn Daily Progress | `7e42e652-89e7-4559-80fd-41f42826c98c` |
@@ -69,6 +70,10 @@ One spec per form, in `specs/<xml file name without .xml>/`. *Form name*, *Form 
 | `outpatient-followup.xml` | Outpatient Followup | 2.0 | `4CE4BA22-16B2-4C85-9B07-5E3696490BC8` | Sierra Leone Outpatient Followup | `d8a038b5-90d2-43dc-b94b-8338b76674f3` |
 | `outpatient-initial.xml` | Outpatient Initial | 2.0 | `C5B788D4-223D-430A-9A90-ADBE63C4A3E8` | Sierra Leone Outpatient Initial | `7d5853d4-67b7-4742-8492-fcf860690ed5` |
 | `pacuFollowup.xml` | PACU Followup | 1.0 | `43b275f0-6e20-4538-ba94-19df332d4f76` | PACU Followup | `6f2df970-6e3e-4898-9a34-9d9e8955c3eb` |
+| `patientRegistration-contact.xml` | Patient Registration Contact Person | 1.0 | `9EE91561-42A0-4E1C-9469-ABA6726056BE` | Patient Registration | `873f968a-73a8-4f9c-ac78-9f4778b751b6` |
+| `patientRegistration-localAddress.xml` | Patient Registration Local Address | 1.0 | `10D81F65-CBAD-4F5B-B7D0-B3C660C569CE` | Patient Registration | `873f968a-73a8-4f9c-ac78-9f4778b751b6` |
+| `patientRegistration-rs.xml` | Patient Registration | 1.0 | `6F6E6FA0-1E99-41A3-9391-E5CB8A127C11` | Patient Registration | `873f968a-73a8-4f9c-ac78-9f4778b751b6` |
+| `patientRegistration-social.xml` | Patient Registration Social | 1.0 | `26087dc0-7429-11e5-a837-0800200c9a66` | Patient Registration | `873f968a-73a8-4f9c-ac78-9f4778b751b6` |
 | `postnatalFollowup.xml` | Postnatal Followup | 1.1 | `929df787-1236-4cb8-a3a2-5aa7a7600d8c` | Postnatal Followup | `b7a7c300-f7e5-4d38-a388-fc178ab02e78` |
 | `postpartumDailyProgress.xml` | Postpartum Daily Progress | 1.0 | `569f6534-fb05-4d8d-aa2e-1b832223e1b8` | Postpartum progress | `37f04ddf-9653-4a02-98b4-1c23734c2f15` |
 | `surgicalPostOpNote.xml` | Surgical Note | 2.5 | `3fd75be3-2c5b-40be-8b6e-f00cb0ecda22` | Surgery Note | `c4941dee-7a9b-4c1c-aa6f-8193e9e5e4e5` |
@@ -105,9 +110,10 @@ A section form has no `formEncounterType`: it edits an encounter that another fo
 | `section-other-ncd.xml` | Other NCD | 1.0 | `2cfad355-c6e9-4466-8c11-860f10c8a270` | NCD Followup Consult | `5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c` |
 | `section-palliative.xml` | Palliative Care | 1.0 | `226796bc-24b0-4af7-98b3-f07b26e390cf` | NCD Followup Consult<br>NCD Initial Consult | `5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c`<br>`ae06d311-1866-455b-8a64-126a9bd74171` |
 | `section-peds.xml` | Pediatrics feeding and supplements | 1.0 | `c278f802-57be-11e9-8647-d663bd873d93` | Sierra Leone Outpatient Initial | `7d5853d4-67b7-4742-8492-fcf860690ed5` |
-| `section-plan.xml` | Plan | 2.0 | `589508A0-BD24-484B-B8FE-E81E28ED982D` | Sierra Leone Outpatient Initial | `7d5853d4-67b7-4742-8492-fcf860690ed5` |
 | `section-plan-medication.xml` | Plan Medication | 2.0 | `8DF0DB24-B0F2-4786-9585-00F730516F02` | MCH Delivery | `00e5ebb2-90ec-11e8-9eb6-529269fb1459` |
+| `section-plan.xml` | Plan | 2.0 | `589508A0-BD24-484B-B8FE-E81E28ED982D` | Sierra Leone Outpatient Initial | `7d5853d4-67b7-4742-8492-fcf860690ed5` |
 | `section-postnatal-followup.xml` | Postnatal followup section | 2.0 | `6f7fcbfb-6e42-400a-9f9c-cbc7f26c07c6` | Postnatal Followup | `b7a7c300-f7e5-4d38-a388-fc178ab02e78` |
+| `section-prescriptions-print.xml` | Prescriptions | 1.0 | `CA8D072A-2681-4E06-B83C-AD3B0FC3D49D` | Outpatient Initial<br>MCH Delivery | `7d5853d4-67b7-4742-8492-fcf860690ed5`<br>`00e5ebb2-90ec-11e8-9eb6-529269fb1459` |
 | `section-sickle-cell.xml` | Sickle Cell | 1.0 | `23afe1ed-76c4-4642-b37b-44944a9dbed9` | NCD Followup Consult<br>NCD Initial Consult | `5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c`<br>`ae06d311-1866-455b-8a64-126a9bd74171` |
 
 ## Section specs
@@ -118,7 +124,7 @@ A section form has no `formEncounterType`: it edits an encounter that another fo
 2. opens `editHtmlFormWithStandardUi.page?...definitionUiResource=file:configuration/pih/htmlforms/section-<x>.xml` directly (`SectionFormPage`), so the visit-page gating documented in `htmlforms/documentation/_availability.e2e.md` is not exercised,
 3. asserts the form's conditions and scripts, and the obs saved on the encounter.
 
-The conditions each spec covers are listed in a comment at the top, taken from the inventory (`htmlforms/documentation/inventory.py`), together with the form's scripts, side effects and Verify findings.
+The conditions each spec covers are listed in a comment at the top, taken from the inventory (`inventory.py`, in `pihemr` under `htmlforms/documentation/`), together with the form's scripts, side effects and Verify findings.
 
 ## Top-level (entry form) specs
 
@@ -129,12 +135,12 @@ The conditions each spec covers are listed in a comment at the top, taken from t
 
 ### VIEW mode
 
-Every spec that saves also opens the read-only rendering of what it saved (`pages/view-form-page.ts`). VIEW is loaded the way the visit page does it, through `viewEncounterWithHtmlForm/getAsHtml.action`, into the test page with `setContent` (htmlformentryui has no standalone VIEW page, and `viewEncounterWithHtmlForm.page` throws for an encounter created over REST). `expectViewShowsSavedObs(page, api, form, encounterUuid, labels?)` checks that every saved text, number and coded obs appears in a `span.value`; the specs add targeted assertions on top (obs groups, custom answer labels, dates, what was left empty must not show). Things to know:
+Every spec that saves also checks what users see afterwards, **on the visit page** (`/openmrs/pihcore/visit/visit.page?visit=<uuid>`, `pages/visit-page.ts` and `pages/view-form-page.ts`). What the page shows for an encounter or section comes from its entry in `encounterTypeConfig.js` (read the one the server runs):
 
-- Saved values are `span.value` (`[X] label` for a selected radio or checkbox), unanswered ones `span.emptyValue`. The shell entry forms of the NCD, ANC and delivery encounters render nothing in VIEW by design (their sections do): the specs assert that.
-- `setContent` runs no jQuery, so show/hide (`when`, `toggle`) and the VIEW scripts (vitals colouring, BMI, the Aldrete total) do not run. A few specs (`pacuFollowup`, `vitals`, `vitalsWithGlucose`) start from a page that has `jq` to run them.
-- The diagnosis widget prints plain text, not `span.value`, so diagnosis obs are not matched by the helper; the specs assert the printed text.
-- Findings only visible in VIEW are numbered `VW<n>` in the spec headers and marked `test.fixme()` like the others.
+- **The form's VIEW** (the entry has a `templateModelUrl` with `getAsHtml.action`, naming the form in `definitionUiResource` or, for the Vitals, OB Triage, Post-operative note and SL maternal/newborn entries, leaving it out so that the encounter's own form is shown): `expectViewShowsSavedObs(page, api, form, encounterUuid, labels?)` opens the visit page, expands that entry like a user and checks that every saved text, number and coded obs appears in a `span.value`; the specs add targeted assertions on top (obs groups, custom answer labels, dates, what was left empty must not show). The form's own scripts (vitals colouring, BMI, the Aldrete total, `when`/`toggle`) run as they do for a user; the visit page does not load `htmlFormEntry.js`, so a form script that needs it throws there and the test fails with the error.
+- **Not the form's VIEW** (the entry only has `shortTemplate`/`longTemplate`, `templateModelUrl` is `encounter.json`, the long template is the section's own such as `dxLong.page`, or the form is a shell whose content is in its sections): `ViewFormPage.open` throws "The visit page shows no VIEW of <form>". Those specs test what the page shows instead with `VisitPage` (the collapsed card, the long template, the list of sections) and say so in a `// Visit-page display:` header line: `checkin`, `checkinMaternal`, `maternalAdmission` and `newbornAdmissionNote` (the Admission encounter), `section-dx`, and the shell forms of the ANC, delivery, postnatal, NCD and outpatient encounters.
+- Saved values are `span.value` (`[X] label` for a selected radio or checkbox), unanswered ones `span.emptyValue`. The diagnosis widget prints plain text, not `span.value`, so diagnosis obs are not matched by the helper; the specs assert the printed text.
+- Findings only visible in the form's VIEW are numbered `VW<n>` in the spec headers and marked `test.fixme()` like the others; when the visit page does not show that VIEW the finding stays in the header as Info.
 
 ### Known form bugs
 

@@ -17,15 +17,15 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //   includeIf age < 13 / age > 12    :719, :723   muac_cm max 27 (child) / 56 (female 13+)
 //   includeIf age < 5                :747         z-score obs
 //   includeIf age < 3                :378, :759   head circumference and MUAC/HC ratio box and script
-//   ifMode VIEW (include true/false) :35-:799     view-only vs entry-only blocks (VIEW is tested: see openViewWithScripts)
+//   ifMode VIEW (include true/false) :35-:799     view-only vs entry-only blocks (VIEW is tested, on the visit page)
 // Scripts: :19 uimessage strings; :147 Fahrenheit / lbs / inches converters (V1); :212-250 BMI = kg/(cm/100)^2, one
 //   decimal, shown on change of weight/height; :297-343 cm -> mm (x10) and mm -> cm (/10) on exit of muac_cm/muac_mm
 //   (needs ExitHandlers, Simple UI only); :379-418 ratio = (mm/10)/HC, one decimal; :580 checkboxRadio (V3).
 // Required: fieldsets with class="required" (consciousness, mobility, temperature, pulse, RR, SpO2, TB screening,
 //   chief complaint) are enforced by the Simple UI navigator only (V5). The location select is required in both UIs.
 // Side effects on save: none (no program, order or disposition). Encounter type 4fb47712-... (Vitals).
-// VIEW (viewEncounterWithHtmlForm getAsHtml.action) is covered by the 'VIEW:' tests: the saved values, and what the VIEW scripts compute (BMI, MUAC in cm,
-// MUAC/HC ratio) and hide (a vital with no value, SL-337); they need the page's jq, see openViewWithScripts.
+// VIEW (on the visit page) is covered by the 'VIEW:' tests: the saved values, and what the VIEW scripts compute (BMI, MUAC in cm,
+// MUAC/HC ratio) and hide (a vital with no value, SL-337); they run when the visit page inserts the HTML.
 // Not covered: EDIT mode, retro-entry gating, shared provider/location/date behaviour (_shared.e2e.md).
 //
 // Findings:
@@ -43,6 +43,10 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //   VW1 Low :270-290,:452-467,:529-545  in VIEW the BMI fieldset stays visible with only its "(Calculated) BMI" heading when the BMI cannot be computed (no height or
 //                       weight, patient over 5): the wrapper is hidden but the fieldset holds no .emptyValue, so the SL-337 rule (:452) does not hide it.
 //                       Fix: hide the BMI fieldset in the VIEW script when no BMI was computed. TESTED below (test.fixme).
+
+// The Standard UI pages do not load uicommons' navigator/exitHandlers.js (only the Simple UI pages do), so the form's top-level `ExitHandlers[...] = ...` lines (and, in vitalsWithGlucose, the
+// glucose script's NavigatorController calls) throw on load (V6): tolerated on the Standard UI pages only; the Simple UI tests still fail on any JavaScript error. Remove this line when SL-1522 is fixed.
+test.use({ allowedJsErrors: [/WithStandardUi[\s\S]*(ExitHandlers|NavigatorController) is not defined/] });
 
 const FORM = 'vitals.xml';
 const VITALS_ENCOUNTER_TYPE_UUID = '4fb47712-34a6-40d2-8ed3-e153abbd25b7';
@@ -72,30 +76,6 @@ const savedObs = async (api: APIRequestContext, patientUuid: string) => {
   expect(encounters).toHaveLength(1);
   const obs = await getEncounterObs(api, encounters[0].uuid);
   return { encounterType: encounters[0].encounterType.uuid, displays: obs.map((o) => o.display) };
-};
-
-// The VIEW of a saved encounter with the form's own scripts running (they compute the BMI, the MUAC in cm and the MUAC/HC ratio and hide the empty
-// vitals, :213-:467, VIEW only). ViewFormPage loads the HTML with setContent, which has no jq of its own and runs `jq(fn)` / `jq(document).ready(fn)`
-// before the rest of the body is parsed: so start from a page that has jq (an unrelated section form) and let those callbacks wait one tick.
-const openViewWithScripts = async (page: Page, api: APIRequestContext, context: EntryContext, encounterUuid: string, labels: Record<string, string> = {}) => {
-  await page.goto(EntryFormPage.enterUrl('section-chief-complaint.xml', context));
-  await page.evaluate(() => {
-    const w = window as any;
-    const jq = w.jq;
-    w.jq = Object.assign(function (this: unknown, arg: unknown) {
-      if (arg === document) {
-        return { ready: (fn: () => void) => setTimeout(fn, 0) };
-      }
-      if (typeof arg === 'function') {
-        setTimeout(arg as () => void, 0);
-        return undefined;
-      }
-      return jq.apply(this, arguments);
-    }, jq);
-  });
-  const view = await expectViewShowsSavedObs(page, api, FORM, encounterUuid, labels);
-  await page.waitForTimeout(500); // the scripts run on the next tick
-  return view;
 };
 
 // What the form shows for the answers it labels itself (the "No" of the TB rows, the confusion radios).
@@ -293,7 +273,7 @@ test.describe('vitals', () => {
     );
   });
 
-  // VIEW (viewEncounterWithHtmlForm getAsHtml.action): saved values in span.value, with the scripts of the form running as they do on the visit page.
+  // VIEW (on the visit page): saved values in span.value, with the scripts of the form running as they do on the visit page.
   test('VIEW: shows the saved vitals, the BMI and the MUAC in cm computed from them, and hides the vitals that were not recorded', async ({
     page,
     api,
@@ -320,24 +300,24 @@ test.describe('vitals', () => {
     await form.expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    const view = await openViewWithScripts(page, api, context, encounter.uuid, VIEW_LABELS);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid, VIEW_LABELS);
     const shown = await view.valueTexts();
     for (const expected of ['cough', '160', '60', '80', '120', '150', 'Awake (alert)', 'no', 'Able to walk without assistance']) {
       expect(shown, expected).toContain(expected);
     }
     // computed by the VIEW scripts: BMI = 60 / 1.6^2 = 23.4 (one decimal), MUAC 150 mm shown as 15 cm
-    await expect(page.locator('#calculated-bmi')).toHaveText('23.4');
-    await expect(page.locator('#muac_cm_display')).toHaveText('15');
+    await expect(view.root.locator('#calculated-bmi')).toHaveText('23.4');
+    await expect(view.root.locator('#muac_cm_display')).toHaveText('15');
     // a vital with no value is hidden (SL-337), the others stay
     for (const empty of ['temperature_c', 'respiratory_rate', 'o2_sat']) {
-      await expect(page.locator(`#${empty}`).locator('xpath=ancestor::fieldset[1]'), empty).toBeHidden();
+      await expect(view.root.locator(`#${empty}`).locator('xpath=ancestor::fieldset[1]'), empty).toBeHidden();
     }
     for (const filled of ['heart_rate', 'height_cm', 'weight_kg']) {
-      await expect(page.locator(`#${filled}`).locator('xpath=ancestor::fieldset[1]'), filled).toBeVisible();
+      await expect(view.root.locator(`#${filled}`).locator('xpath=ancestor::fieldset[1]'), filled).toBeVisible();
     }
     // the TB rows show "No" under their own labels
-    await expect(page.locator('section#tb_screening .value')).toHaveText(['[X] No', '[X] No', '[X] No', '[X] No']);
-    await expect(page.locator('#buttons, input[type=text], input[type=radio], textarea, select')).toHaveCount(0); // read-only
+    await expect(view.root.locator('section#tb_screening .value')).toHaveText(['[X] No', '[X] No', '[X] No', '[X] No']);
+    await expect(view.root.locator('#buttons, input[type=text], input[type=radio], textarea, select')).toHaveCount(0); // read-only
   });
 
   test('VIEW: a child under 3 gets the MUAC/HC ratio, no BMI, and the z-score only when recorded', async ({ page, api, createEntryContext }) => {
@@ -350,13 +330,13 @@ test.describe('vitals', () => {
     await form.expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    const view = await openViewWithScripts(page, api, context, encounter.uuid);
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
     expect(await view.valueTexts()).toEqual(expect.arrayContaining(['140', '45']));
     // (140 mm / 10) / 45 cm = 0.31, shown with one decimal; the 2-year-old has no BMI (age > 5 only, :210) and shows its MUAC in cm
-    await expect(page.locator('#calculated-ratio')).toHaveText('0.3');
-    await expect(page.locator('#muac_cm_display')).toHaveText('14');
-    await expect(page.locator('#calculated-bmi-wrapper')).toHaveCount(0);
-    await expect(page.locator('#z_score').locator('xpath=ancestor::fieldset[1]')).toBeHidden(); // the z-score was not recorded
+    await expect(view.root.locator('#calculated-ratio')).toHaveText('0.3');
+    await expect(view.root.locator('#muac_cm_display')).toHaveText('14');
+    await expect(view.root.locator('#calculated-bmi-wrapper')).toHaveCount(0);
+    await expect(view.root.locator('#z_score').locator('xpath=ancestor::fieldset[1]')).toBeHidden(); // the z-score was not recorded
   });
 
   // VW1 (Low): the BMI fieldset is not hidden by the VIEW scripts when the BMI cannot be computed (its "value" span is never filled, so the
@@ -372,7 +352,7 @@ test.describe('vitals', () => {
     await form.expectSaved();
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
 
-    await openViewWithScripts(page, api, context, encounter.uuid);
-    await expect(page.locator('#calculated-bmi').locator('xpath=ancestor::fieldset[1]')).toBeHidden();
+    const view = await expectViewShowsSavedObs(page, api, FORM, encounter.uuid);
+    await expect(view.root.locator('#calculated-bmi').locator('xpath=ancestor::fieldset[1]')).toBeHidden();
   });
 });

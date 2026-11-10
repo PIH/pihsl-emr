@@ -42,3 +42,11 @@ export class SectionFormPage {
     await expect(this.page).toHaveURL(VISIT_PAGE_URL);
   }
 }
+
+// Some forms (the patientRegistration-* ones) have their own Save button, `#buttons button.submitButton`, and no `#submit`.
+export const buttonsSubmit = (page: Page) => page.locator('#buttons button.submitButton');
+
+export async function openEditWithButtonsSubmit(page: Page, formFile: string, section: SectionEncounter): Promise<void> {
+  await page.goto(SectionFormPage.editUrl(formFile, section));
+  await expect(buttonsSubmit(page)).toBeVisible();
+}

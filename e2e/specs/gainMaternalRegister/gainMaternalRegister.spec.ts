@@ -23,6 +23,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 // VIEW (end of the save test, and the last test): every saved value is shown under the form's own label ("Sex" M/F), the date and time obs as a
 // date and a time, the encounter date appears once (under "Maternal outcome"), the "Other" cadre shows its specify text, and what was left blank is not.
 // Not covered here: the disposition actions, diagnosis autocomplete (:231, :251), EDIT mode.
+// UNREACHABLE: no profile of this repo offers this form (component mchGAINMaternal is never enabled in an SL profile: _availability.e2e.md "Not reachable"). Tests open it by direct URL.
 //
 // Findings: only duplicate id="when" :286 (_shared V10).
 
@@ -41,7 +42,7 @@ const obsSummary = async (api: APIRequestContext, encounterUuid: string): Promis
     return `${o.concept.display}=${typeof v === 'object' && v !== null ? v.display : v}`;
   });
 
-test.describe('gainMaternalRegister', () => {
+test.describe('gainMaternalRegister @unreachable', () => {
   let context: EntryContext;
 
   const open = async (page: Page) => {

@@ -36,8 +36,8 @@ import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../
 //     section wiring).
 // Side effects on save: <enrollInProgram programId="NCD"> (:421), tested below. Not covered here: the MUAC last-vitals
 //     cell (needs a child with a vitals encounter). EDIT is covered by the save test (the saved values reopened); VIEW by the last
-//     test (a fuller save: every saved value shown and nothing for what was not answered). The scripts do not run in the VIEW harness
-//     (setContent, no page jQuery).
+//     test (a fuller save: every saved value shown and nothing for what was not answered). The form's scripts run in the VIEW as it is
+//     inserted in the visit page (the last-vitals/BMI cells need the visit's vitals encounter, which the tests do not create).
 //
 // Findings:
 //   V1 Low  :175-224  validateFamHistoryText and its beforeSubmit/change handlers select .medicalHistoryText, a class
@@ -95,7 +95,7 @@ const addVitalsEncounter = async (
       patient: patient.uuid,
       encounterType: VITALS_ENCOUNTER_TYPE_UUID,
       location: MCH_OPD_LOCATION_UUID,
-      encounterDatetime: new Date().toISOString(),
+      encounterDatetime: new Date(Date.now() - 60_000).toISOString(),
       visit: encounter.visitUuid,
       obs,
     },

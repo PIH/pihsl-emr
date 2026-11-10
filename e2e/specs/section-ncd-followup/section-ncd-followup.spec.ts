@@ -17,8 +17,8 @@ import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../
 //   includeIf age < 13         :413, :483  MUAC fields; need a child patient and are not covered here
 //   ifMode VIEW / not VIEW     :459, :469  BP read-only text vs inputs
 //   ifMode VIEW include=false  :526  #buttons
-// VIEW (getAsHtml): the visit-details answers, categories, blood pressure, BMI and notes are covered by two VIEW checks; the scripts
-//   (last vitals panel, BMI) need the page's jQuery and the visit's vitals encounter and are not run by the harness (setContent).
+// VIEW (on the visit page): the visit-details answers, categories, blood pressure, BMI and notes are covered by two VIEW checks; the scripts
+//   (last vitals panel, BMI) run there but need the visit's vitals encounter, which the tests do not create.
 
 // Scripts (:41-155, run on jq(document).ready in every mode including VIEW):
 //   prefill (REST): GET ws/rest/v1/visit/<visitUuid>?v=custom:(...encounters:(...obs...)) with the visit uuid fixed at

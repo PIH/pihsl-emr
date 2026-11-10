@@ -120,7 +120,7 @@ test.describe('gynecologyFollowup', () => {
         patient: context.patient.uuid,
         encounterType: VITALS_ENCOUNTER_TYPE_UUID,
         location: MCH_OPD_LOCATION_UUID,
-        encounterDatetime: new Date().toISOString(),
+        encounterDatetime: new Date(Date.now() - 60_000).toISOString(),
         visit: context.visitUuid,
         obs: [
           { concept: SYSTOLIC_CONCEPT_UUID, value: 118 },
