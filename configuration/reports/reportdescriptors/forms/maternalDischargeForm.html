@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+    @page {
+        size: A4;
+        margin: 0.6in 0.6in 0.5in 0.6in;
+    }
+    * {
+        box-sizing: border-box;
+    }
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 9pt;
+        color: black;
+        line-height: 1.4;
+    }
+    .form-header {
+        display: table;
+        width: 100%;
+        border-bottom: 2px solid black;
+        padding-bottom: 6pt;
+        margin-bottom: 10pt;
+    }
+    .form-header > div {
+        display: table-cell;
+        vertical-align: middle;
+    }
+    .logo-left img {
+        height: 55pt;
+    }
+    .logo-right {
+        text-align: right;
+    }
+    .logo-right img {
+        height: 55pt;
+    }
+    .form-title {
+        text-align: center;
+        font-size: 12pt;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    h3 {
+        font-size: 9.5pt;
+        font-weight: bold;
+        border-bottom: 1px solid gray;
+        margin: 10pt 0 4pt 0;
+        padding-bottom: 2pt;
+    }
+    .row {
+        margin-bottom: 4pt;
+    }
+    .field {
+        display: inline-block;
+        margin-right: 20pt;
+        vertical-align: top;
+    }
+    .field label, .block label {
+        font-weight: bold;
+        margin-right: 4pt;
+    }
+    .block {
+        margin-bottom: 6pt;
+    }
+    .obs-value {
+        display: block;
+        border-bottom: 1px dotted darkgray;
+        min-height: 14pt;
+        padding: 1pt 0;
+        white-space: pre-line;
+    }
+    .multi-value {
+        display: block;
+        border-bottom: 1px dotted darkgray;
+        min-height: 14pt;
+        padding: 1pt 0;
+        white-space: pre-line;
+    }
+    .med-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 2pt;
+    }
+    .med-table td {
+        padding: 2pt 6pt 2pt 0;
+        vertical-align: top;
+        border-bottom: 1px dotted lightgray;
+        font-size: 8.5pt;
+    }
+    .med-table td:first-child {
+        font-weight: bold;
+        width: 35%;
+    }
+    .med-table td:nth-child(2) {
+        width: 18%;
+    }
+    .med-table td:nth-child(3) {
+        width: 17%;
+    }
+    .med-table td:nth-child(4) {
+        width: 30%;
+    }
+    .signature-row {
+        margin-top: 24pt;
+        display: table;
+        width: 100%;
+    }
+    .sig-cell {
+        display: table-cell;
+        padding-right: 30pt;
+        width: 50%;
+    }
+    .sig-line {
+        border-bottom: 1px solid black;
+        min-width: 150pt;
+        display: inline-block;
+        margin-top: 18pt;
+        width: 90%;
+    }
+    .sig-label {
+        font-size: 7.5pt;
+        color: dimgray;
+        display: block;
+        margin-top: 2pt;
+    }
+    .datestamp {
+        margin-top: 18pt;
+        font-size: 7pt;
+        color: gray;
+        text-align: right;
+    }
+</style>
+</head>
+<body>
+
+<div class="form-header">
+    <div class="logo-left">
+        <img src="resource://moh-sierra-leone-seal.png" alt="Ministry of Health - Government of Sierra Leone"/>
+    </div>
+    <div class="form-title">Maternity Discharge Form</div>
+    <div class="logo-right">
+        <img src="resource://pih-sierra-leone-logo.png" alt="Partners In Health - Sierra Leone"/>
+    </div>
+</div>
+
+<h3>Patient Details</h3>
+
+<div class="row">
+    <span class="field"><label>Name:</label>#encounter.patient_name#</span>
+    <span class="field"><label>Age:</label>#encounter.patient_age#</span>
+    <span class="field"><label>EMR ID:</label>#encounter.emr_id#</span>
+</div>
+<div class="row">
+    <span class="field"><label>Address:</label>#encounter.address# #encounter.city_village#</span>
+    <span class="field"><label>Chiefdom:</label>#encounter.chiefdom#</span>
+    <span class="field"><label>District:</label>#encounter.district#</span>
+</div>
+<div class="row">
+    <span class="field"><label>Discharge Ward:</label>#encounter.discharge_ward#</span>
+    <span class="field"><label>Date of Admission:</label>#encounter.admission_date|dd MMM yyyy#</span>
+    <span class="field"><label>Date of Discharge:</label>#encounter.discharge_date|dd MMM yyyy#</span>
+</div>
+
+<h3>Diagnoses and Medications</h3>
+
+<div class="block">
+    <label>Diagnoses:</label>
+<%
+def dxs = reportData.dataSets.get("diagnoses")
+def dxIter = dxs.iterator()
+if (!dxIter.hasNext()) {
+%>
+    <div class="multi-value">&nbsp;</div>
+<%
+} else {
+%>
+    <table class="med-table">
+<%
+    while (dxIter.hasNext()) {
+        def row = dxIter.next()
+        def name     = row.getColumnValue("diagnosis_name") ?: ""
+        def dxOrder  = row.getColumnValue("dx_order")       ?: ""
+        def certainty = row.getColumnValue("certainty")     ?: ""
+        def qualifier = [dxOrder, certainty].findAll { it }.join(", ")
+%>
+        <tr>
+            <td style="width:70%"><%= name %></td>
+            <td style="width:30%;font-size:8pt;color:dimgray"><%= qualifier %></td>
+        </tr>
+<%
+    }
+%>
+    </table>
+<% } %>
+</div>
+
+<div class="block">
+    <label>Discharge Medications:</label>
+<%
+def meds = reportData.dataSets.get("medications")
+def medIter = meds.iterator()
+if (!medIter.hasNext()) {
+%>
+    <div class="multi-value">&nbsp;</div>
+<%
+} else {
+%>
+    <table class="med-table">
+<%
+    while (medIter.hasNext()) {
+        def row = medIter.next()
+        def drugName  = row.getColumnValue("drug_name")  ?: ""
+        def dose      = row.getColumnValue("dose")       ?: ""
+        def doseUnits = row.getColumnValue("dose_units") ?: ""
+        def route     = row.getColumnValue("route")      ?: ""
+        def frequency = row.getColumnValue("frequency")  ?: ""
+        def duration  = row.getColumnValue("duration")
+        def durUnits  = row.getColumnValue("duration_units") ?: ""
+        def doseDisplay = dose ? "${dose} ${doseUnits}".trim() : ""
+        def durationDisplay = duration ? "${duration} ${durUnits}".trim() : ""
+%>
+        <tr>
+            <td><%= drugName %></td>
+            <td><%= doseDisplay %></td>
+            <td><%= route %></td>
+            <td><%= frequency %><%= durationDisplay ? " x ${durationDisplay}" : "" %></td>
+        </tr>
+<%
+    }
+%>
+    </table>
+<% } %>
+</div>
+
+<h3>Summary</h3>
+
+<div class="block">
+    <label>Clinical History:</label>
+    <div class="obs-value">#encounter.clinical_history#</div>
+</div>
+
+<div class="block">
+    <label>Summary of investigation and management:</label>
+    <div class="obs-value">#encounter.investigation_summary#</div>
+</div>
+
+<h3>Discharge and Follow Up</h3>
+
+<div class="block">
+    <label>Discharge recommendations:</label>
+    <div class="obs-value">#encounter.discharge_recommendations#</div>
+</div>
+
+<div class="row">
+    <span class="field"><label>Follow up appointment date:</label>#encounter.followup_date|dd MMM yyyy#</span>
+    <span class="field"><label>Follow up clinic:</label>#encounter.followup_clinic#</span>
+</div>
+
+<div class="signature-row">
+    <div class="sig-cell">
+        <div class="sig-line">#encounter.provider_name#</div>
+        <span class="sig-label">Provider Name</span>
+    </div>
+    <div class="sig-cell">
+        <div class="sig-line">#encounter.discharge_date|dd MMM yyyy#</div>
+        <span class="sig-label">Date</span>
+    </div>
+</div>
+
+<div class="datestamp">Printed: #encounter.print_date|dd MMM yyyy HH:mm#</div>
+
+</body>
+</html>

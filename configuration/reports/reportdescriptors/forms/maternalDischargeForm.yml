@@ -1,0 +1,28 @@
+key: "maternalDischargeForm"
+uuid: "1fe7c68f-c0e3-44da-a5b3-3609e1ffc352"
+name: "Maternal Discharge Form"
+description: "Print-ready PDF of the Maternal Discharge encounter"
+parameters:
+  - key: "encounterId"
+    type: "java.lang.String"
+    label: "Encounter UUID"
+datasets:
+  - key: "encounter"
+    type: "sql"
+    config: "maternalDischargeForm.sql"
+  - key: "diagnoses"
+    type: "sql"
+    config: "maternalDischargeFormDiagnoses.sql"
+  - key: "medications"
+    type: "sql"
+    config: "maternalDischargeFormMedications.sql"
+designs:
+  - uuid: "d8bb7741-15db-4851-a70b-9b71566b9a1a"
+    name: "PDF"
+    type: "PdfTemplateRenderer"
+    template: "maternalDischargeForm.html"
+    resources:
+      moh-sierra-leone-seal.png: "moh-sierra-leone-seal.png"
+      pih-sierra-leone-logo.png: "pih-sierra-leone-logo.png"
+    properties:
+      templateType: "Groovy"
