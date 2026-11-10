@@ -476,4 +476,14 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/migrate-dual-hiv-syphilis-positive-tests.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20260828-cascade-void-patients-update" author="PIH">
+        <comment>
+            SL-1397, Ensure voided data does not have non-voided child data.
+            Voids all data of voided patients, and cascades voids from other voided parent rows
+            (visits, encounters, obs groups, etc) to their non-voided children.  Children copy
+            voided_by and date_voided from their parent, and the parent's void_reason with
+            " [Cascade void: yyyy-mm-dd.hh:mm]" appended for the time of the run.
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/cascade_void_patients_update.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>
