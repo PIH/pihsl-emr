@@ -33,6 +33,17 @@
             <value>880468f0-eec0-4d70-861a-fe12d4ba5099</value>
         </globalProperty>
 
+        <!-- PIH Apps Labs -->
+        <globalProperty>
+            <property>pihcore.usePihAppsLabs</property>
+            <value>true</value>
+        </globalProperty>
+
+        <globalProperty>
+            <property>pihapps.labs.requireResultValidation</property>
+            <value>true</value>
+        </globalProperty>
+
         <!-- Lab Workflow OWA -->
         <globalProperty>
             <property>labworkflowowa.locationOfLaboratory</property>
