@@ -845,6 +845,20 @@
 
         </fieldset>
 
+        <!-- Pregnancy group: only for female patients aged 10 or over (on the encounterDate), like the other MCH forms -->
+        <includeIf velocityTest="$patient.gender == 'F' and $patient.getAge($encounter.getEncounterDatetime()) >= 10">
+            <fieldset>
+                <legend>
+                    <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
+                </legend>
+                <h3>
+                    <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
+                </h3>
+
+                <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+            </fieldset>
+        </includeIf>
+
     </section>
 
     <submit/>

@@ -587,6 +587,11 @@
         <subform path="configuration/pih/subforms/mental-health-phq2.xml"/>
     </div>
 
+    <!-- Pregnancy group -->
+    <div class="section-container">
+        <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+    </div>
+
     <div class="boundary"></div>
         <div class="section-container">
             <div class="two-columns">
