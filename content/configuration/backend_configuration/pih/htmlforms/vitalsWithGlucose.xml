@@ -851,10 +851,7 @@
                 <legend>
                     <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
                 </legend>
-                <h3>
-                    <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
-                </h3>
-
+                <!-- no h3 heading here: the widget already shows the "Pregnancy group" label next to the answers -->
                 <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
             </fieldset>
         </includeIf>
