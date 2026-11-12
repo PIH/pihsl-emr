@@ -132,7 +132,7 @@
     <div class="bordered-section">
         <p class="list-inline">
             <label>
-                <uimessage code="Hepatitis B (HbsAb)"/>
+                <uimessage code="Hepatitis B (HBsAg)"/>
             </label>
             <obs id="HBsAg" style="radio"
                  conceptId="CIEL:159430"
