@@ -114,6 +114,15 @@
           "allowFutureDates": "false",
           "allowFutureTimes": "true"
         }
+      },
+      {
+        "label": "coreapps.markPatientDead.causeOfDeath",
+        "conceptCode": "org.openmrs.module.emrapi: Cause of Death",
+        "params": {
+          "id": "causeOfDeath",
+          "style": "dropdown",
+          "answerConceptSetIds": "PIH:20681"
+        }
       }
     ]
   }

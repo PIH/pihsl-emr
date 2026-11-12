@@ -596,6 +596,7 @@
                     <p class="side-by-side">
                         <div id="disposition">
                             <encounterDisposition required="true" id="encounter-disposition" />
+                            <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                         </div>
                     </p>
                 </div>
