@@ -1,0 +1,6 @@
+<!-- SL-1485: shows the Death disposition's "Cause of death" as grouped radios, like coreapps/markPatientDead.page.
+     Include once on any form that has an <encounterDisposition> offering Death. -->
+<div id="cause-of-death-tree-widget">
+    <subform path="configuration/pih/subforms/cause-of-death-tree-widget.css"/>
+    <subform path="configuration/pih/subforms/cause-of-death-tree-widget.js"/>
+</div>

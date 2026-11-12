@@ -57,6 +57,11 @@
         </p>
 
     </div>
+
+    <!-- Pregnancy group -->
+    <div class="section-container">
+        <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+    </div>
     <br/>
 
     <ifMode mode="VIEW" include="false">

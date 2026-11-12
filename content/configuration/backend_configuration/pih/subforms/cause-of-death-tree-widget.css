@@ -1,0 +1,22 @@
+/* SL-1485: same look as coreapps/markPatientDead.page */
+.cause-of-death-tree {
+    margin-top: 5px;
+}
+
+.cause-of-death-radio, .cause-of-death-group {
+    padding-top: 5px;
+}
+
+.cause-of-death-radio label {
+    display: inline;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.cause-of-death-group-toggle {
+    cursor: pointer;
+}
+
+.cause-of-death-subcauses .cause-of-death-radio {
+    padding-left: 20px;
+}

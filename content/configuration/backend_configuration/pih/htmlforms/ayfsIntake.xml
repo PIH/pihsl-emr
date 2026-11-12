@@ -621,6 +621,7 @@ sexually in any way that you did not want in the past year?" />
                 <div>
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
+                        <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                     </div>
                 </div>
 
