@@ -32,8 +32,8 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 // the helper's "Diagnosis" mismatches are filtered for that reason.
 //
 // Findings (same shapes as ayfsIntake.xml; ids are the same):
-//   V1 High (fixed in PR #363, SL-1458; not on kgh-demo yet) :358-360 "Symptoms/problems around the genitalia?" answers CIEL:1115,CIEL:1116 (Normal, Abnormal) but is labelled
-//                      yes,no: "Yes" saves Normal. Fixed: answers are now CIEL:1116,CIEL:1115 (Abnormal, Normal) in the yes,no order. TESTED below.
+//   V1 High (SL-1458; not on kgh-demo yet) :388-392 "Symptoms/problems around the genitalia?" answered CIEL:1115,CIEL:1116 (Normal, Abnormal) but is labelled
+//                      yes,no: "Yes" saved Normal. Fixed: the answers are now CIEL:1065,CIEL:1066 (Yes, No); a liquibase changeset migrates the saved obs. TESTED below.
 //   V2 Medium (fixed in PR #363, SL-1467; not on kgh-demo yet) :107-116 each reason checkbox carries a <when> on #other-visit-reason: ticking another reason while "Other" is
 //                      ticked hides the box and its text is dropped on save. Fixed: the box is shown from a standalone "Other" checkbox (#vr-other) after the repeat. TESTED below.
 //   V3 Medium :251-252 #implant-date shows for Jadelle and CIEL:5275 (IUD, not offered here), never for Implanon (CIEL:76022)
@@ -67,10 +67,10 @@ const setDate = (display: Locator, year: number, monthIndex: number, day: number
   );
 
 // Coded answers the form labels differently from the concept name (obs display -> text shown in VIEW): the yes/no answerCodes
-// of the genitalia question (Abnormal is "yes") and the Jadelle label.
+// of the genitalia question (Yes/No shown as "yes"/"no") and the Jadelle label.
 const VIEW_LABELS: Record<string, string> = {
-  'Urogenital exam findings: Abnormal': 'yes',
-  'Urogenital exam findings: Normal': 'no',
+  'Urogenital exam findings: Yes': 'yes',
+  'Urogenital exam findings: No': 'no',
   'Method of family planning: Jadelle (implantable contraceptive)': 'Jadelle',
 };
 
@@ -168,13 +168,13 @@ test.describe('ayfsFollowup', () => {
     await expect(page.getByText('Other contraceptive methods', { exact: true })).toHaveCount(0);
   });
 
-  // V1 (High, fixed in PR #363, not on kgh-demo yet): the genitalia question is labelled yes/no and its answers used to be Normal/Abnormal in that order, so "Yes" saved Normal.
-  // "Yes" (symptoms present) saves Abnormal and "No" saves Normal.
+  // V1 (High, SL-1458, not on kgh-demo yet): the genitalia question is labelled yes/no and its answers used to be Normal/Abnormal in that order, so "Yes" saved Normal.
+  // "Yes" (symptoms present) saves Yes (CIEL:1065) and "No" saves No (CIEL:1066).
   for (const [radio, label, saved] of [
-    [0, 'Yes', 'Abnormal'],
-    [1, 'No', 'Normal'],
+    [0, 'Yes', 'Yes'],
+    [1, 'No', 'No'],
   ] as const) {
-    // Skipped: the form fix (SL-1458, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
+    // Skipped: the form fix (SL-1458) is not on kgh-demo yet. Remove test.fixme() once it is released.
     test(`answering ${label} to genital symptoms saves ${saved} (V1)`, async ({ page, api, createEntryContext }) => {
       test.fixme();
       const context = await open(page, createEntryContext);
@@ -233,7 +233,7 @@ test.describe('ayfsFollowup', () => {
     await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
     await checkboxOf(page, 'fp-meth-1873').check(); // Jadelle: implant date
     await setDate(page.locator('#implant-date input.hasDatepicker'), 2025, 2, 10);
-    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Abnormal
+    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Yes (CIEL:1065)
     await page.locator('#ayfs-dx input[type=checkbox]').nth(1).check(); // Malaria
     await page.locator('#sti-dx input[type=checkbox]').nth(0).check(); // Syphilis
     await setDate(page.locator('#apptDate input.hasDatepicker'), new Date().getFullYear() + 1, 5, 20);
@@ -266,7 +266,7 @@ test.describe('ayfsFollowup', () => {
     ]) {
       expect(shown, expected).toContain(expected);
     }
-    // the genitalia question: "Abnormal" is saved, "yes" is shown
+    // the genitalia question: Yes is saved, "yes" is shown
     await expect(view.page.locator('p', { hasText: 'Symptoms/problems around the genitalia' }).locator('.value')).toHaveText('[X] yes');
     // the diagnoses come from the diagnosis widget; the two checkbox lists stay blank in VIEW
     await expect(view.page.locator('#data-collection')).toContainText('Malaria');
@@ -279,7 +279,7 @@ test.describe('ayfsFollowup', () => {
   });
 
   // EDIT round-trip (SL-1458, SL-1467): the genitalia answer and the "Other" reason text come back as saved, and a second save replaces them.
-  // Skipped: the form fix (SL-1458, SL-1467, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
+  // Skipped: the form fixes (SL-1458; SL-1467, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('EDIT: reopening shows the saved genitalia answer and other-reason text, and a second save replaces them', async ({
     page,
     api,
@@ -288,7 +288,7 @@ test.describe('ayfsFollowup', () => {
     test.fixme();
     const context = await open(page, createEntryContext);
     await answerGbvNo(page);
-    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Abnormal
+    await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Yes (CIEL:1065)
     await checkboxOf(page, 'vr-other').check();
     await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
     await checkboxOf(page, 'vr-fp').check();
@@ -296,7 +296,7 @@ test.describe('ayfsFollowup', () => {
     await page.locator(SAVE).click();
     await expect(page).toHaveURL(VISIT_PAGE_URL);
     const [encounter] = await getPatientEncounters(api, context.patient.uuid);
-    expect(await obsSummary(api, encounter.uuid)).toContain('Urogenital exam findings=Abnormal');
+    expect(await obsSummary(api, encounter.uuid)).toContain('Urogenital exam findings=Yes');
 
     await page.goto(
       SectionFormPage.editUrl(FORM, { patient: context.patient, encounter: { uuid: encounter.uuid, visitUuid: context.visitUuid } }),
@@ -311,14 +311,14 @@ test.describe('ayfsFollowup', () => {
     await expect(page.locator('#other-visit-reason textarea')).toHaveValue('Walk-in for advice');
 
     // change the answer, the text, and drop the other reason
-    await genitalia.nth(1).check(); // no -> Normal
+    await genitalia.nth(1).check(); // no -> No (CIEL:1066)
     await page.locator('#other-visit-reason textarea').fill('Follow-up question');
     await checkboxOf(page, 'vr-fp').uncheck();
     await page.locator(SAVE).click();
     await expect(page).toHaveURL(VISIT_PAGE_URL);
 
     const obs = await obsSummary(api, encounter.uuid);
-    expect(obs.filter((o) => o.startsWith('Urogenital exam findings='))).toEqual(['Urogenital exam findings=Normal']);
+    expect(obs.filter((o) => o.startsWith('Urogenital exam findings='))).toEqual(['Urogenital exam findings=No']);
     expect(obs.filter((o) => o.endsWith('=Follow-up question'))).toHaveLength(1);
     expect(obs.some((o) => o.endsWith('=Walk-in for advice'))).toBeFalsy();
     expect(obs.filter((o) => o.startsWith('Reason for visit='))).toEqual(['Reason for visit=Other']);
