@@ -476,4 +476,24 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/migrate-dual-hiv-syphilis-positive-tests.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+
+    <changeSet id="20261113-SL-1458-migrate-ayfs-genitalia-symptoms-obs" author="cioan">
+        <preConditions onFail="MARK_RAN">
+            <not><sqlCheck expectedResult="0">
+                select count(*) from obs o
+                inner join encounter e on e.encounter_id = o.encounter_id
+                inner join encounter_type et on et.encounter_type_id = e.encounter_type
+                where o.concept_id = concept_from_mapping('CIEL','1126')
+                  and o.value_coded in (concept_from_mapping('CIEL','1115'), concept_from_mapping('CIEL','1116'))
+                  and o.voided = 0
+                  and et.uuid in ('1f3375af-fd9e-42a9-954e-99533ee15de9', '73399721-644e-494b-86c9-5dd345072db3');
+            </sqlCheck></not>
+        </preConditions>
+        <comment>
+            SL-1458: on AYFS Initial and AYFS Followup encounters, "Symptoms/problems around the genitalia?" (CIEL:1126)
+            saved the "yes" radio as Normal (CIEL:1115) and "no" as Abnormal (CIEL:1116). Void those obs and re-create them
+            with Yes (CIEL:1065) and No (CIEL:1066), with previous_version set.
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/migrate_ayfs_genitalia_symptoms_obs.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>

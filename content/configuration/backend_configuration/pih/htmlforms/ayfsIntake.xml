@@ -501,7 +501,7 @@ sexually in any way that you did not want in the past year?" />
                         <uimessage code="Symptoms/problems around the genitalia?" />
                     </label>
                     <obs conceptId="CIEL:1126" style="radio"
-                         answerConceptIds="CIEL:1115,CIEL:1116"
+                         answerConceptIds="CIEL:1065,CIEL:1066"
                          answerCodes="yes,no" />
                 </p>
             </div>
