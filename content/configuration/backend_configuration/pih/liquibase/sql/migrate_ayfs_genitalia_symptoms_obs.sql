@@ -6,11 +6,13 @@
 -- Only CIEL:1126 obs in AYFS Initial / AYFS Followup encounters are touched; CIEL:1126, 1115 and 1116 are used elsewhere.
 -- Each obs is voided and replaced by a copy with the new answer and previous_version pointing to the old obs.
 
-set @question = concept_from_mapping('CIEL', '1126');
-set @normal = concept_from_mapping('CIEL', '1115');
-set @abnormal = concept_from_mapping('CIEL', '1116');
-set @yes = concept_from_mapping('CIEL', '1065');
-set @no = concept_from_mapping('CIEL', '1066');
+-- A CIEL code can have more than one SAME-AS concept on some servers, which makes concept_from_mapping() fail with
+-- "Result consisted of more than one row". So the question and the old answers are matched with IN on report_mapping,
+-- and the new answers take the non-retired concept with the lowest id.
+set @yes = (select min(rm.concept_id) from report_mapping rm inner join concept c on c.concept_id = rm.concept_id
+             where rm.source = 'CIEL' and rm.code = '1065' and c.retired = 0);
+set @no = (select min(rm.concept_id) from report_mapping rm inner join concept c on c.concept_id = rm.concept_id
+            where rm.source = 'CIEL' and rm.code = '1066' and c.retired = 0);
 set @ayfsInitial = (select encounter_type_id from encounter_type where uuid = '1f3375af-fd9e-42a9-954e-99533ee15de9');
 set @ayfsFollowup = (select encounter_type_id from encounter_type where uuid = '73399721-644e-494b-86c9-5dd345072db3');
 -- Use daemon for creator and voided_by user
@@ -38,12 +40,14 @@ insert into temp_ayfs_genitalia_obs
      value_coded, comments, form_namespace_and_path, status, interpretation)
 select o.obs_id, o.person_id, o.concept_id, o.encounter_id, o.order_id, o.obs_datetime, o.location_id, o.obs_group_id,
        o.accession_number,
-       case o.value_coded when @normal then @yes when @abnormal then @no end,
+       case when o.value_coded in (select concept_id from report_mapping where source = 'CIEL' and code = '1115') then @yes
+            when o.value_coded in (select concept_id from report_mapping where source = 'CIEL' and code = '1116') then @no
+       end,
        o.comments, o.form_namespace_and_path, o.status, o.interpretation
   from obs o
   inner join encounter e on e.encounter_id = o.encounter_id
- where o.concept_id = @question
-   and o.value_coded in (@normal, @abnormal)
+ where o.concept_id in (select concept_id from report_mapping where source = 'CIEL' and code = '1126')
+   and o.value_coded in (select concept_id from report_mapping where source = 'CIEL' and code in ('1115', '1116'))
    and o.voided = 0
    and e.encounter_type in (@ayfsInitial, @ayfsFollowup);
 
