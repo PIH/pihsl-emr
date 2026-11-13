@@ -12,7 +12,7 @@ jobs:
       image_name: partnersinhealth/pihsl-emr
       instance_name: kgh-ci
       pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-ci
-      seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone-alert-test-does-not-exist
+      seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone
       suite: sierraleone
       notify_ci_dashboard: true
     secrets: inherit
