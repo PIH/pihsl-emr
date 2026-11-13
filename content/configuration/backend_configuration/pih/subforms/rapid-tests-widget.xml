@@ -139,15 +139,15 @@
                  answerConceptIds="CIEL:703,CIEL:664,CIEL:1138"/>
         </p>
         <ifMode mode="VIEW" include="false">
-            <lookup complexExpression="#set( $hbsAbResult = $fn.latestObsBeforeCurrentEncounter('CIEL:159430', false) )"/>
-            <includeIf velocityTest="($hbsAbResult) ">
+            <lookup complexExpression="#set( $hbsAgResult = $fn.latestObsBeforeCurrentEncounter('CIEL:159430', false) )"/>
+            <includeIf velocityTest="($hbsAgResult) ">
                 <p class="list-inline">
                     <label></label>
                     <label class="bolder-blue">Latest test date: </label>
-                    <span class="light-blue"><lookup complexExpression="$hbsAbResult.obsDatetime"/></span>
+                    <span class="light-blue"><lookup complexExpression="$hbsAgResult.obsDatetime"/></span>
                     <label class="bolder-blue">&nbsp;&nbsp;&nbsp;Result: </label>
                     <span class="light-blue">
-                        <lookup complexExpression="#set( $hbsAnsConceptUuid = $hbsAbResult.valueCoded.uuid )"/>
+                        <lookup complexExpression="#set( $hbsAnsConceptUuid = $hbsAgResult.valueCoded.uuid )"/>
                         <includeIf velocityTest="$hbsAnsConceptUuid == $fn.getConcept('CIEL:703').uuid">
                             <uimessage code="pihcore.positive"/>
                         </includeIf>
