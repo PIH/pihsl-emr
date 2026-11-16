@@ -1,6 +1,7 @@
 <!-- Pregnancy group
      By default the group can be entered. To only show the previous group, set the flag right before including this subform:
-     <lookup complexExpression="#set( $pregGroupViewOnly = true )"/> -->
+     <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+     Include it at most once per form (it uses fixed element ids). -->
 <p class="side-by-side">
     <includeIf velocityTest="!$pregGroupViewOnly">
         <label position="left">
@@ -12,27 +13,14 @@
     </includeIf>
 
     <ifMode mode="VIEW" include="false">
-        <!-- only show the previous group if it was recorded during the pregnancy program enrollment active at this encounter/visit -->
+        <!-- The latest group recorded before this encounter. It is only shown if it was recorded during a Pregnancy program
+             enrollment that is active at this encounter/visit; that check is done in the browser (see the script below),
+             because the form can only look up workflow states, and an enrollment does not always have an active state. -->
         <lookup complexExpression="
             #set( $pregGroup = false )
-            #set( $pregState = false )
-            #if( $encounter )
-                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}', $encounter.encounterDatetime) )
-            #elseif( $visit )
-                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}', $visit.startDatetime) )
-            #else
-                #set( $pregState = $fn.currentProgramWorkflowStatus('${programWorkflow.pregnancyProgramTypeOfTreatment.uuid}') )
-            #end
-            #if( $pregState )
-                #set( $latestPregGroup = false )
-                #set( $latestPregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )
-                #if( $latestPregGroup )
-                    #if( !$latestPregGroup.obsDatetime.before($pregState.patientProgram.dateEnrolled) )
-                        #set( $pregGroup = $latestPregGroup )
-                    #end
-                #end
-            #end"/>
+            #set( $pregGroup = $fn.latestObsBeforeCurrentEncounter('PIH:21747', false) )"/>
         <includeIf velocityTest="($pregGroup) ">
+            <span id="preg-group-current" style="display:none;">
             <br/>
             <span style="color:grey; font-style: italic;">
                 <label>
@@ -56,6 +44,44 @@
                 <uimessage code="pihcore.previousPregnancyProgramCohortGroup.from"/>:
                 <lookup complexExpression="$pregGroupFormName"/></includeIf>)
             </span>
+            </span>
+
+            <script type="text/javascript">
+                // runs right away rather than on document ready: #preg-group-current is already above this script, and an error
+                // in another form's ready handler (e.g. Simple UI-only code) would stop later ready handlers from running
+                (function() {
+                    const contextPath = window.location.href.split('/')[3];
+                    const pregnancyProgramUuid = '${program.pregnancy.uuid}';
+                    const patientUuid = '<lookup expression="patient.uuid"/>';
+                    const pregGroupObsTime = +'<lookup complexExpression="$pregGroup.obsDatetime.time"/>';
+                    // the date the enrollment must be active on: the encounter date when editing, else the visit start, else now
+                    const pregGroupCheckTime = +'<lookup complexExpression="#if( $encounter )$encounter.encounterDatetime.time#elseif( $visit )$visit.startDatetime.time#{else}$formGeneratedDatetime.time#end"/>';
+
+                    const startOfDay = function(time) { const d = new Date(time); d.setHours(0, 0, 0, 0); return d.getTime(); };
+                    const endOfDay = function(time) { const d = new Date(time); d.setHours(23, 59, 59, 999); return d.getTime(); };
+
+                    jq.getJSON('/' + contextPath + '/ws/rest/v1/programenrollment', {
+                        patient: patientUuid,
+                        v: 'custom:(program:(uuid),dateEnrolled,dateCompleted,voided)'
+                    }, function(data) {
+                        // show the group if it was recorded during a Pregnancy enrollment that is active on the check date
+                        // (compared by day, as enrollment dates may be entered without a time)
+                        const show = (data.results || []).some(function(pp) {
+                            if (pp.voided || !pp.program || pp.program.uuid !== pregnancyProgramUuid || !pp.dateEnrolled) {
+                                return false;
+                            }
+                            const enrolled = startOfDay(new Date(pp.dateEnrolled).getTime());
+                            const completed = pp.dateCompleted ? new Date(pp.dateCompleted).getTime() : null;
+                            const activeOnCheckDate = enrolled &lt;= endOfDay(pregGroupCheckTime)
+                                &amp;&amp; (completed === null || completed &gt; pregGroupCheckTime);
+                            return activeOnCheckDate &amp;&amp; pregGroupObsTime &gt;= enrolled;
+                        });
+                        if (show) {
+                            jq('#preg-group-current').show();
+                        }
+                    });
+                })();
+            </script>
         </includeIf>
     </ifMode>
 </p>
