@@ -845,8 +845,16 @@
 
         </fieldset>
 
-        <!-- Pregnancy group: only for female patients aged 10 or over (on the encounterDate), like the other MCH forms -->
-        <includeIf velocityTest="$patient.gender == 'F' and $patient.getAge($encounter.getEncounterDatetime()) >= 10">
+        <!-- Pregnancy group: only at MCH OPD, for female patients aged 10 or over (on the encounterDate), like the other MCH forms.
+             The location is the encounter's when editing or viewing, else the login location (the default of the Location field). -->
+        <lookup complexExpression="
+            #set( $pregGroupLocation = false )
+            #if( $encounter )
+                #set( $pregGroupLocation = $encounter.location )
+            #elseif( $sessionContext )
+                #set( $pregGroupLocation = $sessionContext.sessionLocation )
+            #end"/>
+        <includeIf velocityTest="$pregGroupLocation and $pregGroupLocation.uuid == '${location.mchOpd.uuid}' and $patient.gender == 'F' and $patient.getAge($encounter.getEncounterDatetime()) >= 10">
             <fieldset>
                 <legend>
                     <uimessage code="pihcore.pregnancyProgramCohortGroup"/>
