@@ -16,6 +16,7 @@ ${location.kgh.uuid},,KGH,KGH,,
 0d3704ab-17f7-4272-aa1b-9118ae51acce,,KGH Laboratory,KGH Laboratory,KGH,
 ${location.ncdPharmacy.uuid},,NCD Pharmacy,KGH NCD Pharmacy,KGH,
 ${location.opdPharmacy.uuid},,OPD Pharmacy,KGH OPD Pharmacy,KGH,
+fa50a968-937b-4593-94d1-952555859e9d,,General OPD,KGH General Outpatient Department,KGH,
 067c83ad-6850-11ee-ab8d-0242ac120002,,MCOE,Maternal Center of Excellence,KGH,
 f85feffc-fe54-4648-aa14-01ed6d30b943,,MCOE Triage,MCOE Triage,MCOE,${location.mcoeInpatientPharmacy.uuid}
 11377a5b-6850-11ee-ab8d-0242ac120002,,Labour and Delivery,Labour and Delivery,MCOE,${location.mcoeInpatientPharmacy.uuid}
