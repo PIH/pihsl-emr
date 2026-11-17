@@ -360,6 +360,10 @@
                          answerSeparator=""/>
                 </p>
 
+                <!-- Pregnancy group -->
+                <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+                <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+
                 <p class="list-inline">
                     <label>
                         <uimessage code="emergency"/>

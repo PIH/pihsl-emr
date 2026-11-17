@@ -1,0 +1,88 @@
+<!-- PHQ-9 and GAD-7 questionnaires; the total scores are calculated automatically by mental-health-phq9-gad7-widget.js
+     Ported from the ces-emr consult form. Each repeat row renders two questions side by side ({0}/{1} and {2}/{3}) -->
+<div id="mental-health-phq9-gad7-widget" class="section-container">
+
+    <div class="question-container" id="phq9-questions">
+        <h4>Patient Health Questionnaire (PHQ-9)</h4>
+        <p>Over the <u>last 2 weeks</u>, how often have you been bothered by any of the following problems?</p>
+        <repeat with="['Little interest or pleasure in doing things','1. Little interest or pleasure in doing things','Feeling down depressed or hopeless','2. Feeling down, depressed, or hopeless'],
+                      ['Trouble falling or staying asleep or sleeping too much','3. Trouble falling or staying asleep, or sleeping too much','Feeling tired or having little energy','4. Feeling tired or having little energy'],
+                      ['Little appetite or eating less','5. Poor appetite or overeating','Feels like they have failed someone','6. Feeling bad about yourself - or that you are a failure, or have let yourself or your family down'],
+                      ['Distracted easily','7. Trouble concentrating on things, such as reading the newspaper or watching television','Feels slower than normal','8. Moving or speaking so slowly that other people could have noticed? Or the opposite - being so fidgety or restless that you have been moving around more than usual']">
+            <div class="two-columns">
+                <div>
+                    <obs conceptId="PIH:{0}"
+                         labelText="{1}"
+                         answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                         answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+                </div>
+                <div>
+                    <obs conceptId="PIH:{2}"
+                         labelText="{3}"
+                         answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                         answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+                </div>
+            </div>
+            <br/>
+        </repeat>
+        <div class="two-columns">
+            <div>
+                <obs id="phq9-question9"
+                     conceptId="PIH:Has thought about ending their life"
+                     labelText="9. Thoughts that you would be better off dead or of hurting yourself in some way"
+                     answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                     answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+            </div>
+            <div>
+                <obs id="phq9-score"
+                     conceptId="PIH:11586"
+                     labelText="Total PHQ-9 score (0-27)"/>
+            </div>
+        </div>
+        <ifMode mode="VIEW" include="false">
+            <div>
+                <label id="phq9-suicide-alert" style="color: red;"></label>
+            </div>
+        </ifMode>
+    </div>
+
+    <hr style="border: none; border-top: 2px solid #999; margin: 20px 0;"/>
+
+    <div class="question-container" id="gad7-questions">
+        <h4>Generalized Anxiety Disorder 7-Item (GAD-7)</h4>
+        <p>Over the <u>last 2 weeks</u>, how often have you been bothered by any of the following problems?</p>
+        <repeat with="['Feeling nervous','1. Feeling nervous, anxious, or on edge','Not able to stop worrying','2. Not being able to stop or control worrying'],
+                      ['Worrying too much about different things','3. Worrying too much about different things','Difficulty relaxing','4. Trouble relaxing'],
+                      ['Being so restless that it is difficult to sit quietly','5. Being so restless that it is hard to sit still','Getting upset or irritable easily','6. Becoming easily annoyed or irritable']">
+            <div class="two-columns">
+                <div>
+                    <obs conceptId="PIH:{0}"
+                         labelText="{1}"
+                         answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                         answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+                </div>
+                <div>
+                    <obs conceptId="PIH:{2}"
+                         labelText="{3}"
+                         answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                         answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+                </div>
+            </div>
+            <br/>
+        </repeat>
+        <div class="two-columns">
+            <div>
+                <obs conceptId="PIH:Feeling scared as if something terrible could happen"
+                     labelText="7. Feeling afraid as if something awful might happen"
+                     answerConceptIds="PIH:NEVER,PIH:SOME DAYS,PIH:More than half the days,PIH:1100"
+                     answerLabels="Not at all,Several days,More than half the days,Nearly every day"/>
+            </div>
+            <div>
+                <obs id="gad7-score"
+                     conceptId="PIH:11733"
+                     labelText="Total GAD-7 score (0-21)"/>
+            </div>
+        </div>
+    </div>
+
+</div>

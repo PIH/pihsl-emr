@@ -27,6 +27,32 @@
                 vertical-align: top;
             }
         </ifMode>
+
+        #condom-method .condom-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        #condom-method .condom-row > span:first-child {
+            display: flex;
+            align-items: center;
+            min-width: 160px;
+        }
+        #condom-method .condom-row input[type="checkbox"] {
+            float: none;
+        }
+        #condom-method .condom-row label {
+            display: inline;
+            width: auto;
+        }
+        #condom-method .condom-row input[type="text"] {
+            display: inline-block;
+            margin: 0 5px 0 0;
+        }
+        #condom-method .condom-row .value + .units {
+            margin-left: 5px;
+        }
     </style>
 
     <script type="text/javascript">
@@ -315,6 +341,7 @@
                                     </template>
                                     <render acID="CIEL:1873"   dID="1873" csName="Jadelle" />
                                     <render acID="CIEL:76022"  dID="76022" csName="Implanon" />
+                                    <render acID="PIH:21756"  dID="21756" csName="Levoplant" />
                                 </repeat>
                                 <obsgroup groupingConceptId="PIH:Family planning construct" showIfEmpty="false">
                                     <obs conceptId="CIEL:374" style="checkbox"
@@ -335,7 +362,7 @@
                     </div>
 
                     <div id="condom-method">
-                        <p>
+                        <div>
                             <strong>
                                 <uimessage code="Condom"/>
                             </strong>
@@ -343,16 +370,19 @@
                             <repeat>
                                 <template>
                                     <obsgroup groupingConceptId="PIH:Family planning construct" showIfEmpty="false">
-                                        <obs id="fp-meth-{dID}" conceptId="CIEL:374" style="checkbox"
-                                             answerConceptId="{acID}"
-                                             answerCode="{csName}">
-                                        </obs>
+                                        <div class="condom-row">
+                                            <obs id="fp-meth-{dID}" conceptId="CIEL:374" style="checkbox"
+                                                 answerConceptId="{acID}"
+                                                 answerCode="{csName}">
+                                            </obs>
+                                            <obs id="no-of-condoms-{noCondoID}" conceptId="PIH:{noCondoID}" showUnits="condoms" />
+                                        </div>
                                     </obsgroup>
                                 </template>
-                                <render acID="CIEL:164813" dID="164813" csName="Male condom" />
-                                <render acID="CIEL:164814" dID="164814" csName="Female condom" />
+                                <render acID="CIEL:164813" dID="164813" csName="Male condom" noCondoID="21757"/>
+                                <render acID="CIEL:164814" dID="164814" csName="Female condom" noCondoID="21758"/>
                             </repeat>
-                        </p>
+                        </div>
                     </div>
                 </div>
 

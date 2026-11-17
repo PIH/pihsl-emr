@@ -235,6 +235,10 @@
         <section id="Overview" sectionTag="fieldset" headerTag="legend" headerStyle="title"
                  headerCode="Overview">
             <div class="section-container">
+                <!-- Pregnancy group -->
+                <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+                <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+
                 <div id="deliveryDateAndMethod">
                     <p id="when" class="date-one-line">
                         <label>
@@ -552,6 +556,11 @@
         </div>
     </section>
 
+    <section id="mh-phq2" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Mental Health">
+        <subform path="configuration/pih/subforms/mental-health-phq2.xml"/>
+    </section>
+
     <section id="health-ed" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Health education">
         <div class="section-container">
@@ -593,31 +602,67 @@
                                              answerConceptId="{acID}"
                                              answerCode="{csName}">
                                             <controls>
-                                                <when value="CIEL:1873" thenDisplay="#implant-date"/>
-                                                <when value="CIEL:5275" thenDisplay="#implant-date"/>
+                                                <when value="{acID}" thenDisplay="{thenDisplay}"/>
                                             </controls>
                                         </obs>
                                     </obsgroup>
                                 </template>
-                                <render acID="CIEL:159783" dID="159783" csName="Combined oral contraceptive (COC)" />
-                                <render acID="CIEL:80784"  dID="80784" csName="Progestin-only pill (POP)" />
-                                <render acID="CIEL:5277"   dID="5277" csName="pihcore.fp.rhythm" />
-                                <render acID="CIEL:190"    dID="190" csName="Condoms" />
-                                <render acID="CIEL:907"    dID="907" csName="Depo-provera" />
-                                <render acID="PIH:21450"   dID="21450" csName="Sayana press" />
-                                <render acID="CIEL:5275"   dID="5275" csName="pihcore.fp.iud" />
-                                <render acID="CIEL:1873"   dID="1873" csName="Implant" />
-                                <render acID="CIEL:1472"   dID="1472" csName="pihcore.fp.tubalLig" />
-                                <render acID="CIEL:136163" dID="136163" csName="Exclusive breastfeeding (requires a secondary method)" />
+                                <render acID="CIEL:159783" dID="159783" csName="Combined oral contraceptive (COC)" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:80784"  dID="80784" csName="Progestin-only pill (POP)" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:5277"   dID="5277" csName="pihcore.fp.rhythm" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:190"    dID="190" csName="Condoms" thenDisplay="#condom-count" />
+                                <render acID="CIEL:907"    dID="907" csName="Depo-provera" thenDisplay="#fp-method-noop" />
+                                <render acID="PIH:21450"   dID="21450" csName="Sayana press" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:5275"   dID="5275" csName="pihcore.fp.iud" thenDisplay="#iud-date" />
+                                <render acID="CIEL:1873"   dID="1873" csName="Implant" thenDisplay="#implant-date" />
+                                <render acID="CIEL:1472"   dID="1472" csName="pihcore.fp.tubalLig" thenDisplay="#fp-method-noop" />
+                                <render acID="CIEL:136163" dID="136163" csName="Exclusive breastfeeding (requires a secondary method)" thenDisplay="#fp-method-noop" />
                             </repeat>
                         </p>
                     </div>
 
-                    <div id="implant-date">
-                        <label>
-                            <uimessage code="pihcore.dateImplant"/>:
-                        </label>
-                        <obs conceptId="PIH:3203" />
+                    <div>
+                        <div id="condom-count">
+                            <p>
+                                <label>
+                                    <uimessage code="pihcore.numFCondoms"/>:
+                                </label>
+                                <obs conceptId="PIH:21758" showUnits="condoms" />
+                            </p>
+
+                            <p>
+                                <label>
+                                    <uimessage code="pihcore.numMCondoms"/>:
+                                </label>
+                                <obs conceptId="PIH:21757" showUnits="condoms" />
+                            </p>
+                        </div>
+
+                        <div id="iud-date">
+                            <br/>
+                            <label>
+                                <uimessage code="pihcore.dateIudInsert"/>:
+                            </label>
+                            <obs conceptId="PIH:21759" />
+                        </div>
+
+                        <div id="implant-date">
+                            <br/><br/>
+
+                            <p class="side-by-side">
+                                <label>
+                                    <uimessage code="Type of implant"/>
+                                </label>
+                                <obs conceptId="CIEL:163401" style="radio"
+                                answerConceptIds="CIEL:1873,PIH:21756"
+                                answerCodes="Jadelle,Levoplant"/>
+                            </p>
+
+                            <label>
+                                <uimessage code="pihcore.dateImplant"/>:
+                            </label>
+                            <obs conceptId="PIH:3203" />
+                        </div>
                     </div>
                 </div>
             </div>

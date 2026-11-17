@@ -71,6 +71,9 @@
                              answerSeparator="&lt;br /&gt;"/>
                     </p>
 
+                    <!-- Pregnancy group -->
+                    <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+
                     <!-- Number of ANC visits -->
                     <p>
                         <label>
@@ -563,6 +566,7 @@
                 <div>
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
+                        <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                     </div>
                 </div>
                 <div>

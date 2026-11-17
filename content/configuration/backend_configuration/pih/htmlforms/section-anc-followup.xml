@@ -14,18 +14,6 @@
             display: inline-block;
         }
 
-        #vitals fieldset p {
-            vertical-align: top;
-            display: inline-block;
-            float: none;
-        }
-
-        #vitals fieldset .left {
-            vertical-align: top;
-            display: inline-block;
-            float: none;
-        }
-
     </style>
 
     <style type="text/css">
@@ -86,6 +74,10 @@
     <section id="anc-followup" sectionTag="fieldset" headerTag="legend"
              headerStyle="title" headerCode="pihcore.ancFollowup.title">
         <div class="section-container">
+            <!-- Pregnancy group -->
+            <lookup complexExpression="#set( $pregGroupViewOnly = true )"/>
+            <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+
             <div class="two-columns">
                 <div>
                     <label>
@@ -380,6 +372,7 @@
                 <div>
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
+                        <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                     </div>
                 </div>
                 <div>

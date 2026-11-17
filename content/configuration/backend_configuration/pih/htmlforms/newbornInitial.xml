@@ -691,6 +691,20 @@
         </div>
     </section>
 
+    <section id="scores" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Scores">
+        <div class="section-container ">
+            <div>
+                <label>
+                    <uimessage code="Modified Sick Neonatal Score (MSNS) (0-16)"/>
+                </label>
+                <p class="small">
+                    <obs conceptId="PIH:21780" />
+                </p>
+            </div>
+        </div>
+    </section>
+
     <section id="dx" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Diagnoses">
         <div class="section-container">
@@ -834,6 +848,7 @@
             <p class="side-by-side">
                 <div id="disposition">
                     <encounterDisposition id="encounter-disposition" />
+                    <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                 </div>
             </p>
 

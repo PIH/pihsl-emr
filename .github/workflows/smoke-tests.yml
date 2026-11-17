@@ -5,13 +5,13 @@ on:
   workflow_call:
 
 jobs:
-  kgh-test:
+  kgh-ci:
     if: github.repository_owner == 'PIH'
     uses: PIH/openmrs-contrib-distro-tools/.github/workflows/execute-pihemr-smoke-tests.yml@main
     with:
       image_name: partnersinhealth/pihsl-emr
-      instance_name: kgh-test
-      pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-test
+      instance_name: kgh-ci
+      pih_config: sierraLeone,sierraLeone-kgh,sierraLeone-kgh-ci
       seed_image_name: partnersinhealth/pihsl-emr-seed-sierraleone
       suite: sierraleone
       notify_ci_dashboard: true

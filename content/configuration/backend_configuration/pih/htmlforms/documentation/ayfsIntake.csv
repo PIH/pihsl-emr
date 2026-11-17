@@ -37,7 +37,7 @@ Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning h
 Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
 Sexual partner?,Coded,Yes | No,radio,No,no,CIEL:160109,CIEL:1065|CIEL:1066,,
 Unprotected sexual contact within the past month?,Coded,Yes | No,radio,No,no,CIEL:159218,CIEL:1065|CIEL:1066,,
-Symptoms/problems around the genitalia?,Coded,Yes | No,radio,No,no,CIEL:1126,CIEL:1115|CIEL:1116,,
+Symptoms/problems around the genitalia?,Coded,Yes | No,radio,No,no,CIEL:1126,CIEL:1065|CIEL:1066,,
 Diagnoses (encounterDiagnosesByObs),Other,Pick diagnoses,diagnoses widget,No,no,,,,
 STI Diagnosis,Coded,Syphilis | Genital warts | Dysuria | Inguinal bubo | Scrotal swelling | Lower abdominal pain | Urethral discharge syndrome | Genital ulcer | Vaginal discharge syndrome | Anorectal infections,checkbox,No,no,PIH:DIAGNOSIS,CIEL:121812|CIEL:139505|CIEL:118771|CIEL:137155|CIEL:125203|CIEL:157544|CIEL:123529|PIH:GENITAL SORES|CIEL:123395|CIEL:148654,STI Diagnosis,PIH:Visit Diagnoses
 Other STI,Text,N/A,textarea,No,no,PIH:1374,,,

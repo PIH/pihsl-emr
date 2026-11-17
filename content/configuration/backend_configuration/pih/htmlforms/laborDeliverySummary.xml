@@ -522,6 +522,14 @@
         </span>
     </subform>
 
+    <section id="group" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Pregnancy cohort">
+        <div class="section-container">
+            <!-- Pregnancy group -->
+            <subform path="configuration/pih/subforms/pregnancy-group-widget.xml"/>
+        </div>
+    </section>
+
     <section id="onset" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Labour onset">
         <div class="section-container">
@@ -1196,6 +1204,11 @@
                 </p>
             </div>
         </div>
+    </section>
+
+    <section id="mh-phq2" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Mental Health">
+        <subform path="configuration/pih/subforms/mental-health-phq2.xml"/>
     </section>
 
     <section id="documents" sectionTag="fieldset" headerTag="legend" headerStyle="title"

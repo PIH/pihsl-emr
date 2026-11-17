@@ -449,6 +449,7 @@
 
                 <div id="disposition">
                     <encounterDisposition id="encounter-disposition" />
+                    <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                 </div>
             </p>
 

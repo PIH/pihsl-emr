@@ -448,7 +448,7 @@
                     </template>
                     <render viaID="PIH:21498" qLabel="Entire lesion seen" />
                     <render viaID="PIH:21494" qLabel="Covers more than 75% of cervix" />
-                    <render viaID="PIH:21498" qLabel="Extends into endocervical canal/vagina" />
+                    <render viaID="PIH:21495" qLabel="Extends into endocervical canal/vagina" />
                     <render viaID="PIH:21499" qLabel="Eligible for cryotherapy" />
                 </repeat>
             </div>
@@ -572,6 +572,7 @@
                 <div>
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
+                        <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
                     </div>
                 </div>
                 <div>
