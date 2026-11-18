@@ -9,7 +9,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 // they create, so availability (documentation/_availability.e2e.md: enableMCHForms + pregnancy, enterMCH, "Maternal and
 // Child Location" session tag, female >= 10, no FP intake or followup in the visit) is not exercised. The session location
 // (MCH OPD) has the tag, so the Location select is preselected and Save works with the defaults. familyPlanningFollowup.xml
-// has the same formUuid but another encounter type (formEncounterType 52fe1a29-... here), asserted in the save test.
+// used to share this form's formUuid (fixed: SL-1503, 152a5cb); the encounter type differs (formEncounterType 52fe1a29-... here), asserted in the save test.
 //
 // Conditions in the form, from documentation inventory (familyPlanningIntake.inv.md):
 //   toggle CIEL:374 style dim  :137       history row f<id>-date start/end dates are disabled and dimmed until the row is ticked

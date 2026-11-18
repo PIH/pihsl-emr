@@ -24,10 +24,10 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 // procedure autocompletes, EDIT mode, the Next/Save navigation script. VIEW is covered by the full save test (every section) and VW1.
 //
 // Findings (the same issues as gynecologyFollowup.xml, at these lines):
-//   V1 Medium :140,:222  every hidden CIEL:1937 obs has a defaultValue (6, 1-3), so the "showIfEmpty=false" obsgroups (cryotherapy
+//   V1 Medium (fixed: SL-1480, PR #369) :140,:222  every hidden CIEL:1937 obs has a defaultValue (6, 1-3), so the "showIfEmpty=false" obsgroups (cryotherapy
 //                       CIEL:1938 :137, planned procedures PIH:21483 :220) are never empty: each save stores 1 + 3 empty groups
 //                       with only their index. Fix: fill the index from script when the group has a value, or drop the hidden
-//                       defaults. TESTED below (test.fixme).
+//                       defaults. TESTED below.
 //   V2 Low    :87-122   the exam checkboxes carry class normalObs / abnormalObs but nothing makes them exclusive (ancProgress
 //                       and newbornDischarge have a handler): "Normal" and "Condyloma" can be saved together (intent
 //                       unconfirmed, not asserted).
@@ -35,8 +35,8 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //                       visit" (Yes/No): the label asks about suspicion, the concept records a test (concept unconfirmed).
 //   V4 Low    :170      the STI rows use class="{switch}" but their <render>s define finding/name, so the rendered class is
 //                       literally "{switch}" (also :175-181). Harmless, nothing targets it.
-//   VW1 Low   :220-232  the V1 defaults also show in VIEW: the empty planned-procedure groups are rendered as blank "____" lines (3), because the
-//                       groups are never empty. Fix: V1. TESTED below (test.fixme).
+//   VW1 Low (fixed with V1)   :220-232  the V1 defaults also show in VIEW: the empty planned-procedure groups are rendered as blank "____" lines (3), because the
+//                       groups are never empty. Fix: V1. TESTED below.
 //   VW2 Info :161  the STI list (#sti-list) is always rendered in VIEW, as seven empty checkboxes when "STI suspected?" is not Yes (when/thenDisplay is
 //                   ENTER/EDIT only; same as gainNewbornRegister VW1; not tested).
 
@@ -139,10 +139,8 @@ test.describe('gynecologyFollowup', () => {
   });
 
   // V1 (Medium): the hidden CIEL:1937 defaults keep the showIfEmpty="false" obsgroups non-empty, so a save with one exam
-  // finding still stores the procedure groups. Intended behaviour: no procedure obs when none was entered. Remove
-  // test.fixme() when fixed.
+  // finding still stored the procedure groups. Intended behaviour: no procedure obs when none was entered (fixed: SL-1480, PR #369).
   test('saving with no procedure entered stores no procedure groups (V1)', async ({ page, api }) => {
-    test.fixme();
     await open(page);
     await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
     await save(page);
@@ -154,9 +152,8 @@ test.describe('gynecologyFollowup', () => {
   });
 
   // VW1 (Low): the V1 defaults also keep the empty planned-procedure groups in the VIEW, as blank "____" lines (3) next to the one real
-  // "Other procedure planned" line. Intended: the empty groups are not shown. Remove test.fixme() when V1 is fixed.
+  // "Other procedure planned" line. Intended: the empty groups are not shown (fixed with V1, SL-1480).
   test('VIEW: no blank procedure lines for procedures that were not entered (VW1)', async ({ page, api }) => {
-    test.fixme();
     await open(page);
     await page.locator('#physical-exam').getByLabel('PAP test performed', { exact: true }).check();
     await save(page);
