@@ -508,4 +508,17 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/cascade_void_patients_update.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20261118-SL-1463-void-empty-maternal-death-groups" author="cbho">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from obs where void_reason = 'SL-1463: void empty Maternal Death obs group';
+            </sqlCheck>
+        </preConditions>
+        <comment>
+            SL-1463: the Maternal Death form saved the secondary-cause obs group (PIH:21678) and action-point groups
+            (PIH:21673) with only their hidden marker obs (CIEL:159946, CIEL:165416) on every review. Void those groups,
+            and their marker obs, on Maternal Death encounters when the marker is their only non-voided child.
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/void_empty_maternal_death_groups.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>
