@@ -13,7 +13,7 @@ Age at first birth,Coded,N/A,radio,No,no,CIEL:160339,,,
 Cigarette smoking?,Coded,Yes | No,radio,No,no,CIEL:163731,CIEL:1065|CIEL:1066,,
 Other OB/Gynecology history,Coded,Dysmenorrhea | Prior cesarean delivery,checkbox,No,no,PIH:DIAGNOSIS,CIEL:127|CIEL:113814,Other OB/Gynecology history,PIH:Visit Diagnoses
 Other OB/Gynecology history,Text,N/A,textarea,No,no,CIEL:160221,,,
-Cervical Cancer Screening,Coded,"VIA screening | Postponed cryotherapy | Treatment complication related | Cryotherapy, TA, LEEP | One year follow-up | One year follow-up appointment after cryotherapy treatment at last visit | Routine VIA screening | Screening patient who had VIA-negative at last screening visit | Referral for Cryotherapy, TA, LEEP",radio,No,no,CIEL:164181,PIH:21609|PIH:21600|PIH:21601|PIH:21602|PIH:21603|PIH:21604|PIH:21605|PIH:21606|PIH:21607,,
+Visit type,Coded,"VIA screening | Postponed cryotherapy | Treatment complication related | Cryotherapy, TA, LEEP | One year follow-up | One year follow-up appointment after cryotherapy treatment at last visit | Routine VIA screening | Screening patient who had VIA-negative at last screening visit | Referral for Cryotherapy, TA, LEEP",radio,No,no,CIEL:164181,PIH:21609|PIH:21600|PIH:21601|PIH:21602|PIH:21603|PIH:21604|PIH:21605|PIH:21606|PIH:21607,,
 HIV Status,Coded,Positive | Negative | Unknown,radio,No,no,PIH:3753,CIEL:703|CIEL:664|CIEL:1067,,
 ART Status,Coded,on ART | not on ART,radio,No,no,CIEL:160119,CIEL:1065|CIEL:1066,,
 HCT accepted,Coded,Yes | No,radio,No,no,CIEL:165328,CIEL:1065|CIEL:1066,,

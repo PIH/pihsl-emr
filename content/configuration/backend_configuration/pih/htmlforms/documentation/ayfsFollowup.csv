@@ -1,0 +1,37 @@
+Question,Datatype,Possible Answers,input type,required?,skip logic?,concept for question,concepts for answers,group name (if part of concept group),concept group mapping
+Subform: encounter-provider-location-date.xml,Other,Subform — configuration/pih/subforms/encounter-provider-location-date.xml,subform,No,no,,,,
+"Has anyone hit, kicked, punched, or otherwise hurt you in the past year?",Coded,Yes | No,radio,Yes,no,PIH:21679,CIEL:1065|CIEL:1066,,
+"Has anyone insulted you, ignored you, yelled at you or made you feel ashamed or bad about yourself in the past year?",Coded,Yes | No,radio,Yes,no,PIH:21680,CIEL:1065|CIEL:1066,,
+"Has anyone forced you to have sex, or perform any sexual act or touched you sexually in any way that you did not want in the past year?",Coded,Yes | No,radio,Yes,no,PIH:21681,CIEL:1065|CIEL:1066,,
+"Has anyone made you feel afraid, unsafe or in danger in the past year?",Coded,Yes | No,radio,Yes,no,PIH:21682,CIEL:1065|CIEL:1066,,
+Reason for visit,Coded,Family planning | Maternal health clinic | STI service | Voluntary counseling and testing center | Treatment of minor illness | General health education,checkbox,No,no,CIEL:167788,PIH:FAMILY PLANNING|PIH:ANTENATAL CLINIC|PIH:SEXUALLY TRANSMITTED INFECTION PROGRAM|CIEL:159940|PIH:21701|PIH:21700,,
+Reason for visit,Coded,Other,checkbox,No,Other → show #other-visit-reason,CIEL:167788,CIEL:5622,,
+"if other, specify reason for the visit",Text,N/A,textarea,No,no,CIEL:160430,,,
+Combined oral contraceptive (COC),Coded,Ethinyl estradoil / Levonorgestrel,checkbox,No,no,CIEL:374,CIEL:104625,Combined oral contraceptive (COC),PIH:Family planning construct
+Combined oral contraceptive (COC),Coded,Other combined oral contraceptive (COC),checkbox,No,no,CIEL:374,CIEL:159783,Combined oral contraceptive (COC),PIH:Family planning construct
+Progestin-only orals,Coded,Levonorgestrel,checkbox,No,no,CIEL:374,CIEL:78796,Progestin-only orals,PIH:Family planning construct
+Progestin-only orals,Coded,Other progestin-only pill (POP),checkbox,No,no,CIEL:374,CIEL:80784,Progestin-only orals,PIH:Family planning construct
+Injectables,Coded,Medroxyprogesterone acetate (Depo-provera) | Sayana press,checkbox,No,no,CIEL:374,CIEL:907|PIH:21450,Injectables,PIH:Family planning construct
+Injectables,Coded,Other injectable contraceptive,checkbox,No,no,CIEL:374,CIEL:5279,Injectables,PIH:Family planning construct
+Intrauterine Contraceptive Device (IUCD),Coded,Copper T IUD | Mirena hormone-eluting intrauterine device (IUD),checkbox,No,no,CIEL:374,PIH:21478|CIEL:165464,Intrauterine Contraceptive Device (IUCD),PIH:Family planning construct
+Implants,Coded,Jadelle (implantable contraceptive) | Etonogestrel | Levoplant,checkbox,No,no,CIEL:374,CIEL:1873|CIEL:76022|PIH:21756,Implants,PIH:Family planning construct
+Implants,Coded,Other implant,checkbox,No,no,CIEL:374,CIEL:162422,Implants,PIH:Family planning construct
+Date of implant placement,Date,N/A,date,No,no,PIH:3203,,,
+Condom,Coded,Male condom | Female condom,checkbox,No,no,CIEL:374,CIEL:164813|CIEL:164814,Condom,PIH:Family planning construct
+Number of male condoms,Numeric,N/A,number,No,no,PIH:21757,,Condom,PIH:Family planning construct
+Number of female condoms,Numeric,N/A,number,No,no,PIH:21758,,Condom,PIH:Family planning construct
+Other contraceptive methods,Coded,Emergency contraceptive pills,checkbox,No,no,CIEL:160693,CIEL:160570,,
+specify other method,Text,N/A,text,No,no,PIH:2996,,,
+Sexual partner?,Coded,Yes | No,radio,No,no,CIEL:160109,CIEL:1065|CIEL:1066,,
+Unprotected sexual contact within the past month?,Coded,Yes | No,radio,No,no,CIEL:159218,CIEL:1065|CIEL:1066,,
+Symptoms/problems around the genitalia?,Coded,Yes | No,radio,No,no,CIEL:1126,CIEL:1065|CIEL:1066,,
+Subform: rapid-tests-widget.xml,Other,Subform — configuration/pih/subforms/rapid-tests-widget.xml,subform,No,no,,,,
+Diagnoses (encounterDiagnosesByObs),Other,Pick diagnoses,diagnoses widget,No,no,,,,
+Free Text Comments,Text,N/A,textarea,No,no,PIH:CLINICAL IMPRESSION COMMENTS,,,
+Common diagnoses,Coded,STI | Malaria | Typhoid | Sickle-cell | Common cold | Body pain | Headache | Appendicitis | Dental | Upper respiratory tract infection | UTI | PC bleeding,checkbox,No,no,PIH:DIAGNOSIS,CIEL:112992|CIEL:116128|CIEL:141|CIEL:117703|PIH:Common cold|CIEL:114403|CIEL:139084|CIEL:121518|PIH:7631|CIEL:149478|CIEL:111633|CIEL:150802,Common diagnoses,PIH:Visit Diagnoses
+STI diagnoses,Coded,Syphilis | Genital warts | Dysuria | Inguinal bubo | Scrotal swelling | Lower abdominal pain | Urethral discharge syndrome | Genital ulcer | Vaginal discharge syndrome | Anorectal infections,checkbox,No,no,PIH:DIAGNOSIS,CIEL:112493|CIEL:139505|CIEL:118771|CIEL:137155|CIEL:125203|CIEL:157544|CIEL:123529|PIH:GENITAL SORES|CIEL:123395|CIEL:148654,STI diagnoses,PIH:Visit Diagnoses
+Subform: drug-order-widget.xml,Other,Subform — configuration/pih/subforms/drug-order-widget.xml,subform,No,no,,,,
+Disposition,Other,Disposition widget,disposition widget,Yes,no,,,,
+Subform: cause-of-death-tree-widget.xml,Other,Subform — configuration/pih/subforms/cause-of-death-tree-widget.xml,subform,No,no,,,,
+Next appointment date,Date,N/A,date,No,no,PIH:RETURN VISIT DATE,,,
+Referred to:,Coded,NCD clinic | TB / HIV clinic | Outpatient consultation | Obstetrics/Gynecology | Mental health | Rainbow clinic | Dabunde Sickle Clinic | Other,checkbox,No,no,CIEL:1272,CIEL:168363|CIEL:168362|PIH:OUTPATIENT CONSULTATION|PIH:7831|PIH:MENTAL HEALTH SERVICES|PIH:20638|PIH:21714|CIEL:5622,Referred to:,

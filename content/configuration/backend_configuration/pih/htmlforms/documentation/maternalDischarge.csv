@@ -1,7 +1,7 @@
 Question,Datatype,Possible Answers,input type,required?,skip logic?,concept for question,concepts for answers,group name (if part of concept group),concept group mapping
 Subform: encounter-provider-location-date.xml,Other,Subform — configuration/pih/subforms/encounter-provider-location-date.xml,subform,No,no,,,,
 Diagnoses (encounterDiagnosesByObs),Other,Pick diagnoses,diagnoses widget,No,no,,,,
-Pih task maternal Discharge,Text,N/A,textarea,No,no,CIEL:160221,,,
+Maternal Discharge,Text,N/A,textarea,No,no,CIEL:160221,,,
 Summary of investigation done and results,Text,N/A,textarea,No,no,CIEL:165399,,,
 Summary of management in the hospital,Text,N/A,textarea,No,no,CIEL:165399,,,
 Subform: drug-order-widget.xml,Other,Subform — configuration/pih/subforms/drug-order-widget.xml,subform,No,no,,,,
