@@ -5,39 +5,9 @@ Family Planning Initial,Coded,Method switch | Post abortion,checkbox,No,no,PIH:1
 For post-partum family planning,Coded,Less than 48 hours | 48 hours to 6 weeks | 7 weeks - 1 year,radio,No,no,PIH:21472,PIH:21473|PIH:21474|PIH:21475,,
 Subform: prior-vital-signs-widget.xml,Other,Subform — configuration/pih/subforms/prior-vital-signs-widget.xml,subform,No,no,,,,
 Subform: vital-signs-wt-ht-bp-widget.xml,Other,Subform — configuration/pih/subforms/vital-signs-wt-ht-bp-widget.xml,subform,No,no,,,,
-Family planning history: method,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning | Lactational amenorrhea | Tubal ligation | Vasectomy,checkbox,No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277|CIEL:136163|CIEL:1472|CIEL:1489,Family planning history: method,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
+Family planning history: method,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning | Lactational amenorrhea | Tubal ligation | Vasectomy,"checkbox (table: one row per method, each with its own start and end date)",No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277|CIEL:136163|CIEL:1472|CIEL:1489,Family planning history: method,PIH:Family planning history construct
+Start date,Date,N/A,date (per method row),No,no,CIEL:163757,,Family planning history: method,PIH:Family planning history construct
+End date,Date,N/A,date (per method row),No,no,CIEL:163758,,Family planning history: method,PIH:Family planning history construct
 Family planning counselling,Coded,Yes | No,radio,No,no,CIEL:1382,CIEL:1065|CIEL:1066,,
 Accepts and receives family planning,Coded,Yes | No,radio,No,no,CIEL:166421,CIEL:1065|CIEL:1066,,
 Combined oral contraceptive (COC),Coded,Ethinyl estradoil / Levonorgestrel,checkbox,No,no,CIEL:374,CIEL:104625,Combined oral contraceptive (COC),PIH:Family planning construct
