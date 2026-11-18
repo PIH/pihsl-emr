@@ -2,7 +2,7 @@ Question,Datatype,Possible Answers,input type,required?,skip logic?,concept for 
 Subform: encounter-provider-location-date.xml,Other,Subform — configuration/pih/subforms/encounter-provider-location-date.xml,subform,No,no,,,,
 Subform: prior-vital-signs-widget.xml,Other,Subform — configuration/pih/subforms/prior-vital-signs-widget.xml,subform,No,no,,,,
 Subform: vital-signs-wt-ht-bp-widget.xml,Other,Subform — configuration/pih/subforms/vital-signs-wt-ht-bp-widget.xml,subform,No,no,,,,
-Start Date,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning | Lactational amenorrhea | Tubal ligation | Vasectomy,checkbox,No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277|CIEL:136163|CIEL:1472|CIEL:1489,Start Date,PIH:Family planning history construct
+Family planning history: method,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning | Lactational amenorrhea | Tubal ligation | Vasectomy,checkbox,No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277|CIEL:136163|CIEL:1472|CIEL:1489,Family planning history: method,PIH:Family planning history construct
 Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
 Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
 Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
@@ -60,7 +60,7 @@ Sti Suspected,Coded,Chlamydia | Gonorrhea | Genital herpes | Hep B | HPV | Trich
 Comment,Coded,N/A,radio,No,no,PIH:13231,,,
 Tannerstage,Coded,Stage I | Stage II | Stage III | Stage IV | Stage V,radio,No,no,PIH:5310,CIEL:160771|CIEL:160774|CIEL:160778|CIEL:160782|PIH:11931,,
 Subform: prior-procedure-widget.xml,Other,Subform — configuration/pih/subforms/prior-procedure-widget.xml,subform,No,no,,,,
-Zl if Other Specify,Coded,N/A,radio,No,no,CIEL:165264,,,
+"if other, specify:",Coded,N/A,radio,No,no,CIEL:165264,,,
 Other procedure planned,Text,N/A,text,No,no,PIH:10772,,,
 Diagnoses (encounterDiagnosesByObs),Other,Pick diagnoses,diagnoses widget,No,no,,,,
 Subform: rapid-tests-widget.xml,Other,Subform — configuration/pih/subforms/rapid-tests-widget.xml,subform,No,no,,,,

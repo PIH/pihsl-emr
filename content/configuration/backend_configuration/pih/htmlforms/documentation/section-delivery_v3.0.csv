@@ -3,10 +3,10 @@ Admission date/time,Coded,N/A,radio,No,no,CIEL:1640,,,
 Grava,Coded,N/A,radio,No,no,CIEL:5624,,,
 Para,Coded,N/A,radio,No,no,CIEL:1053,,,
 Gestational age,Coded,N/A,radio,No,no,CIEL:165425,,,
-Calculated Estimated Delivery Date,Date,N/A,date,No,no,CIEL:1427,,,
+Last menstrual period date (hidden field used to calculate EDD),Date,N/A,date,No,no,CIEL:1427,,,
 Time of start of labour,Coded,N/A,radio,No,no,CIEL:163444,,,
 Presentation and position:,Coded,N/A,radio,No,Other → show #other-presentation,CIEL:160090,,,
-Zl if Other Specify,Coded,N/A,radio,No,no,PIH:14414,,,
+"if other, specify:",Coded,N/A,radio,No,no,PIH:14414,,,
 Delivery date/time,Date,N/A,date,Yes,no,CIEL:5599,,,
 Type,Coded,Spontaneous vaginal delivery | Breech | Delivery by cesarean section,radio,No,no,PIH:11663,CIEL:1170|PIH:1172|CIEL:155884,,
 Outcome,Coded,Alive | FSB | MSB,radio,No,no,CIEL:159917,CIEL:151849|CIEL:159916|CIEL:135436,,
@@ -23,11 +23,11 @@ Mother,Coded,Gbv | Chorioamnionitis | severe pre-eclampsia | Eclampsia | Prolong
 Mother,Coded,Other STI,checkbox,No,no,PIH:6644,PIH:174,,
 Mother,Coded,Other,checkbox,No,no,PIH:6644,PIH:OTHER,,
 Mother,Coded,Postpartum hemorrhage,checkbox,No,no,PIH:DIAGNOSIS,PIH:POSTPARTUM HEMORRHAGE,Mother,PIH:Visit Diagnoses
-Mother,Coded,N/A,radio,No,no,PIH:Estimated blood loss,,,
+Estimated blood loss,Numeric,N/A,number,No,no,PIH:Estimated blood loss,,,
 Baby,Coded,abnormal placenta | abnormal presentation | cephalopelvic distortion | low birth weight | low birth weight | low birth weight | low birth weight | low birth weight | Premature less than 28 weeks | Premature (28-32) | Premature (32-36) | Respiratory distress | birth asphyxia | Fetal distress | Fetal demise | fetal retardation | Congenital malformation | rupture membrane | aspiration meconium,checkbox,No,no,PIH:12564,CIEL:130109|CIEL:115939|CIEL:145935|CIEL:162217|CIEL:162218|CIEL:162219|CIEL:162237|CIEL:162239|CIEL:111523|PIH:11789|PIH:11790|CIEL:127639|PIH:Birth Asphyxia|PIH:Fetal distress|CIEL:116642|CIEL:118245|CIEL:143849|CIEL:129211|CIEL:115866,Baby,
 HCW Name,Coded,N/A,radio,No,no,PIH:6592,,Newborn condition,CIEL:163391
 HCW Cadre:,Coded,N/A,radio,No,Other → show #other-role,CIEL:1573,,Newborn condition,CIEL:163391
-Zl if Other Specify,Coded,N/A,radio,No,no,PIH:14415,,Newborn condition,CIEL:163391
+"if other, specify:",Coded,N/A,radio,No,no,PIH:14415,,Newborn condition,CIEL:163391
 Counselled on family planning before discharge,Coded,Yes | No,radio,No,no,CIEL:1382,CIEL:1065|CIEL:1066,,
 Accepted and received a family planning before discharge,Coded,Yes | No,radio,No,no,CIEL:166421,CIEL:1065|CIEL:1066,,
 PAC (PostAbortion Care) type,Coded,Misoprostol,checkbox,No,no,PIH:14376,CIEL:79984,,

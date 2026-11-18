@@ -4,7 +4,7 @@ Labour start date/time,Coded,N/A,radio,No,no,CIEL:163444,,,
 Induced labor,Coded,Yes | No,radio,No,Yes → show #induced-details,CIEL:151750,CIEL:1065|CIEL:1066,,
 Induction date/time,Coded,N/A,radio,No,no,CIEL:168755,,,
 Method of induction,Coded,Mechanical induction | Oxytocin | Misoprostol,radio,No,no,CIEL:168751,CIEL:168752|CIEL:168753|CIEL:168754,,
-Labour start date/time,Coded,Companion Present,checkbox,No,no,PIH:6547,PIH:14646,,
+Companion present,Coded,Companion Present,checkbox,No,no,PIH:6547,PIH:14646,,
 Duration of first stage,Coded,N/A,radio,No,no,PIH:20114,,,
 Duration of first stage,Coded,N/A,radio,No,no,PIH:20115,,,
 Second stage start date/time,Coded,N/A,radio,No,no,PIH:20113,,,
@@ -24,7 +24,7 @@ Breastfeeding initiate date Time,Coded,N/A,radio,No,no,PIH:21116,,,
 Skin To Skin initiated,Coded,,checkbox,No,no,CIEL:1651,CIEL:164173,,
 Uterotonic Provided,Coded,Yes | No,radio,No,Yes → show #uteroDate,PIH:14373,CIEL:1065|CIEL:1066,,
 Uterotonic Datetime,Coded,N/A,radio,No,no,PIH:21403,,,
-pihcore.fullAMTSL,Coded,Yes | No,radio,No,no,CIEL:163452,CIEL:1065|CIEL:1066,,
+Active management of third stage of labour (AMTSL),Coded,Yes | No,radio,No,no,CIEL:163452,CIEL:1065|CIEL:1066,,
 Duration of third stage,Coded,N/A,radio,No,no,PIH:20124,,,
 Duration of third stage,Coded,N/A,radio,No,no,PIH:20125,,,
 Total duration of labor,Coded,N/A,radio,No,no,PIH:20457,,,
@@ -38,3 +38,17 @@ Number of sutures,Coded,N/A,radio,No,no,PIH:20126,,,
 Subform: lab-results-section.xml,Other,Subform — configuration/pih/subforms/lab-results-section.xml,subform,No,no,,,,
 Perineum comments,Coded,N/A,radio,No,no,PIH:20128,,,
 Upload partogram,Coded,N/A,radio,No,no,PIH:13756,,,
+Date/time of delivery,Datetime,N/A,datetime,No,no,PIH:5599,,Infant (repeated for infants 1-3),PIH:13555
+Outcome,Coded,Alive | FSB | MSB,radio,No,no,CIEL:159917,CIEL:151849|CIEL:159916|CIEL:135436,Infant (repeated for infants 1-3),PIH:13555
+Sex,Coded,M | F,radio,No,no,CIEL:1587,CIEL:1534|CIEL:1535,Infant (repeated for infants 1-3),PIH:13555
+Birth weight,Numeric,N/A,number,No,no,CIEL:5916,,Infant (repeated for infants 1-3),PIH:13555
+Birth length,Numeric,N/A,number,No,no,CIEL:163554,,Infant (repeated for infants 1-3),PIH:13555
+Head circumference,Numeric,N/A,number,No,no,CIEL:163555,,Infant (repeated for infants 1-3),PIH:13555
+Pre-delivery FHR,Coded,+ | -,radio,No,no,CIEL:165377,CIEL:1065|CIEL:1066,Infant (repeated for infants 1-3),PIH:13555
+Apgar score (at 1 minute),Numeric,N/A,number,No,no,PIH:14419,,Infant (repeated for infants 1-3),PIH:13555
+Apgar score (at 5 minutes),Numeric,N/A,number,No,no,CIEL:159604,,Infant (repeated for infants 1-3),PIH:13555
+Apgar score (at 10 minutes),Numeric,N/A,number,No,no,PIH:14785,,Infant (repeated for infants 1-3),PIH:13555
+Is baby registered in EMR?,Coded,No | Yes | Do Not Register,radio,No,no,PIH:20150,CIEL:1066|CIEL:1065|CIEL:1175,Infant (repeated for infants 1-3),PIH:13555
+Foetal presentation,Coded,N/A,radio,No,Other → show #other-presentation,CIEL:160090,,Infant (repeated for infants 1-3),PIH:13555
+"if other, specify:",Text,N/A,text,No,no,PIH:14414,,Infant (repeated for infants 1-3),PIH:13555
+Method of delivery,Coded,Spontaneous vaginal delivery | Delivery by cesarean section | Delivery by vacuum extraction,radio,No,no,PIH:11663,CIEL:1170|CIEL:155884|CIEL:159902,Infant (repeated for infants 1-3),PIH:13555

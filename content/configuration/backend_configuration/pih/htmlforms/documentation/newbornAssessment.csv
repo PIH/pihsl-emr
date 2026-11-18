@@ -1,7 +1,7 @@
 Question,Datatype,Possible Answers,input type,required?,skip logic?,concept for question,concepts for answers,group name (if part of concept group),concept group mapping
 Subform: encounter-provider-location-date.xml,Other,Subform — configuration/pih/subforms/encounter-provider-location-date.xml,subform,No,no,,,,
-Pih task newborn Assessment,Coded,Type 1 Diabetes | Type 2 Diabetes | Gestational diabetes | Eclampsia | Postpartum haemorrhage | Preeclampsia | Victim of GBV (gender-based violence) | Multiple gestation | Signs of foetal distress | Abnormal foetal presentation | Sickle-cell disease | Other,checkbox,No,no,PIH:3334,CIEL:142474|CIEL:142473|CIEL:1449|CIEL:118744|CIEL:230|CIEL:129251|CIEL:165088|CIEL:115491|CIEL:118256|CIEL:150862|CIEL:117703|CIEL:5622,Pih task newborn Assessment,
-Zl if Other Specify,Coded,N/A,radio,No,no,PIH:14679,,,
+Newborn Assessment,Coded,Type 1 Diabetes | Type 2 Diabetes | Gestational diabetes | Eclampsia | Postpartum haemorrhage | Preeclampsia | Victim of GBV (gender-based violence) | Multiple gestation | Signs of foetal distress | Abnormal foetal presentation | Sickle-cell disease | Other,checkbox,No,no,PIH:3334,CIEL:142474|CIEL:142473|CIEL:1449|CIEL:118744|CIEL:230|CIEL:129251|CIEL:165088|CIEL:115491|CIEL:118256|CIEL:150862|CIEL:117703|CIEL:5622,Newborn Assessment,
+"if other, specify:",Coded,N/A,radio,No,no,PIH:14679,,,
 Date & time of delivery,Date,N/A,date,No,no,CIEL:5599,,,
 Gestation age,Coded,N/A,radio,No,no,CIEL:165425,,,
 Type of delivery,Coded,Spontaneous vaginal delivery | Breech | Delivery by cesarean section,radio,No,no,PIH:11663,CIEL:1170|PIH:1172|CIEL:155884,,
@@ -27,4 +27,4 @@ Birth Injury,Coded,Yes | No,radio,No,Yes → show #birthInjury-details,CIEL:1472
 Birth injury details,Text,N/A,textarea,No,no,CIEL:160686,,,
 Overall condition,Coded,Satisfactory | Deteriorated,radio,No,no,CIEL:160116,CIEL:160113|CIEL:160115,,
 Disposition,Other,Disposition widget,disposition widget,Yes,no,,,,
-Pih app notes summary,Text,N/A,textarea,No,no,CIEL:161011,,,
+Notes,Text,N/A,textarea,No,no,CIEL:161011,,,

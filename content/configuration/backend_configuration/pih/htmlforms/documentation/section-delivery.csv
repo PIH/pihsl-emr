@@ -3,7 +3,7 @@ Admission date/time,Coded,N/A,radio,No,no,CIEL:1640,,,
 Grava,Coded,N/A,radio,No,no,CIEL:5624,,,
 Para,Coded,N/A,radio,No,no,CIEL:1053,,,
 Gestational age,Coded,N/A,radio,No,no,CIEL:165425,,,
-Calculated Estimated Delivery Date,Date,N/A,date,No,no,CIEL:1427,,,
+Last menstrual period date (hidden field used to calculate EDD),Date,N/A,date,No,no,CIEL:1427,,,
 Time of start of labour,Coded,N/A,radio,No,no,CIEL:163444,,,
 Was the partograph used?,Coded,Yes | No,radio,No,no,PIH:13964,CIEL:1065|CIEL:1066,,
 Uterotonic given immediately after birth? (Oxytocin/ HSC),Coded,Yes | No,radio,No,no,PIH:14373,CIEL:1065|CIEL:1066,,
@@ -13,12 +13,12 @@ Mother,Coded,Victim of GBV | Chorioamnionitis | Severe pre-eclampsia | Eclampsia
 Mother,Coded,Other STI,checkbox,No,no,PIH:6644,PIH:174,,
 Mother,Coded,Other,checkbox,No,no,PIH:6644,PIH:OTHER,,
 Mother,Coded,Postpartum hemorrhage,checkbox,No,no,PIH:DIAGNOSIS,PIH:POSTPARTUM HEMORRHAGE,Mother,PIH:Visit Diagnoses
-Mother,Coded,N/A,radio,No,no,CIEL:169036,,,
-Mother,Coded,N/A,radio,No,no,CIEL:169037,,,
+Estimated blood loss BEFORE delivery,Numeric,N/A,number,No,no,CIEL:169036,,,
+Estimated blood loss AFTER delivery,Numeric,N/A,number,No,no,CIEL:169037,,,
 Baby,Coded,"Placental abnormality | Malpresentation of foetus | Cephalopelvic disproportion | Low birth weight infant, 1000-1249 gm | low birth weight infant, 1250-1499 gm | low birth weight infant, 1500-1749 gm | low birth weight infant, 1750-1999 gm | low birth weight infant, 2000-2499 gm | Extreme premature (less than 28 weeks | Very premature (28 to 32 weeks) | Moderate premature (32 to 36 weeks) | Respiratory distress | Birth asphyxia | Foetal distress | Intra-uterine foetal demise | Intra-uterine growth retardation | Congenital malformation | Premature rupture of membranes | Meconium aspiration",checkbox,No,no,PIH:12564,CIEL:130109|CIEL:115939|CIEL:145935|CIEL:162217|CIEL:162218|CIEL:162219|CIEL:162237|CIEL:162239|CIEL:111523|PIH:11789|PIH:11790|CIEL:127639|PIH:Birth Asphyxia|PIH:Fetal distress|CIEL:116642|CIEL:118245|CIEL:143849|CIEL:129211|CIEL:115866,Baby,
 HCW Name,Coded,N/A,radio,No,no,PIH:6592,,Weeks,CIEL:163391
 HCW Cadre:,Coded,Doctor | SECHN Midwife | RN Midwife | ESO | Other,radio,No,Other → show #other-role,CIEL:1573,PIH:DOCTOR|PIH:20156|PIH:20157|PIH:20158|CIEL:5622,Weeks,CIEL:163391
-Zl if Other Specify,Coded,N/A,radio,No,no,PIH:14415,,Weeks,CIEL:163391
+"if other, specify:",Coded,N/A,radio,No,no,PIH:14415,,Weeks,CIEL:163391
 Counselled on family planning before discharge,Coded,Yes | No,radio,No,no,CIEL:1382,CIEL:1065|CIEL:1066,,
 Accepted and received a family planning before discharge,Coded,Yes | No,radio,No,no,CIEL:166421,CIEL:1065|CIEL:1066,,
 Discharge Date,Coded,N/A,radio,No,no,PIH:3800,,,

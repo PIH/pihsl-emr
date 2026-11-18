@@ -1,6 +1,6 @@
 Question,Datatype,Possible Answers,input type,required?,skip logic?,concept for question,concepts for answers,group name (if part of concept group),concept group mapping
 Delivery Date,Coded,N/A,radio,No,no,CIEL:5599,,,
-Calculated Estimated Delivery Date,Date,N/A,date,No,no,CIEL:1427,,,
+Last menstrual period date (hidden field used to calculate EDD),Date,N/A,date,No,no,CIEL:1427,,,
 Birthweight,Coded,N/A,radio,Yes,no,CIEL:5916,,,
 Birthweight,Coded,N/A,radio,No,no,PIH:Estimated blood loss,,,
 Delivery Type,Coded,Vaginal delivery,checkbox,No,no,PIH:11663,CIEL:162595,,

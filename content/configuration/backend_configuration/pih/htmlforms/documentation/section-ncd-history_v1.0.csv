@@ -48,7 +48,7 @@ On ACE inhibitors,Coded,Yes | No | Unknown,radio,No,no,CIEL:167998,PIH:YES|PIH:N
 On NSAIDs,Coded,Yes | No | Unknown,radio,No,no,PIH:14712,PIH:YES|PIH:NO|PIH:UNKNOWN,,
 On Nephrotoxic drugs,Coded,Yes | No | Unknown,radio,No,no,PIH:14713,PIH:YES|PIH:NO|PIH:UNKNOWN,,
 Family history of cardiac disease,Coded,Yes | No | Unknown,radio,No,no,CIEL:140231,PIH:YES|PIH:NO|PIH:UNKNOWN,,
-Pregnancy,Coded,Yes | No | Unknown,radio,No,no,CIEL:5272,PIH:YES|PIH:NO|PIH:UNKNOWN,,
+Pregnant,Coded,Pregnant,radio,No,no,CIEL:5272,PIH:YES|PIH:NO|PIH:UNKNOWN,,
 Risk factors for liver cirrhosis,Coded,History of alcohol use | Herbal traditional medications | Obesity | Current drug user,checkbox,No,no,PIH:14873,CIEL:159449|CIEL:5841|CIEL:115115|CIEL:160666,Risk factors for liver cirrhosis,
 Risk factors for liver cirrhosis,Coded,Others,checkbox,No,no,PIH:14873,CIEL:5622,,
 Risk factors for Hepatitis B,Coded,Maternal infection | Sibling infection | Partner infected | Blood transfusion | Traditional ceremony | Unknown | None,checkbox,No,no,PIH:14874,CIEL:168292|CIEL:168293|CIEL:168294|CIEL:1063|PIH:14920|CIEL:1067|CIEL:1107,Risk factors for Hepatitis B,
