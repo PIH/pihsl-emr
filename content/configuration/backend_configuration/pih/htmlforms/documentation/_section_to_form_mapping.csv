@@ -1,100 +1,118 @@
-filename,path,encounter_type,formName
-ancFollowup.xml,configuration/pih/htmlforms/ancFollowup.xml,ANC_FOLLOWUP,AncFollowup
-ancFollowup_v1.0.xml,configuration/pih/htmlforms/ancFollowup_v1.0.xml,ANC_FOLLOWUP,AncFollowup v1.0
-ancFollowup_v1.1.xml,configuration/pih/htmlforms/ancFollowup_v1.1.xml,ANC_FOLLOWUP,AncFollowup v1.1
-ancFollowup_v2.0.xml,configuration/pih/htmlforms/ancFollowup_v2.0.xml,ANC_FOLLOWUP,AncFollowup v2.0
-ancIntake.xml,configuration/pih/htmlforms/ancIntake.xml,ANC_INTAKE,AncIntake
-ancIntake_v1.0.xml,configuration/pih/htmlforms/ancIntake_v1.0.xml,ANC_INTAKE,AncIntake v1.0
-ancIntake_v1.1.xml,configuration/pih/htmlforms/ancIntake_v1.1.xml,ANC_INTAKE,AncIntake v1.1
-ancIntake_v2.0.xml,configuration/pih/htmlforms/ancIntake_v2.0.xml,ANC_INTAKE,AncIntake v2.0
-ancProgress.xml,configuration/pih/htmlforms/ancProgress.xml,SIERRA_LEONE_ANC_PROGRESS (Sierra Leone ANC progress (inpatient)),ANC Progress
-ballardScore.xml,configuration/pih/htmlforms/ballardScore.xml,SIERRA_LEONE_BALLARD_SCORE,Ballard Score
-checkin.xml,configuration/pih/htmlforms/checkin.xml,CHECK_IN,Checkin
-checkinMaternal.xml,configuration/pih/htmlforms/checkinMaternal.xml,CHECK_IN,Checkin Maternal
-checkin_v2.0.xml,configuration/pih/htmlforms/checkin_v2.0.xml,CHECK_IN,Checkin v2.0
-delivery.xml,configuration/pih/htmlforms/delivery.xml,MCH_DELIVERY,Delivery
-delivery_v1.0.xml,configuration/pih/htmlforms/delivery_v1.0.xml,MCH_DELIVERY,Delivery v1.0
-delivery_v1.1.xml,configuration/pih/htmlforms/delivery_v1.1.xml,MCH_DELIVERY,Delivery v1.1
-delivery_v2.0.xml,configuration/pih/htmlforms/delivery_v2.0.xml,MCH_DELIVERY,Delivery v2.0
-delivery_v3.0.xml,configuration/pih/htmlforms/delivery_v3.0.xml,MCH_DELIVERY,Delivery v3.0
-dispensing.xml,configuration/pih/htmlforms/dispensing.xml,MEDICATION_DISPENSED,Dispensing
-gainMaternalRegister.xml,configuration/pih/htmlforms/gainMaternalRegister.xml,,Gain Maternal Register
-gainNewbornRegister.xml,configuration/pih/htmlforms/gainNewbornRegister.xml,,Gain Newborn Register
-inpatientNewbornVitals.xml,configuration/pih/htmlforms/inpatientNewbornVitals.xml,,Inpatient Newborn Vitals
-inpatientVitals.xml,configuration/pih/htmlforms/inpatientVitals.xml,,Inpatient Vitals
-laborDeliverySummary.xml,configuration/pih/htmlforms/laborDeliverySummary.xml,LABOR_DELIVERY_SUMMARY,Labor Delivery Summary
-laborProgress.xml,configuration/pih/htmlforms/laborProgress.xml,SIERRA_LEONE_LABOR_PROGRESS (site-specific labor progress mapping),Labor Progress
-maternalAdmission.xml,configuration/pih/htmlforms/maternalAdmission.xml,MATERNAL_ADMISSION,Maternal Admission
-maternalDischarge.xml,configuration/pih/htmlforms/maternalDischarge.xml,MATERNAL_DISCHARGE,Maternal Discharge
-mentalHealth.xml,configuration/pih/htmlforms/mentalHealth.xml,MENTAL_HEALTH_ASSESSMENT,Mental Health
-mentalHealthFollowup.xml,configuration/pih/htmlforms/mentalHealthFollowup.xml,MENTAL_HEALTH_FOLLOWUP,Mental Health Followup
-mentalHealthFollowup_v1.0.xml,configuration/pih/htmlforms/mentalHealthFollowup_v1.0.xml,MENTAL_HEALTH_FOLLOWUP,Mental Health Followup v1.0
-mentalHealth_v1.0.xml,configuration/pih/htmlforms/mentalHealth_v1.0.xml,MENTAL_HEALTH_ASSESSMENT,Mental Health v1.0
-ncd-followup-part-1.xml,configuration/pih/htmlforms/ncd-followup-part-1.xml,NCD_FOLLOWUP_CONSULT,NCD Followup Part 1
-ncd-followup-part-1_v1.0.xml,configuration/pih/htmlforms/ncd-followup-part-1_v1.0.xml,NCD_FOLLOWUP_CONSULT,NCD Followup Part 1 v1.0
-ncd-followup-part-2.xml,configuration/pih/htmlforms/ncd-followup-part-2.xml,NCD_FOLLOWUP_2_CONSULT,NCD Followup Part 2
-ncd-followup.xml,configuration/pih/htmlforms/ncd-followup.xml,NCD_FOLLOWUP_CONSULT,NCD Followup
-ncd-followup_v1.0.xml,configuration/pih/htmlforms/ncd-followup_v1.0.xml,NCD_FOLLOWUP_CONSULT,NCD Followup v1.0
-ncd-initial-part-1.xml,configuration/pih/htmlforms/ncd-initial-part-1.xml,NCD_INITIAL_1_CONSULT,NCD Initial Part 1
-ncd-initial-part-1_v1.0.xml,configuration/pih/htmlforms/ncd-initial-part-1_v1.0.xml,NCD_INITIAL_1_CONSULT,NCD Initial Part 1 v1.0
-ncd-initial-part-2.xml,configuration/pih/htmlforms/ncd-initial-part-2.xml,NCD_INITIAL_2_CONSULT,NCD Initial Part 2
-ncd-initial-part-2_v1.0.xml,configuration/pih/htmlforms/ncd-initial-part-2_v1.0.xml,NCD_INITIAL_2_CONSULT,NCD Initial Part 2 v1.0
-ncd-initial.xml,configuration/pih/htmlforms/ncd-initial.xml,NCD_INITIAL_CONSULT,NCD Initial
-ncd-initial_v1.0.xml,configuration/pih/htmlforms/ncd-initial_v1.0.xml,NCD_INITIAL_CONSULT,NCD Initial v1.0
-newbornAdmissionNote.xml,configuration/pih/htmlforms/newbornAdmissionNote.xml,,Newborn Admission Note
-newbornAssessment.xml,configuration/pih/htmlforms/newbornAssessment.xml,NEWBORN_ASSESSMENT,Newborn Assessment
-newbornDailyProgress.xml,configuration/pih/htmlforms/newbornDailyProgress.xml,NEWBORN_DAILY_PROGRESS,Newborn Daily Progress
-newbornDailyProgress_v1.0.xml,configuration/pih/htmlforms/newbornDailyProgress_v1.0.xml,NEWBORN_DAILY_PROGRESS,Newborn Daily Progress v1.0
-newbornDischarge.xml,configuration/pih/htmlforms/newbornDischarge.xml,NEWBORN_DISCHARGE,Newborn Discharge
-newbornInitial.xml,configuration/pih/htmlforms/newbornInitial.xml,NEWBORN_INITIAL,Newborn Initial
-newbornInitial_v1.0.xml,configuration/pih/htmlforms/newbornInitial_v1.0.xml,NEWBORN_INITIAL,Newborn Initial v1.0
-nicuTriage.xml,configuration/pih/htmlforms/nicuTriage.xml,,NICU Triage
-outpatient-followup.xml,configuration/pih/htmlforms/outpatient-followup.xml,OUTPATIENT_FOLLOWUP (site-specific mapping),Outpatient Followup
-outpatient-followup_v1.0.xml,configuration/pih/htmlforms/outpatient-followup_v1.0.xml,OUTPATIENT_FOLLOWUP_V1 (site-specific mapping),Outpatient Followup v1.0
-outpatient-initial.xml,configuration/pih/htmlforms/outpatient-initial.xml,CONSULTATION_INITIAL,Outpatient Initial
-outpatient-initial_v1.0.xml,configuration/pih/htmlforms/outpatient-initial_v1.0.xml,CONSULTATION_INITIAL,Outpatient Initial v1.0
-pacuFollowup.xml,configuration/pih/htmlforms/pacuFollowup.xml,SIERRA_LEONE_PACU_FOLLOWUP (PACU Followup),PACU Followup
-patientRegistration-localAddress.xml,configuration/pih/htmlforms/patientRegistration-localAddress.xml,PATIENT_REGISTRATION,Patient Registration Local Address
-patientRegistration-social.xml,configuration/pih/htmlforms/patientRegistration-social.xml,PATIENT_REGISTRATION,Patient Registration Social
-postnatalFollowup.xml,configuration/pih/htmlforms/postnatalFollowup.xml,POSTNATAL_FOLLOWUP,Postnatal Followup
-postpartumDailyProgress.xml,configuration/pih/htmlforms/postpartumDailyProgress.xml,,Postpartum Daily Progress
-section-anc-followup.xml,configuration/pih/htmlforms/section-anc-followup.xml,ANC_FOLLOWUP,Section ANC Followup
-section-anc-followup_v2.0.xml,configuration/pih/htmlforms/section-anc-followup_v2.0.xml,ANC_FOLLOWUP,Section ANC Followup v2.0
-section-anc-intake.xml,configuration/pih/htmlforms/section-anc-intake.xml,ANC_INTAKE,Section ANC Intake
-section-anc-intake_v2.0.xml,configuration/pih/htmlforms/section-anc-intake_v2.0.xml,ANC_INTAKE,Section ANC Intake v2.0
-section-chief-complaint.xml,configuration/pih/htmlforms/section-chief-complaint.xml,PRIMARY_CARE_PEDS_FOLLOWUP_CONSULT / PRIMARY_CARE_ADULT_INITIAL_CONSULT,Section Chief Complaint
-section-delivery.xml,configuration/pih/htmlforms/section-delivery.xml,MCH_DELIVERY,Section Delivery
-section-delivery_v1.0.xml,configuration/pih/htmlforms/section-delivery_v1.0.xml,MCH_DELIVERY,Section Delivery v1.0
-section-delivery_v1.1.xml,configuration/pih/htmlforms/section-delivery_v1.1.xml,MCH_DELIVERY,Section Delivery v1.1
-section-delivery_v2.0.xml,configuration/pih/htmlforms/section-delivery_v2.0.xml,MCH_DELIVERY,Section Delivery v2.0
-section-delivery_v3.0.xml,configuration/pih/htmlforms/section-delivery_v3.0.xml,MCH_DELIVERY,Section Delivery v3.0
-section-diabetes.xml,configuration/pih/htmlforms/section-diabetes.xml,NCD_INITIAL_CONSULT / NCD_FOLLOWUP_CONSULT,Section Diabetes
-section-dx.xml,configuration/pih/htmlforms/section-dx.xml,NCD_INITIAL_CONSULT / ANC_FOLLOWUP,Section Diagnoses
-section-exam.xml,configuration/pih/htmlforms/section-exam.xml,NCD_INITIAL_CONSULT / NCD_FOLLOWUP_CONSULT,Section Exam
-section-heart-failure.xml,configuration/pih/htmlforms/section-heart-failure.xml,NCD_INITIAL_CONSULT,Section Heart Failure
-section-history.xml,configuration/pih/htmlforms/section-history.xml,NCD_INITIAL_CONSULT / NCD_FOLLOWUP_CONSULT,Section History
-section-hospital.xml,configuration/pih/htmlforms/section-hospital.xml,NCD_INITIAL_CONSULT,Section Hospital
-section-hospital_v1.0.xml,configuration/pih/htmlforms/section-hospital_v1.0.xml,NCD_INITIAL_CONSULT,Section Hospital v1.0
-section-hypertension.xml,configuration/pih/htmlforms/section-hypertension.xml,NCD_INITIAL_CONSULT / NCD_FOLLOWUP_CONSULT,Section Hypertension
-section-kidney.xml,configuration/pih/htmlforms/section-kidney.xml,NCD_INITIAL_CONSULT,Section Kidney
-section-liver.xml,configuration/pih/htmlforms/section-liver.xml,NCD_INITIAL_CONSULT,Section Liver
-section-lung.xml,configuration/pih/htmlforms/section-lung.xml,NCD_INITIAL_CONSULT,Section Lung
-section-ncd-followup.xml,configuration/pih/htmlforms/section-ncd-followup.xml,NCD_FOLLOWUP_CONSULT,Section NCD Followup
-section-ncd-history.xml,configuration/pih/htmlforms/section-ncd-history.xml,NCD_INITIAL_CONSULT,Section NCD History
-section-ncd-history_v1.0.xml,configuration/pih/htmlforms/section-ncd-history_v1.0.xml,NCD_INITIAL_CONSULT,Section NCD History v1.0
-section-ncd-notes.xml,configuration/pih/htmlforms/section-ncd-notes.xml,NCD_INITIAL_2_CONSULT,Section NCD Notes
-section-ncd-plan.xml,configuration/pih/htmlforms/section-ncd-plan.xml,NCD_INITIAL_CONSULT / NCD_FOLLOWUP_CONSULT,Section NCD Plan
-section-other-ncd.xml,configuration/pih/htmlforms/section-other-ncd.xml,,Section Other NCD
-section-palliative.xml,configuration/pih/htmlforms/section-palliative.xml,NCD_INITIAL_CONSULT,Section Palliative
-section-peds.xml,configuration/pih/htmlforms/section-peds.xml,PRIMARY_CARE_PEDS_INITIAL_CONSULT / PRIMARY_CARE_PEDS_FOLLOWUP_CONSULT,Section Pediatrics
-section-plan-medication.xml,configuration/pih/htmlforms/section-plan-medication.xml,ANC_INTAKE / ANC_FOLLOWUP,Section Plan Medication
-section-plan-medication_v1.0.xml,configuration/pih/htmlforms/section-plan-medication_v1.0.xml,ANC_INTAKE / ANC_FOLLOWUP,Section Plan Medication v1.0
-section-plan-medication_v1.1.xml,configuration/pih/htmlforms/section-plan-medication_v1.1.xml,ANC_INTAKE / ANC_FOLLOWUP,Section Plan Medication v1.1
-section-plan.xml,configuration/pih/htmlforms/section-plan.xml,PRIMARY_CARE_ADULT_INITIAL_CONSULT,Section Plan
-section-plan_v1.0.xml,configuration/pih/htmlforms/section-plan_v1.0.xml,PRIMARY_CARE_ADULT_INITIAL_CONSULT,Section Plan v1.0
-section-postnatal-followup.xml,configuration/pih/htmlforms/section-postnatal-followup.xml,POSTNATAL_FOLLOWUP,Section Postnatal Followup
-section-sickle-cell.xml,configuration/pih/htmlforms/section-sickle-cell.xml,NCD_INITIAL_CONSULT,Section Sickle Cell
-surgicalPostOpNote.xml,configuration/pih/htmlforms/surgicalPostOpNote.xml,POST_OPERATIVE_NOTE,Surgical Note
-triage.xml,configuration/pih/htmlforms/triage.xml,SIERRA_LEONE_TRIAGE / MCOE_TRIAGE (site-specific),Triage
-vitals.xml,configuration/pih/htmlforms/vitals.xml,VITALS,Vitals
-vitalsWithGlucose.xml,configuration/pih/htmlforms/vitalsWithGlucose.xml,VITALS_WITH_GLUCOSE (site-specific Vitals),Vitals With Glucose
+﻿File,Kind,Encounter type,Form name,Version,Encounter type UUID,Form UUID
+ancFollowup.xml,Entry form,ANC Followup,Prenatal Followup,3.1,00e5e946-90ec-11e8-9eb6-529269fb1459,0ad6338a-086d-4fb8-9926-332753b0cf19
+ancFollowup_v1.0.xml,Entry form (older version),ANC Followup,Prenatal Followup,1.0,00e5e946-90ec-11e8-9eb6-529269fb1459,F98BADD0-6759-4652-A899-1B8CA4E29E8C
+ancFollowup_v1.1.xml,Entry form (older version),ANC Followup,Prenatal Followup,1.1,00e5e946-90ec-11e8-9eb6-529269fb1459,819b7edc-910c-11e8-9eb6-529269fb1459
+ancFollowup_v2.0.xml,Entry form (older version),ANC Followup,Prenatal Followup,2.0,00e5e946-90ec-11e8-9eb6-529269fb1459,0A828E6F-F8ED-4BAF-BB02-244D61E7F4DA
+ancFollowup_v3.0.xml,Entry form (older version),ANC Followup,Prenatal Followup,3.0,00e5e946-90ec-11e8-9eb6-529269fb1459,945c8816-bdd1-4712-8fb1-2fc95ddf943f
+ancIntake.xml,Entry form,ANC Intake,ANC First Visit (Initial),3.1,00e5e810-90ec-11e8-9eb6-529269fb1459,a3b04938-1da7-4582-8b66-c9575790b63b
+ancIntake_v1.0.xml,Entry form (older version),ANC Intake,Prenatal Intake,1.0,00e5e810-90ec-11e8-9eb6-529269fb1459,F588C26A-6568-48CF-94A7-A8D8FCE04D82
+ancIntake_v1.1.xml,Entry form (older version),ANC Intake,Prenatal Intake,1.1,00e5e810-90ec-11e8-9eb6-529269fb1459,00e552d8-90ec-11e8-9eb6-529269fb1459
+ancIntake_v2.0.xml,Entry form (older version),ANC Intake,ANC First Visit (Initial),2.0,00e5e810-90ec-11e8-9eb6-529269fb1459,E70CF900-D0A1-4ACD-92E2-FC61C5E0BCFD
+ancIntake_v3.0.xml,Entry form (older version),ANC Intake,ANC First Visit (Initial),3.0,00e5e810-90ec-11e8-9eb6-529269fb1459,6e8d7da3-2405-446c-bf0d-f76d06f29e41
+ancProgress.xml,Entry form,ANC Progress,ANC Progress,1.0,ce67f875-726f-4314-abd5-6bcaec10d273,abec7eeb-3db4-450e-a254-3d6c01515976
+ayfsFollowup.xml,Entry form,AYFS Followup,AYFS Followup,1.0,73399721-644e-494b-86c9-5dd345072db3,2db3e8df-f950-493f-85b2-90a9477cd02f
+ayfsIntake.xml,Entry form,AYFS Initial,AYFS Initial,1.0,1f3375af-fd9e-42a9-954e-99533ee15de9,c225bf8c-40ff-4911-83e0-44c876bc3865
+ballardScore.xml,Entry form,Ballard Score,Ballard Score,1.0,8e027b32-13de-491b-9f29-534d21a48f0d,ca499bac-1a8d-4d92-8b36-8b30ab771f12
+cervicalCancerScreening.xml,Entry form,Cervical Cancer Screening,Cervical Cancer Screening,1.0,820a80b0-1d59-407e-acbb-56abb69abd35,6a25ba50-cba6-44c2-a132-9fad31e01f17
+checkin.xml,Entry form,Check-In,Check-In,3.0,55a0d3ea-a4d7-4e88-8f01-5aceb2d3c61b,c233ca6a-ebe2-4d5a-8f79-466c3aced2a0
+checkinMaternal.xml,Entry form,SL Maternal Check-in,Maternal Check-In,1.0,251c03fa-a9dc-4157-855f-b016f4fae9ab,9a5a5d5b-4e99-43a0-8b66-8c9b97963354
+checkin_v2.0.xml,Entry form (older version),Check-In,Check-In,2.0,55a0d3ea-a4d7-4e88-8f01-5aceb2d3c61b,6058e2e0-7428-11e5-a837-0800200c9a66
+delivery.xml,Entry form,MCH Delivery,MCH Delivery,4.0,00e5ebb2-90ec-11e8-9eb6-529269fb1459,4d90fcbb-0b2e-4667-bd57-7571d44ac086
+delivery_v1.0.xml,Entry form (older version),MCH Delivery,MCH Delivery,1.0,00e5ebb2-90ec-11e8-9eb6-529269fb1459,9F8EC44D-CC7D-4ADD-8A6A-6FAF736255A0
+delivery_v1.1.xml,Entry form (older version),MCH Delivery,MCH Delivery,1.1,00e5ebb2-90ec-11e8-9eb6-529269fb1459,819b85c6-910c-11e8-9eb6-529269fb1459
+delivery_v2.0.xml,Entry form (older version),MCH Delivery,MCH Delivery,2.0,00e5ebb2-90ec-11e8-9eb6-529269fb1459,5B727834-1E58-4F49-B456-424995A71C79
+delivery_v3.0.xml,Entry form (older version),MCH Delivery,MCH Delivery,3.0,00e5ebb2-90ec-11e8-9eb6-529269fb1459,c9c2f261-0622-404c-a06a-aa7a6d5193f7
+dispensing.xml,Entry form,Dispensing (type name not given in this repo),Dispensing,1.0,8ff50dea-18a1-4609-b4c9-3f8f2d611b84,ba22eda5-148d-456e-8adc-f36247d1f7c3
+familyPlanningFollowup.xml,Entry form,Family Planning Followup,Family Planning Followup,1.1,5a1d1710-98b0-4e5f-8f6b-c9cef0c8cf05,ec502050-c987-4aad-8ca5-628fd7871233
+familyPlanningIntake.xml,Entry form,Family Planning Initial,Family Planning Initial,1.0,52fe1a29-678d-49cb-9ccd-7296d634284d,dffa9543-2cf0-4b9e-9306-0aebeb7a1835
+gainMaternalRegister.xml,Entry form,Maternity and Delivery Register,Maternity and Delivery Register,1.0,9cc89b83-e32f-410a-947d-aeb3bda37571,e8bdd24e-0fba-4fe9-969f-316f70722c39
+gainNewbornRegister.xml,Entry form,SCBU Newborn Register,SCBU Newborn Register,1.0,3790ecc6-bc63-48f8-9104-f81dc90ee21c,a165541e-9745-4891-b6d7-b8374575e63e
+gynecologyFollowup.xml,Entry form,Gynecology Followup,Gynecology Followup,1.0,9b973514-7799-41b6-85f1-1ebc752d01f0,c1303824-0fba-4e08-932a-c10990956d00
+gynecologyIntake.xml,Entry form,Gynecology Initial,Gynecology Initial,1.0,34700f4f-c3df-4cfc-863a-bd8b92a0a485,b456c65f-4d3b-4d1d-b1f5-952e78fa0121
+inpatientNewbornVitals.xml,Entry form,Inpatient Vitals,Vital Signs Newborn Inpatient,1.0,6b1c3929-f23c-423f-8cad-64b17cf10b99,e1e64fc8-ccf2-40ee-8ebb-7cb659d1d236
+inpatientVitals.xml,Entry form,Inpatient Vitals,Vital Signs Inpatient,1.0,6b1c3929-f23c-423f-8cad-64b17cf10b99,ce487212-2263-4a5d-a1c1-3879a3e9a141
+laborDeliverySummary.xml,Entry form,Labor and Delivery Summary,Labour and Delivery Summary,1.0,fec2cc56-e35f-42e1-8ae3-017142c1ca59,51f7451f-1d27-4907-aafb-a20ba3894048
+laborProgress.xml,Entry form,Labour Progress,Labour Progress,1.0,ac5ec970-31b7-4659-9141-284bfbc13c69,837fec21-38f2-4deb-aa3a-d93a79a5a7ab
+maternalAdmission.xml,Entry form,Admission,Maternal Admission,1.0,260566e1-c909-4d61-a96f-c1019291a09d,2eceee55-4308-41b5-8d76-d5197cf57818
+maternalDeath.xml,Entry form,Maternal Death,Maternal Death,1.0,415b342e-9e4d-4496-bac4-7b6ffb8619f0,25485cdd-5cb3-4d91-abc4-029718254954
+maternalDischarge-print.xml,Print template,Maternal Discharge,Maternal Discharge (Print),1.0,2110a810-db62-4914-ba95-604b96010164,a5377e3a-228e-4186-b6f5-a86d0ba0d136
+maternalDischarge.xml,Entry form,Maternal Discharge,Maternal Discharge,1.1,2110a810-db62-4914-ba95-604b96010164,ccd256b4-a861-4ec2-88f8-6d56927a09b2
+maternalDischarge_v1.0.xml,Entry form (older version),Maternal Discharge,Maternal Discharge,1.0,2110a810-db62-4914-ba95-604b96010164,a934da8d-cc58-43e9-af9d-b11cb310728c
+mentalHealth.xml,Entry form,Mental Health Consult,Mental Health Intake,2.0,a8584ab8-cc2a-11e5-9956-625662870761,55399407-F739-4647-B940-A68CC45483F4
+mentalHealthFollowup.xml,Entry form,Mental Health Follow-up,Mental Health Follow-up,2.0,9d701a81-bb83-40ea-9efc-af50f05575f2,55DA9EF7-DCBE-4B9F-9A77-C905862BD565
+mentalHealthFollowup_v1.0.xml,Entry form (older version),Mental Health Follow-up,Mental Health Follow-up,1.0,9d701a81-bb83-40ea-9efc-af50f05575f2,33f2ec65-2ac5-4841-a627-10a76b2bb32c
+mentalHealth_v1.0.xml,Entry form (older version),Mental Health Consult,Mental Health Intake,1.0,a8584ab8-cc2a-11e5-9956-625662870761,a8584dd8-cc2a-11e5-9956-625662870761
+ncd-followup-part-1.xml,Entry form,NCD Followup Part 1 only,NCD Followup (Part 1),2.0,e02a8c32-4f14-4ff7-a4e9-2f087d9a1cf7,ab30cec8-b1f9-4383-90a7-03411337ebfb
+ncd-followup-part-1_v1.0.xml,Entry form (older version),NCD Followup Part 1 only,NCD Followup (Part 1),1.0,e02a8c32-4f14-4ff7-a4e9-2f087d9a1cf7,21d9b3ee-6195-4aef-a1fe-0b87559ffee7
+ncd-followup-part-2.xml,Entry form,NCD Followup Part 2 only,NCD Followup (Part 2),1.0,6a3afa6f-8f78-44a9-80c9-3f4f3b6ad8f2,4daeb7ca-6ba5-48fc-8a92-478a67f75ad5
+ncd-followup.xml,Entry form,NCD Followup Consult,NCD Followup,2.0,5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c,4969ab47-6212-46dd-ac49-11c75b2e04d9
+ncd-followup_v1.0.xml,Entry form (older version),NCD Followup Consult,NCD Followup,1.0,5cbfd6a2-92d9-4ad0-b526-9d29bfe1d10c,8b0fb553-c59b-42c0-8d5d-1f90c04d1c02
+ncd-initial-part-1.xml,Entry form,NCD Initial Part 1 only,NCD Initial (Part 1),2.0,48c413c4-e7f6-491a-8431-900451fe8a32,94371e9b-69dc-4c34-a2f0-290cd5070187
+ncd-initial-part-1_v1.0.xml,Entry form (older version),NCD Initial Part 1 only,NCD Initial (Part 1),1.0,48c413c4-e7f6-491a-8431-900451fe8a32,0d4878f0-73cc-4018-8b02-2b5aaa6e25dd
+ncd-initial-part-2.xml,Entry form,NCD Initial Part 2 only,NCD Initial (Part 2),2.0,43423212-6f70-4df8-a9f7-2aef88df1ee2,7179edaf-9006-49cd-8f12-862ec494f75b
+ncd-initial-part-2_v1.0.xml,Entry form (older version),NCD Initial Part 2 only,NCD Initial (Part 2),1.0,43423212-6f70-4df8-a9f7-2aef88df1ee2,f5ee5823-ff3e-473a-a25a-af074cedce05
+ncd-initial.xml,Entry form,NCD Initial Consult,NCD Initial,2.0,ae06d311-1866-455b-8a64-126a9bd74171,c5ccc0dd-a15c-408c-98dd-97b696a6465a
+ncd-initial_v1.0.xml,Entry form (older version),NCD Initial Consult,NCD Initial,1.0,ae06d311-1866-455b-8a64-126a9bd74171,4ac1c817-4f9a-4d87-872b-eb55eb5bf2b2
+newbornAdmissionNote.xml,Entry form,Admission,Newborn Admission,1.0,260566e1-c909-4d61-a96f-c1019291a09d,AA165115-CAB7-46DA-9B49-917091EE5540
+newbornAssessment.xml,Entry form,Newborn Assessment,Newborn Assessment,1.0,6444b8d4-407d-444d-aa15-d6dff204ed83,17e93a76-32d1-4435-a5e3-3068e305c2d7
+newbornDailyProgress.xml,Entry form,Newborn Daily Progress,Newborn Daily Progress,1.1,7e42e652-89e7-4559-80fd-41f42826c98c,3eddc127-3417-4878-9210-88c55040535f
+newbornDailyProgress_v1.0.xml,Entry form (older version),Newborn Daily Progress,Newborn Daily Progress,1.0,7e42e652-89e7-4559-80fd-41f42826c98c,6575f0e6-fcae-47ef-9838-4129e60e2cbb
+newbornDischarge.xml,Entry form,Newborn Discharge,Newborn Discharge,1.1,153d3182-c76f-4047-b7f2-d83cf967b206,edb9d20b-6537-4593-9002-152bd3b61605
+newbornDischarge_v1.0.xml,Entry form (older version),Newborn Discharge,Newborn Discharge,1.0,153d3182-c76f-4047-b7f2-d83cf967b206,0f7174d7-4e23-4df7-ac97-c892af657bbe
+newbornInitial.xml,Entry form,Newborn Initial,Newborn Initial,1.1,093b6ffc-e55a-461a-85cc-c6acf7714a23,18e9f245-c4c5-4af7-8a72-4bd8b67dcd86
+newbornInitial_v1.0.xml,Entry form (older version),Newborn Initial,Newborn Initial,1.0,093b6ffc-e55a-461a-85cc-c6acf7714a23,9f84aa9d-b6a0-4c2b-be36-1a8f96d8bc79
+nicuTriage.xml,Entry form,NICU Triage,NICU Triage,1.0,fb4318dd-cca9-4d20-bb31-0d4eba947d74,83acacb4-eba6-4573-83e7-5d2e468deb50
+outpatient-followup.xml,Entry form,SL Outpatient Followup,Outpatient Followup,2.0,d8a038b5-90d2-43dc-b94b-8338b76674f3,4CE4BA22-16B2-4C85-9B07-5E3696490BC8
+outpatient-followup_v1.0.xml,Entry form (older version),SL Outpatient Followup,Outpatient Followup,1.0,d8a038b5-90d2-43dc-b94b-8338b76674f3,41913f5d-b287-4979-84e4-aed30e2f0a1b
+outpatient-initial.xml,Entry form,SL Outpatient Initial,Outpatient Initial,2.0,7d5853d4-67b7-4742-8492-fcf860690ed5,C5B788D4-223D-430A-9A90-ADBE63C4A3E8
+outpatient-initial_v1.0.xml,Entry form (older version),SL Outpatient Initial,Outpatient Initial,1.0,7d5853d4-67b7-4742-8492-fcf860690ed5,f7f924ed-c7a2-4932-a678-553c363f720c
+pacuFollowup.xml,Entry form,PACU Followup,PACU Followup,1.0,6f2df970-6e3e-4898-9a34-9d9e8955c3eb,43b275f0-6e20-4538-ba94-19df332d4f76
+patientRegistration-localAddress.xml,Entry form,Patient Registration,Patient Registration Local Address,1.0,873f968a-73a8-4f9c-ac78-9f4778b751b6,10D81F65-CBAD-4F5B-B7D0-B3C660C569CE
+patientRegistration-social.xml,Entry form,Patient Registration,Patient Registration Social,1.0,873f968a-73a8-4f9c-ac78-9f4778b751b6,26087dc0-7429-11e5-a837-0800200c9a66
+postnatalFollowup.xml,Entry form,Postnatal Followup,Postnatal Followup,1.1,b7a7c300-f7e5-4d38-a388-fc178ab02e78,929df787-1236-4cb8-a3a2-5aa7a7600d8c
+postnatalFollowup_v1.0.xml,Entry form (older version),Postnatal Followup,Postnatal Followup,1.0,b7a7c300-f7e5-4d38-a388-fc178ab02e78,366c36aa-82cf-4949-8bbc-2cb5d9a4fa49
+postpartumDailyProgress.xml,Entry form,Postpartum progress,Postpartum Daily Progress,1.0,37f04ddf-9653-4a02-98b4-1c23734c2f15,569f6534-fb05-4d8d-aa2e-1b832223e1b8
+section-anc-followup.xml,Section,Section of: ANC Followup,Prenatal followup section,4.0,,d7ed025a-7d8f-46ae-abc6-03de835ef903
+section-anc-followup_v2.0.xml,Section (older version),Section of: ANC Followup,Prenatal followup section,2.0,,14ebab9c-d7dc-11e8-9f8b-f2801f1b9fd1
+section-anc-followup_v3.0.xml,Section (older version),Section of: ANC Followup,Prenatal followup section,3.0,,d9e986da-96db-4c32-b5e4-990faeb1793b
+section-anc-intake.xml,Section,Section of: ANC Intake,ANC First (Initial) section,4.0,,e046d2df-1b46-4a7c-94ad-9d3bdeabac86
+section-anc-intake_v2.0.xml,Section (older version),Section of: ANC Intake,ANC First (Initial) section,2.0,,14eba91c-d7dc-11e8-9f8b-f2801f1b9fd1
+section-anc-intake_v3.0.xml,Section (older version),Section of: ANC Intake,ANC First (Initial) section,3.0,,640f90e5-3cf4-4316-9598-00910da0d8fe
+section-chief-complaint.xml,Section,Section of: SL Outpatient Followup,Chief Complaint,1.0,,71ee5c0c-d8ae-4777-af9f-bb57f563503a
+section-delivery.xml,Section,Section of: MCH Delivery,MCH Delivery section,4.0,,adf7fa6e-6302-4cdf-bdae-fe3426e1eea2
+section-delivery_v1.0.xml,Section (older version),Section of: MCH Delivery,MCH Delivery section,1.0,,14ebad5e-d7dc-11e8-9f8b-f2801f1b9fd1
+section-delivery_v1.1.xml,Section (older version),Section of: MCH Delivery,MCH Delivery section,1.1,,895c0e34-980f-4df0-8c89-5db491def4b4
+section-delivery_v2.0.xml,Section (older version),Section of: MCH Delivery,MCH Delivery section,2.0,,b1e6214d-7c4c-4c82-b2d0-ad8f2b42a68a
+section-delivery_v3.0.xml,Section (older version),Section of: MCH Delivery,MCH Delivery section,3.0,,e1d2303e-7a49-43c7-8fd5-ca062fef6616
+section-diabetes.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Diabetes,1.0,,d26b1ddf-d410-4a9f-be0f-b516e7c26c40
+section-dx.xml,Section,"Section of: SL Outpatient Initial, SL Outpatient Followup, NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only, MCH Delivery",Diagnostic,1.0,,3498f204-a6fa-4df0-b7fd-a94eb03a43c9
+section-exam.xml,Section,"Section of: SL Outpatient Initial, SL Outpatient Followup",Physical exam,2.0,,b34b71f4-03f1-11e5-8418-1697f925ec7b
+section-heart-failure.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Heart Failure,1.0,,8301277b-1062-4c15-8701-9771ac95e599
+section-history.xml,Section,Section of: SL Outpatient Initial,History,1.0,,162091b1-0060-4e56-8c17-7015aeddf608
+section-hospital.xml,Section,"Section of: NCD Initial Consult, NCD Initial Part 1 only, NCD Followup Consult, NCD Followup Part 1 only",NCD hospitalization,2.0,,0b98d2c7-716d-44c1-b343-6a8b41b09580
+section-hospital_v1.0.xml,Section (older version),"Section of: NCD Initial Consult, NCD Initial Part 1 only, NCD Followup Consult, NCD Followup Part 1 only",NCD hospitalization,1.0,,2d52173d-6030-4284-940a-0d0e79e48491
+section-hypertension.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Hypertension,1.0,,3a1d79fe-9aa0-4289-bcea-c70aae516234
+section-kidney.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Chronic Kidney Disease,1.0,,1a66029d-0e0c-410b-9fa6-8ea26f697cb8
+section-liver.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Liver Disease,1.0,,4357b34b-ab3a-4404-ab33-a73104b26fdb
+section-lung.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Chronic Lung Disease,1.0,,add648f7-7d24-47ce-9456-8006021e074e
+section-ncd-followup.xml,Section,"Section of: NCD Followup Consult, NCD Followup Part 1 only",NCD Visit Information,1.0,,1d764c06-ebdc-42fa-b75a-d5b789e3f630
+section-ncd-history.xml,Section,"Section of: NCD Initial Consult, NCD Initial Part 1 only",NCD History,2.0,,a29c13c8-1d46-4f58-bb09-c9b71e6bc5bf
+section-ncd-history_v1.0.xml,Section (older version),"Section of: NCD Initial Consult, NCD Initial Part 1 only",NCD History,1.0,,b0b5ed18-f477-45d5-87f9-ad3df76e9b5b
+section-ncd-notes.xml,Section,Section of: NCD Initial Part 2 only,NCD Overview,2.0,,9f84ab34-73ef-46d3-951c-af29c589abc4
+section-ncd-plan.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",NCD Plan,1.0,,aa8d9374-f343-4818-8433-66f4e6145a7f
+section-other-ncd.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only (not Initial Part 2 version 1.0)",Other NCD,1.0,,2cfad355-c6e9-4466-8c11-860f10c8a270
+section-palliative.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Palliative Care,1.0,,226796bc-24b0-4af7-98b3-f07b26e390cf
+section-peds.xml,Section,"Section of: SL Outpatient Initial, SL Outpatient Followup",Pediatrics feeding and supplements,1.0,,c278f802-57be-11e9-8647-d663bd873d93
+section-plan-medication.xml,Section,"Section of: MCH Delivery; also ANC Intake/Followup, form versions 1.0, 1.1, 2.0 only",Plan Medication,2.0,,8DF0DB24-B0F2-4786-9585-00F730516F02
+section-plan-medication_v1.0.xml,Section (older version),"Section of: MCH Delivery; also ANC Intake/Followup, form versions 1.0, 1.1, 2.0 only",Plan Medication,1.0,,11D1D273-78F9-4303-BEE4-11CC995DD433
+section-plan-medication_v1.1.xml,Section (older version),"Section of: MCH Delivery; also ANC Intake/Followup, form versions 1.0, 1.1, 2.0 only",Plan Medication,1.1,,00b30a40-bcf8-11e5-a837-0899200c9a66
+section-plan.xml,Section,"Section of: SL Outpatient Initial, SL Outpatient Followup",Plan,2.0,,589508A0-BD24-484B-B8FE-E81E28ED982D
+section-plan_v1.0.xml,Section (older version),"Section of: SL Outpatient Initial, SL Outpatient Followup",Plan,1.0,,00a30a40-bef8-11e5-a837-0800200c9a66
+section-postnatal-followup.xml,Section,Section of: Postnatal Followup,Postnatal followup section,2.0,,6f7fcbfb-6e42-400a-9f9c-cbc7f26c07c6
+section-postnatal-followup_v1.0.xml,Section (older version),Section of: Postnatal Followup,Postnatal followup section,1.0,,9a775ba9-a6b2-44b8-bc0a-6a30cf318626
+section-sickle-cell.xml,Section,"Section of: NCD Initial Consult, NCD Followup Consult, NCD Initial Part 2 only, NCD Followup Part 2 only",Sickle Cell,1.0,,23afe1ed-76c4-4642-b37b-44944a9dbed9
+surgicalPostOpNote.xml,Entry form,Surgery Note,Surgical Note,2.5,c4941dee-7a9b-4c1c-aa6f-8193e9e5e4e5,3fd75be3-2c5b-40be-8b6e-f00cb0ecda22
+surgicalPostOpNote_v2.0.xml,Entry form (older version),Surgery Note,Surgical Note,2.0,c4941dee-7a9b-4c1c-aa6f-8193e9e5e4e5,f61756c3-b8db-48d3-b8ee-f36f537fe16e
+triage.xml,Entry form,SL MCH Triage,MCOE Triage,1.0,41911448-71a1-43d7-bba8-dc86339850da,ae39663d-c248-4cee-b48e-5eb226f74e47
+vitals.xml,Entry form,Vital Signs,Vitals,2.2,4fb47712-34a6-40d2-8ed3-e153abbd25b7,68728aa6-4985-11e2-8815-657001b58a90
+vitalsWithGlucose.xml,Entry form,Vitals with Glucose,Vitals with glucose,1.0,2fd151a2-fbef-43e3-b82d-c3f70f1d7333,e867a9a5-e5d4-4e9f-b6ab-2abcd152d35d
