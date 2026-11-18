@@ -8,33 +8,9 @@ Referred from:,Coded,N/A,radio,No,Other → show #other-ref-text,PIH:21696,,,
 "If other, please specify",Text,N/A,textarea,No,no,PIH:6421,,,
 Referred by:,Coded,Teachers | Peers | Self | out of school youth | self-referral following AYFS message,radio,No,no,PIH:Type of referral role,PIH:Teacher|CIEL:170188|CIEL:978|PIH:21702|PIH:21698,,
 Self,Coded,in school | out of school,radio,No,no,PIH:21684,CIEL:1065|CIEL:1066,,
-Family planning history: method,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning,checkbox,No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277,Family planning history: method,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning start date,Coded,N/A,radio,No,no,CIEL:163757,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
-Family planning end date,Date,N/A,date,No,no,CIEL:163758,,,PIH:Family planning history construct
+Family planning history: method,Coded,Ethinyl estradoil / Levonorgestrel | Combined oral contraceptive pills | Levonorgestrel | Norethindrone | Condoms | Medroxyprogesterone acetate (Depo-provera) | Sayana press | Copper T IUD | Mirena hormone-eluting intrauterine device (IUD) | Jadelle (implantable contraceptive) | Etonogestrel | Implant | Natural family planning,"checkbox (table: one row per method, each with its own start and end date)",No,no,CIEL:374,CIEL:104625|CIEL:159783|CIEL:78796|CIEL:80784|CIEL:190|CIEL:907|PIH:21450|PIH:21478|CIEL:165464|CIEL:1873|CIEL:76022|CIEL:162422|CIEL:5277,Family planning history: method,PIH:Family planning history construct
+Start date,Date,N/A,date (per method row),No,no,CIEL:163757,,Family planning history: method,PIH:Family planning history construct
+End date,Date,N/A,date (per method row),No,no,CIEL:163758,,Family planning history: method,PIH:Family planning history construct
 Sexual partner?,Coded,Yes | No,radio,No,no,CIEL:160109,CIEL:1065|CIEL:1066,,
 Unprotected sexual contact within the past month?,Coded,Yes | No,radio,No,no,CIEL:159218,CIEL:1065|CIEL:1066,,
 Symptoms/problems around the genitalia?,Coded,Yes | No,radio,No,no,CIEL:1126,CIEL:1065|CIEL:1066,,
