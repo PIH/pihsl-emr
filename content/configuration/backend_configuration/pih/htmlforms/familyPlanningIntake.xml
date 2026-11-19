@@ -20,6 +20,17 @@
     <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.ReopenVisitAction"/>
 
     <style type="text/css">
+        /* View mode: "Other: specified text" (Method switch and Social support) */
+        .ms-comment::before { content: ": "; }
+        /* Method switch details (SL-1518/SL-1519) */
+        #method-switch-details { margin: 0.25em 0 0.75em 1.5em; padding-top: 0.5em; border-top: 1px solid #ddd; }
+        #method-switch-details .ms-columns { display: flex; gap: 2em; }
+        #method-switch-details .ms-columns > div { flex: 1; }
+        #method-switch-details .ms-heading { margin: 0.5em 0 0.25em 0; }
+        #method-switch-details .ms-specify { display: block; margin: 0.25em 0 0 1.75em; font-size: 0.9em; }
+        #method-switch-details .ms-other input[type=text] { display: block; margin: 0.25em 0 0 1.75em; }
+        #ms-removal-reason label { display: inline; }
+        #ms-removal-reason input[type=radio] { margin: 0.35em 0.5em 0.35em 0.25em; }
         <ifMode mode="VIEW" include="false">
             #data-collection {
                 display: inline-block;
@@ -85,6 +96,19 @@
         </span>
     </subform>
 
+    <!-- Family planning client type (SL-1518): PIH:14321 "Family planning service status", as on the OB/GYN initial form:
+         PIH:13958 "Accepted" = first time user (new acceptor), CIEL:965 "Currently using birth control" = continuing user -->
+    <section id="fp-client-type" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Family planning client type">
+        <div class="section-container">
+            <p class="list-inline-wide">
+                <obs conceptId="PIH:14321" style="radio"
+                     answerConceptIds="PIH:13958,CIEL:965"
+                     answerCodes="First time family planning user,Continuing family planning user"/>
+            </p>
+        </div>
+    </section>
+
     <section id="disability" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Disability">
         <div class="section-container">
@@ -100,29 +124,6 @@
                 <render concept="CIEL:153343" name="Learning impairment" />
                 <render concept="PIH:21470"   name="Multiple" />
             </repeat>
-        </div>
-    </section>
-
-    <section id="service" sectionTag="fieldset" headerTag="legend" headerStyle="title"
-             headerCode="Service type">
-        <div class="section-container">
-            <repeat>
-                <template>
-                    <obs conceptId="PIH:13236" style="checkbox"
-                         answerConceptId="{concept}" answerCode="{name}"/>
-                </template>
-                <render concept="CIEL:163494" name="Method switch" />
-                <render concept="PIH:14376"   name="Post abortion" />
-            </repeat>
-            <br/>
-
-            <p class="list-inline-wide">
-                <label>
-                    <uimessage code="For post-partum family planning" />
-                </label>
-                <obs conceptId="PIH:21472" style="radio"
-                     answerConceptIds="PIH:21473,PIH:21474,PIH:21475" />
-            </p>
         </div>
     </section>
 
@@ -190,6 +191,109 @@
                     <render acID="CIEL:1489" dID="1489" csName="Vasectomy" />
                 </repeat>
             </table>
+        </div>
+    </section>
+
+    <section id="service" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Service type">
+        <div class="section-container">
+            <!-- Method switch shows the previous method, side effects and removal reason (SL-1518/SL-1519) -->
+            <obs id="svc-method-switch" conceptId="PIH:13236" style="checkbox"
+                 answerConceptId="CIEL:163494" answerCode="Method switch">
+                <controls>
+                    <when value="CIEL:163494" thenDisplay="#method-switch-details" />
+                </controls>
+            </obs>
+
+            <div id="method-switch-details">
+                <div class="ms-columns">
+                    <div>
+                        <p class="ms-heading"><uimessage code="Previous method" /></p>
+                        <repeat>
+                            <template>
+                                <div><obs conceptId="PIH:21857" style="checkbox"
+                                          answerConceptId="{concept}" answerCode="{name}" /></div>
+                            </template>
+                            <render concept="PIH:13249" name="Combined oral contraceptive (COC)" />
+                            <render concept="PIH:21850" name="Progestin-only pill (POP)" />
+                            <render concept="CIEL:5277" name="Natural (Rhythm)" />
+                            <render concept="PIH:190"   name="Condoms" />
+                            <render concept="PIH:907"   name="Depo-provera" />
+                            <render concept="PIH:21450" name="Sayana press" />
+                            <render concept="PIH:5275"  name="IUD" />
+                            <render concept="PIH:20955" name="Implant" />
+                            <render concept="PIH:1719"  name="Tubal ligation" />
+                            <render concept="PIH:13158" name="Exclusive breastfeeding (requires a secondary method)" />
+                        </repeat>
+                    </div>
+                    <div>
+                        <p class="ms-heading"><uimessage code="Side effects" /></p>
+                        <repeat>
+                            <template>
+                                <div><obs conceptId="PIH:1297" style="checkbox"
+                                          answerConceptId="{concept}" answerCode="{name}" /></div>
+                            </template>
+                            <render concept="PIH:7253"  name="Irregular bleeding" />
+                            <render concept="PIH:21851" name="Prolonged bleeding" />
+                            <render concept="PIH:7617"  name="Amenorrhea" />
+                            <render concept="PIH:21645" name="Dizziness" />
+                            <render concept="PIH:5978"  name="Nausea" />
+                            <render concept="PIH:21852" name="Weight change" />
+                            <render concept="PIH:620"   name="Headache" />
+                            <render concept="PIH:21648" name="Abdominal bloating" />
+                            <render concept="PIH:151"   name="Abdominal pain" />
+                            <render concept="PIH:21853" name="Breast tenderness" />
+                            <render concept="PIH:838"   name="Acne" />
+                            <render concept="PIH:9527"  name="Mood changes" />
+                        </repeat>
+                        <!-- "Other" keeps the specified text in the obs comment -->
+                        <div class="ms-other"><obs id="ms-side-effect-other" conceptId="PIH:1297" style="checkbox"
+                                                   answerConceptId="CIEL:5622" answerCode="Other"
+                                                   commentFieldCode="Please specify" /></div>
+                    </div>
+                </div>
+
+                <p class="ms-heading"><uimessage code="Removal reason" /></p>
+                <!-- "Ready for pregnancy" is PIH 21847, which has only its CIEL:160571 mapping -->
+                <div class="ms-other">
+                    <obs id="ms-removal-reason" conceptId="PIH:21846" style="radio"
+                         answerConceptIds="CIEL:160571,PIH:21858,CIEL:5622"
+                         answerCodes="Ready for pregnancy,Time due,Other"
+                         answerSeparator="&lt;br /&gt;"
+                         commentFieldCode="Please specify" />
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                // HFE writes the "Please specify" comment label as bare text after "Other"; wrap it so it sits on its own line under "Other"
+                jq(function() {
+                    jq('#ms-side-effect-other, #ms-removal-reason').contents().filter(function() {
+                        return this.nodeType === 3 &amp;&amp; jq.trim(this.nodeValue) !== '';
+                    }).wrap('&lt;span class="ms-specify"&gt;&lt;/span&gt;');
+
+                    // View mode has no inputs: drop the "Please specify" label and show the text as "Other: text"
+                    jq('#ms-side-effect-other, #ms-removal-reason, #support-other').each(function() {
+                        var field = jq(this);
+                        if (field.find('input').length === 0) {
+                            var specify = field.find('.ms-specify').hide();
+                            specify.next('.value').addClass('ms-comment');
+                            specify.next('.emptyValue').hide();  // nothing specified: drop the blank placeholder
+                        }
+                    });
+                });
+            </script>
+
+            <obs conceptId="PIH:13236" style="checkbox"
+                 answerConceptId="PIH:14376" answerCode="Post abortion" />
+            <br/>
+
+            <p class="list-inline-wide">
+                <label>
+                    <uimessage code="For post-partum family planning" />
+                </label>
+                <obs conceptId="PIH:21472" style="radio"
+                     answerConceptIds="PIH:21473,PIH:21474,PIH:21475" />
+            </p>
         </div>
     </section>
 

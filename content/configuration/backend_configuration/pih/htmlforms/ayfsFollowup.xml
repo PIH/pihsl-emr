@@ -21,6 +21,25 @@
     <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.CleanDiagnosisConstructAction" />
 
     <style type="text/css">
+        /* View mode: "Other: specified text" (Method switch and Social support) */
+        .ms-comment::before { content: ": "; }
+        /* Method switch details (SL-1518/SL-1519) */
+        #method-switch-details { margin: 0.25em 0 0.75em 1.5em; padding-top: 0.5em; border-top: 1px solid #ddd; }
+        #method-switch-details .ms-columns { display: flex; gap: 2em; }
+        #method-switch-details .ms-columns > div { flex: 1; }
+        #method-switch-details .ms-heading { margin: 0.5em 0 0.25em 0; }
+        /* "Please specify" under an "Other" checkbox or radio (Method switch and Social support) */
+        .ms-specify { display: block; margin: 0.25em 0 0 1.75em; font-size: 0.9em; }
+        .ms-other input[type=text] { display: block; margin: 0.25em 0 0 1.75em; }
+        /* Social support (SL-1519) */
+        /* Reserve the height Disposition takes with Death selected (death date + cause of death),
+           so Social support below doesn't jump when a disposition is picked */
+        #outcome-section #disposition { min-height: 430px; }
+        #social-support-section { margin-top: 1em; padding-top: 0.75em; border-top: 1px solid #ccc; }
+        #specify-support .support-details { margin: 0.25em 0 0.5em 1.75em; }
+        #transport-amount input[type=text] { display: inline-block; width: 7em; margin-right: 0.4em; }
+        #ms-removal-reason label { display: inline; }
+        #ms-removal-reason input[type=radio] { margin: 0.35em 0.5em 0.35em 0.25em; }
         #condom-method .condom-row {
             display: flex;
             align-items: center;
@@ -157,6 +176,115 @@ sexually in any way that you did not want in the past year?" />
                 <obs conceptId="CIEL:160430" style="textarea" labelCode="if other, specify reason for the visit" />
             </div>
 
+        </div>
+    </section>
+
+    <!-- Service type (SL-1519), the same section as on the FP forms -->
+    <section id="service" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Service type">
+        <div class="section-container">
+            <!-- Method switch shows the previous method, side effects and removal reason (SL-1518/SL-1519) -->
+            <obs id="svc-method-switch" conceptId="PIH:13236" style="checkbox"
+                 answerConceptId="CIEL:163494" answerCode="Method switch">
+                <controls>
+                    <when value="CIEL:163494" thenDisplay="#method-switch-details" />
+                </controls>
+            </obs>
+
+            <div id="method-switch-details">
+                <div class="ms-columns">
+                    <div>
+                        <p class="ms-heading"><uimessage code="Previous method" /></p>
+                        <repeat>
+                            <template>
+                                <div><obs conceptId="PIH:21857" style="checkbox"
+                                          answerConceptId="{concept}" answerCode="{name}" /></div>
+                            </template>
+                            <render concept="PIH:13249" name="Combined oral contraceptive (COC)" />
+                            <render concept="PIH:21850" name="Progestin-only pill (POP)" />
+                            <render concept="CIEL:5277" name="Natural (Rhythm)" />
+                            <render concept="PIH:190"   name="Condoms" />
+                            <render concept="PIH:907"   name="Depo-provera" />
+                            <render concept="PIH:21450" name="Sayana press" />
+                            <render concept="PIH:5275"  name="IUD" />
+                            <render concept="PIH:20955" name="Implant" />
+                            <render concept="PIH:1719"  name="Tubal ligation" />
+                            <render concept="PIH:13158" name="Exclusive breastfeeding (requires a secondary method)" />
+                        </repeat>
+                    </div>
+                    <div>
+                        <p class="ms-heading"><uimessage code="Side effects" /></p>
+                        <repeat>
+                            <template>
+                                <div><obs conceptId="PIH:1297" style="checkbox"
+                                          answerConceptId="{concept}" answerCode="{name}" /></div>
+                            </template>
+                            <render concept="PIH:7253"  name="Irregular bleeding" />
+                            <render concept="PIH:21851" name="Prolonged bleeding" />
+                            <render concept="PIH:7617"  name="Amenorrhea" />
+                            <render concept="PIH:21645" name="Dizziness" />
+                            <render concept="PIH:5978"  name="Nausea" />
+                            <render concept="PIH:21852" name="Weight change" />
+                            <render concept="PIH:620"   name="Headache" />
+                            <render concept="PIH:21648" name="Abdominal bloating" />
+                            <render concept="PIH:151"   name="Abdominal pain" />
+                            <render concept="PIH:21853" name="Breast tenderness" />
+                            <render concept="PIH:838"   name="Acne" />
+                            <render concept="PIH:9527"  name="Mood changes" />
+                        </repeat>
+                        <!-- "Other" keeps the specified text in the obs comment -->
+                        <div class="ms-other"><obs id="ms-side-effect-other" conceptId="PIH:1297" style="checkbox"
+                                                   answerConceptId="CIEL:5622" answerCode="Other"
+                                                   commentFieldCode="Please specify" /></div>
+                    </div>
+                </div>
+
+                <p class="ms-heading"><uimessage code="Removal reason" /></p>
+                <!-- "Ready for pregnancy" is PIH 21847, which has only its CIEL:160571 mapping -->
+                <div class="ms-other">
+                    <obs id="ms-removal-reason" conceptId="PIH:21846" style="radio"
+                         answerConceptIds="CIEL:160571,PIH:21858,CIEL:5622"
+                         answerCodes="Ready for pregnancy,Time due,Other"
+                         answerSeparator="&lt;br /&gt;"
+                         commentFieldCode="Please specify" />
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                // HFE writes the "Please specify" comment label as bare text after "Other"; wrap it so it sits on its own line under "Other"
+                jq(function() {
+                    jq('#ms-side-effect-other, #ms-removal-reason, #support-other').contents().filter(function() {
+                        return this.nodeType === 3 &amp;&amp; jq.trim(this.nodeValue) !== '';
+                    }).wrap('&lt;span class="ms-specify"&gt;&lt;/span&gt;');
+
+                    // View mode has no inputs: drop the "Please specify" label and show the text as "Other: text"
+                    jq('#ms-side-effect-other, #ms-removal-reason, #support-other').each(function() {
+                        var field = jq(this);
+                        if (field.find('input').length === 0) {
+                            var specify = field.find('.ms-specify').hide();
+                            specify.next('.value').addClass('ms-comment');
+                            specify.next('.emptyValue').hide();  // nothing specified: drop the blank placeholder
+                        }
+                    });
+
+                    // Social support: show the "Please specify" box only while "Other" is ticked, and clear it when unticked
+                    var supportOther = jq('#support-other input[type=checkbox]');
+                    var toggleSupportOther = function() {
+                        var on = supportOther.is(':checked');
+                        jq('#support-other .ms-specify, #support-other input[type=text]').toggle(on);
+                        if (!on) {
+                            jq('#support-other input[type=text]').val('');
+                        }
+                    };
+                    if (supportOther.length) {  // not in view mode
+                        supportOther.change(toggleSupportOther);
+                        toggleSupportOther();
+                    }
+                });
+            </script>
+
+            <obs conceptId="PIH:13236" style="checkbox"
+                 answerConceptId="PIH:14376" answerCode="Post abortion" />
         </div>
     </section>
 
@@ -407,6 +535,36 @@ sexually in any way that you did not want in the past year?" />
             </h3>
             <subform path="configuration/pih/subforms/rapid-tests-widget.xml"/>
 
+            <!-- Pregnancy (urine) test (SL-1519), laid out like the rapid tests in the widget above.
+                 The widget is shared by other forms, so the test is added here. "Not done" shows the reasons. -->
+            <div id="pregnancy-test" class="bordered-section">
+                <p class="list-inline">
+                    <label>
+                        <uimessage code="Pregnancy (urine)"/>
+                    </label>
+                    <obs id="urine-pregnancy-test" conceptId="CIEL:45" style="radio"
+                         answerConceptIds="CIEL:703,CIEL:664,CIEL:1138,CIEL:160737"
+                         answerLabels="Positive,Negative,Indeterminate,Not done">
+                        <controls>
+                            <when value="CIEL:160737" thenDisplay="#preg-reason-not-done" />
+                        </controls>
+                    </obs>
+                </p>
+
+                <div id="preg-reason-not-done" class="indented">
+                    <p class="list-inline">
+                        <label>
+                            <uimessage code="Reason not performed"/>
+                        </label>
+                        <obs style="radio"
+                             conceptId="CIEL:165182"
+                             answerConceptIds="CIEL:165183,CIEL:167156,CIEL:159524,CIEL:5622"
+                             answerCodes="No test kit,Patient refused,Not sexually active,other"/>
+                    </p>
+                </div>
+            </div>
+            <div class="boundary"></div>
+
             <h3>
                 <uimessage code="Lab Orders" />
             </h3>
@@ -513,6 +671,70 @@ sexually in any way that you did not want in the past year?" />
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
                         <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
+                    </div>
+
+                    <!-- Social support (SL-1519), a subsection of Outcome under Disposition:
+                         the NCD question (CIEL:163766, PIH:2156) with the AYFS support options -->
+                    <div id="social-support-section">
+                        <p class="side-by-side">
+                            <label>
+                                <uimessage code="Social support"/>
+                            </label>
+                            <obs id="social-support" conceptId="CIEL:163766" style="radio"
+                                 answerConceptIds="CIEL:1065,CIEL:1066" required="true">
+                                <controls>
+                                    <when value="CIEL:1065" thenDisplay="#specify-support"/>
+                                </controls>
+                            </obs>
+                        </p>
+
+                        <div id="specify-support">
+                            <label>
+                                <uimessage code="if yes, specify support:"/>
+                            </label>
+                            <div>
+                                <obs id="support-transport" conceptId="PIH:2156" style="checkbox"
+                                     answerConceptId="PIH:990" answerCode="Transport">
+                                    <controls>
+                                        <when value="PIH:990" thenDisplay="#transport-amount"/>
+                                    </controls>
+                                </obs>
+                            </div>
+                            <div id="transport-amount" class="support-details">
+                                <label>
+                                    <uimessage code="Transport amount"/>
+                                </label>
+                                <obs conceptId="PIH:2970"/> <uimessage code="NLe"/>
+                            </div>
+                            <div>
+                                <obs conceptId="PIH:2156" style="checkbox"
+                                     answerConceptId="PIH:21859" answerCode="Delivery package"/>
+                            </div>
+                            <div>
+                                <obs id="support-nutrition" conceptId="PIH:2156" style="checkbox"
+                                     answerConceptId="PIH:1400" answerCode="Nutritional support">
+                                    <controls>
+                                        <when value="PIH:1400" thenDisplay="#nutrition-items"/>
+                                    </controls>
+                                </obs>
+                            </div>
+                            <div id="nutrition-items" class="support-details">
+                                <label>
+                                    <uimessage code="Items given"/>
+                                </label>
+                                <!-- Not a <repeat>: the quotes in the "Kenda" label break the repeat's substitution -->
+                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21861" answerCode="Rice"/></div>
+                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21862" answerCode="Palm oil"/></div>
+                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21863" answerCode="&quot;Kenda&quot; (mayonnaise bottle)"/></div>
+                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21864" answerCode="Pepper (1 mayonnaise bottle)"/></div>
+                            </div>
+                            <!-- "Other" keeps the specified text in the obs comment -->
+                            <div class="ms-other">
+                                <obs id="support-other" conceptId="PIH:2156" style="checkbox"
+                                     answerConceptId="CIEL:5622" answerCode="Other"
+                                     commentFieldCode="Please specify"/>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
