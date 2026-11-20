@@ -315,6 +315,27 @@
                             specify.next('.emptyValue').hide();  // nothing specified: drop the blank placeholder
                         }
                     });
+
+                    // Show each "Please specify" box only while its "Other" is selected, and clear it otherwise
+                    var toggleSpecify = function(fieldId, other, triggers) {
+                        if (!other.length) {
+                            return;  // view mode
+                        }
+                        var field = jq(fieldId);
+                        var toggle = function() {
+                            var on = other.is(':checked');
+                            field.find('.ms-specify, input[type=text]').toggle(on);
+                            if (!on) {
+                                field.find('input[type=text]').val('');
+                            }
+                        };
+                        triggers.change(toggle);
+                        toggle();
+                    };
+                    var sideEffectOther = jq('#ms-side-effect-other input[type=checkbox]');
+                    toggleSpecify('#ms-side-effect-other', sideEffectOther, sideEffectOther);
+                    var removalReasons = jq('#ms-removal-reason input[type=radio]');
+                    toggleSpecify('#ms-removal-reason', removalReasons.last(), removalReasons);  // "Other" is the last answer
                 });
             </script>
 
