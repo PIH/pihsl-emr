@@ -34,8 +34,7 @@
         /* Social support (SL-1519) */
         /* Reserve the height Disposition takes with Death selected (death date + cause of death),
            so Social support below doesn't jump when a disposition is picked */
-        #outcome-section #disposition { min-height: 430px; }
-        #social-support-section { margin-top: 1em; padding-top: 0.75em; border-top: 1px solid #ccc; }
+        #social-support-section { margin-bottom: 1em; }
         #specify-support .support-details { margin: 0.25em 0 0.5em 1.75em; }
         #transport-amount input[type=text] { display: inline-block; width: 7em; margin-right: 0.4em; }
         #ms-removal-reason label { display: inline; }
@@ -676,75 +675,75 @@ sexually in any way that you did not want in the past year?" />
     <section id="outcome-section" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Outcome">
         <div class="section-container">
+            <!-- Social support (SL-1519), a subsection of Outcome, above the Disposition / Next appointment row:
+                 the NCD question (CIEL:163766, PIH:2156) with the AYFS support options -->
+            <div id="social-support-section">
+                <p class="side-by-side">
+                    <label>
+                        <uimessage code="Social support"/>
+                    </label>
+                    <obs id="social-support" conceptId="CIEL:163766" style="radio"
+                         answerConceptIds="CIEL:1065,CIEL:1066" required="true">
+                        <controls>
+                            <when value="CIEL:1065" thenDisplay="#specify-support"/>
+                        </controls>
+                    </obs>
+                </p>
+
+                <div id="specify-support">
+                    <label>
+                        <uimessage code="if yes, specify support:"/>
+                    </label>
+                    <div>
+                        <obs id="support-transport" conceptId="PIH:2156" style="checkbox"
+                             answerConceptId="PIH:990" answerCode="Transport">
+                            <controls>
+                                <when value="PIH:990" thenDisplay="#transport-amount"/>
+                            </controls>
+                        </obs>
+                    </div>
+                    <div id="transport-amount" class="support-details">
+                        <label>
+                            <uimessage code="Transport amount"/>
+                        </label>
+                        <obs conceptId="PIH:2970"/> <uimessage code="NLe"/>
+                    </div>
+                    <div>
+                        <obs conceptId="PIH:2156" style="checkbox"
+                             answerConceptId="PIH:21859" answerCode="Delivery package"/>
+                    </div>
+                    <div>
+                        <obs id="support-nutrition" conceptId="PIH:2156" style="checkbox"
+                             answerConceptId="PIH:1400" answerCode="Nutritional support">
+                            <controls>
+                                <when value="PIH:1400" thenDisplay="#nutrition-items"/>
+                            </controls>
+                        </obs>
+                    </div>
+                    <div id="nutrition-items" class="support-details">
+                        <label>
+                            <uimessage code="Items given"/>
+                        </label>
+                        <!-- Not a <repeat>: the quotes in the "Kenda" label break the repeat's substitution -->
+                        <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21861" answerCode="Rice"/></div>
+                        <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21862" answerCode="Palm oil"/></div>
+                        <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21863" answerCode="&quot;Kenda&quot; (mayonnaise bottle)"/></div>
+                        <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21864" answerCode="Pepper (1 mayonnaise bottle)"/></div>
+                    </div>
+                    <!-- "Other" keeps the specified text in the obs comment -->
+                    <div class="ms-other">
+                        <obs id="support-other" conceptId="PIH:2156" style="checkbox"
+                             answerConceptId="CIEL:5622" answerCode="Other"
+                             commentFieldCode="Please specify"/>
+                    </div>
+                </div>
+            </div>
+
             <div class="two-columns">
                 <div>
                     <div id="disposition">
                         <encounterDisposition id="encounter-disposition" />
                         <subform path="configuration/pih/subforms/cause-of-death-tree-widget.xml"/>
-                    </div>
-
-                    <!-- Social support (SL-1519), a subsection of Outcome under Disposition:
-                         the NCD question (CIEL:163766, PIH:2156) with the AYFS support options -->
-                    <div id="social-support-section">
-                        <p class="side-by-side">
-                            <label>
-                                <uimessage code="Social support"/>
-                            </label>
-                            <obs id="social-support" conceptId="CIEL:163766" style="radio"
-                                 answerConceptIds="CIEL:1065,CIEL:1066" required="true">
-                                <controls>
-                                    <when value="CIEL:1065" thenDisplay="#specify-support"/>
-                                </controls>
-                            </obs>
-                        </p>
-
-                        <div id="specify-support">
-                            <label>
-                                <uimessage code="if yes, specify support:"/>
-                            </label>
-                            <div>
-                                <obs id="support-transport" conceptId="PIH:2156" style="checkbox"
-                                     answerConceptId="PIH:990" answerCode="Transport">
-                                    <controls>
-                                        <when value="PIH:990" thenDisplay="#transport-amount"/>
-                                    </controls>
-                                </obs>
-                            </div>
-                            <div id="transport-amount" class="support-details">
-                                <label>
-                                    <uimessage code="Transport amount"/>
-                                </label>
-                                <obs conceptId="PIH:2970"/> <uimessage code="NLe"/>
-                            </div>
-                            <div>
-                                <obs conceptId="PIH:2156" style="checkbox"
-                                     answerConceptId="PIH:21859" answerCode="Delivery package"/>
-                            </div>
-                            <div>
-                                <obs id="support-nutrition" conceptId="PIH:2156" style="checkbox"
-                                     answerConceptId="PIH:1400" answerCode="Nutritional support">
-                                    <controls>
-                                        <when value="PIH:1400" thenDisplay="#nutrition-items"/>
-                                    </controls>
-                                </obs>
-                            </div>
-                            <div id="nutrition-items" class="support-details">
-                                <label>
-                                    <uimessage code="Items given"/>
-                                </label>
-                                <!-- Not a <repeat>: the quotes in the "Kenda" label break the repeat's substitution -->
-                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21861" answerCode="Rice"/></div>
-                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21862" answerCode="Palm oil"/></div>
-                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21863" answerCode="&quot;Kenda&quot; (mayonnaise bottle)"/></div>
-                                <div><obs conceptId="PIH:21860" style="checkbox" answerConceptId="PIH:21864" answerCode="Pepper (1 mayonnaise bottle)"/></div>
-                            </div>
-                            <!-- "Other" keeps the specified text in the obs comment -->
-                            <div class="ms-other">
-                                <obs id="support-other" conceptId="PIH:2156" style="checkbox"
-                                     answerConceptId="CIEL:5622" answerCode="Other"
-                                     commentFieldCode="Please specify"/>
-                            </div>
-                        </div>
                     </div>
                 </div>
 
