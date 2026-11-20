@@ -23,7 +23,7 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 // ends with a VIEW of the second save.
 //
 // Findings:
-//   V1 High (fixed in PR #363, SL-1462; not on kgh-demo yet) :449-452 the VIA rows "Entire lesion seen" and "Extends into endocervical canal/vagina" both use PIH:21498
+//   V1 High (fixed: SL-1462, c521c7f) :449-452 the VIA rows "Entire lesion seen" and "Extends into endocervical canal/vagina" both use PIH:21498
 //                      (Entire lesion visible); the extending-lesion concept is PIH:21495. The second answer is saved as the
 //                      first question's concept, so the two cannot be told apart. Fixed: viaID="PIH:21495" on :451. TESTED below.
 //   V2 Medium :431,:434 thenDisplay="#via+" and id="via+": "+" is not valid in a jQuery id selector, so the VIA follow-up questions
@@ -109,11 +109,9 @@ test.describe('cervicalCancerScreening', () => {
     await expect(label).toBeHidden();
   });
 
-  // V1 (High, fixed in PR #363, not on kgh-demo yet): "Extends into endocervical canal/vagina" used to be saved with the concept of "Entire lesion seen" (PIH:21498).
+  // V1 (High, fixed: SL-1462, c521c7f): "Extends into endocervical canal/vagina" used to be saved with the concept of "Entire lesion seen" (PIH:21498).
   // Each answer is now its own obs: one "Entire lesion visible" obs (PIH:21498) and one for the extending lesion (PIH:21495).
-  // Skipped: the form fix (SL-1462, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('"Extends into endocervical canal" is saved under its own concept (V1)', async ({ page, api, createEntryContext }) => {
-    test.fixme();
     const context = await open(page, createEntryContext);
     await page.locator('#via-resultq input').nth(1).check(); // VIA positive
     await radioOf(page, 'Entire lesion seen').nth(0).check(); // yes
@@ -163,13 +161,11 @@ test.describe('cervicalCancerScreening', () => {
   });
 
   // EDIT round-trip (SL-1462): the two VIA answers come back each in its own row, and changing one leaves the other alone.
-  // Skipped: the form fix (SL-1462, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('EDIT: reopening shows both VIA answers in their own rows, and changing one does not touch the other', async ({
     page,
     api,
     createEntryContext,
   }) => {
-    test.fixme();
     const context = await open(page, createEntryContext);
     await page.locator('#via-resultq input').nth(1).check(); // VIA positive
     await radioOf(page, 'Entire lesion seen').nth(0).check(); // yes
@@ -253,9 +249,8 @@ test.describe('cervicalCancerScreening', () => {
     for (const expected of ['2', '03 May 2026', '[X] positive', '[X] on ART', '[X] Q1', '[X] Q3', '[X] VIA positive', '[X] Cryotherapy', 'Return in 12 months', `09 Apr ${apptYear}`]) {
       expect(shown, expected).toContain(expected);
     }
-    // "Covers more than 75%" was not answered. The rows of "Entire lesion seen" and "Extends into endocervical canal" are not asserted here: while V1 is
-    // unfixed both answers are obs of the same concept and the VIEW shows an arbitrary one of them (kgh-ci showed "yes", a local server "no"). The EDIT test
-    // (test.fixme, SL-1462) asserts them in their own rows once the fix is released.
+    // "Covers more than 75%" was not answered. The rows of "Entire lesion seen" and "Extends into endocervical canal" are not asserted here: the EDIT test
+    // (SL-1462) asserts them in their own rows.
     await expect(view.page.locator('p', { hasText: 'Covers more than 75% of cervix' }).locator('.value')).toHaveCount(0);
     // nothing was ticked for the other quadrants, the HIV answers, the treatment or the other referrals
     for (const unexpected of ['[X] negative', '[X] unknown', '[X] Q2', '[X] Q4', '[X] not on ART']) {

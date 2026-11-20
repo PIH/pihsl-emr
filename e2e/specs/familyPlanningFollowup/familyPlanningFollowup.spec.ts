@@ -8,8 +8,8 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 // appointment, referral out). A top-level form: the specs open enterHtmlFormWithStandardUi inside a visit they create, so
 // availability (documentation/_availability.e2e.md: enableMCHForms + pregnancy, enterMCH, "Maternal and Child Location"
 // session tag, female >= 10, no FP intake or followup in the visit) is not exercised. The session location (MCH OPD) has the
-// tag, so the Location select is preselected and Save works with the defaults. The form has the same formUuid as
-// familyPlanningFollowup.xml but formEncounterType 5a1d1710-... (asserted in the save test).
+// tag, so the Location select is preselected and Save works with the defaults. The form used to share its formUuid
+// with familyPlanningIntake.xml (fixed: SL-1503, 152a5cb: its own formUuid, formName and formVersion 1.1); formEncounterType is 5a1d1710-... (asserted in the save test).
 //
 // Conditions in the form, from documentation inventory (familyPlanningFollowup.inv.md):
 //   when Jadelle/Implanon      :223-224   show #implant-date (every box of the implant repeat carries both <when>s)
@@ -33,7 +33,7 @@ import { EntryFormPage, expectViewShowsSavedObs, selectDefaultProvider, VISIT_PA
 //                       and Implanon (CIEL:76022): ticking Implanon (or "Other implant") never shows #implant-date. Fix:
 //                       value="CIEL:76022". TESTED below (test.fixme).
 //   V2 Low    :58       answerCodeXX="{name}" is not an HFE attribute (typo for answerCode): concept names are shown.
-//   V3 Low    :16       formName="Family Planning Initial" although this is the followup form (copy of the intake; the title
+//   V3 Low (fixed: SL-1503, 152a5cb) :16       formName="Family Planning Initial" although this is the followup form (copy of the intake; the title
 //                       <h2> at :34 says "Family Planning Followup"). Fix: formName="Family Planning Followup".
 //   V4 Low    :281-282  "Other contraceptive methods" > Emergency contraceptive pills is saved under CIEL:160693 "Method of
 //                       contraception failure" = Emergency contraceptive pills, not under Method of family planning like every

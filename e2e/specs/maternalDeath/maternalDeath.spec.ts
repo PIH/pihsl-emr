@@ -25,7 +25,7 @@ import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultP
 // of the action points, app-loader availability.
 //
 // Findings:
-//   V1 Medium (fixed in PR #363, SL-1463; not on kgh-demo yet) the primary/secondary cause groups and the three action-point groups held hidden obs with a defaultValue
+//   V1 Medium (fixed: SL-1463, shipped with SL-1480 / PR #369) the primary/secondary cause groups and the three action-point groups held hidden obs with a defaultValue
 //        (CIEL:159946 "primary"/"secondary", CIEL:165416 row number); a group with a default is never "empty", so every save stored the secondary
 //        cause group and action points 2 and 3 with only their label/number. showIfEmpty="false" only affects VIEW. Fixed by dropping the defaults
 //        and setting the hidden obs in a beforeSubmit script, only for groups that have an entry. TESTED below.
@@ -165,10 +165,8 @@ test.describe('maternalDeath', () => {
     expect(visits[0].stopDatetime).toBeNull();
   });
 
-  // V1 (fixed in PR #363, not on kgh-demo yet): the hidden marker and row number are set only for the groups that have an entry.
-  // Skipped: the form fix (SL-1463, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
+  // V1 (fixed, SL-1463 / SL-1480): the hidden marker and row number are set only for the groups that have an entry.
   test('V1: empty cause and action-point rows are not stored as groups', async ({ page, api }) => {
-    test.fixme();
     await markDead(api, ctx);
     await openForm(page, ctx);
     await fillReview(page); // one primary cause and one action point: the secondary cause and action points 2/3 stay empty
@@ -215,12 +213,10 @@ test.describe('maternalDeath', () => {
   });
 
   // EDIT round-trip (SL-1463): the hidden marker and row number must follow the entries, also when a row is cleared or added on reopen.
-  // Skipped: the form fix (SL-1463, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('EDIT: reopening shows the saved rows, and clearing, changing and adding rows on a second save keeps the groups in step', async ({
     page,
     api,
   }) => {
-    test.fixme();
     const actionRow = (n: number) => page.locator('#actionPts tr').nth(n + 1).locator('input[type=text]:visible'); // n = 1..3
     const secondaryCause = page.locator('#secondaryCause input.autoCompleteText');
 
@@ -267,9 +263,7 @@ test.describe('maternalDeath', () => {
   });
 
   // VIEW: every saved value is shown, and the rows that were left empty (secondary cause, action points 2 and 3) are blank.
-  // Skipped: the form fix (SL-1463, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('VIEW: shows the saved review, and nothing for the rows that were left empty', async ({ page, api }) => {
-    test.fixme();
     await markDead(api, ctx);
     await openForm(page, ctx);
     await fillReview(page); // primary cause and action point 1 only
@@ -286,7 +280,8 @@ test.describe('maternalDeath', () => {
       'Arrived late from a peripheral unit',
       'Earlier referral',
       'Malaria',
-      '[X] Primary',
+      'Primary', // the hidden marker (CIEL:159946) is a plain coded obs, not a checkbox, so no "[X]"
+      '1', // the hidden action point row number (CIEL:165416)
       'Review the referral protocol',
       'Matron',
     ]) {
@@ -294,8 +289,9 @@ test.describe('maternalDeath', () => {
     }
     await expect(view.page.locator('#secondaryCause .value')).toHaveCount(0);
     // (the form wraps each <tr> in a <span id="action-n">, which the browser lifts out of the table: select the fields by id)
-    await expect(view.page.locator('#action-desc-1 .value')).toHaveText('Review the referral protocol');
-    await expect(view.page.locator('#action-person-1 .value')).toHaveText('Matron');
-    await expect(view.page.locator('#action-desc-2 .value, #action-person-2 .value, #action-desc-3 .value, #action-person-3 .value')).toHaveCount(0);
+    // (the ids are the obs ids of the form: ap-desc-n / ap-person-n, not the controlIds action-desc-n / action-person-n)
+    await expect(view.page.locator('#ap-desc-1 .value')).toHaveText('Review the referral protocol');
+    await expect(view.page.locator('#ap-person-1 .value')).toHaveText('Matron');
+    await expect(view.page.locator('#ap-desc-2 .value, #ap-person-2 .value, #ap-desc-3 .value, #ap-person-3 .value')).toHaveCount(0);
   });
 });

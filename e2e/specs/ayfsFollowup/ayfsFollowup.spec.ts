@@ -32,9 +32,9 @@ import type { APIRequestContext, Locator, Page } from '@playwright/test';
 // the helper's "Diagnosis" mismatches are filtered for that reason.
 //
 // Findings (same shapes as ayfsIntake.xml; ids are the same):
-//   V1 High (SL-1458; not on kgh-demo yet) :388-392 "Symptoms/problems around the genitalia?" answered CIEL:1115,CIEL:1116 (Normal, Abnormal) but is labelled
+//   V1 High (fixed: SL-1458, PR #376) :388-392 "Symptoms/problems around the genitalia?" answered CIEL:1115,CIEL:1116 (Normal, Abnormal) but is labelled
 //                      yes,no: "Yes" saved Normal. Fixed: the answers are now CIEL:1065,CIEL:1066 (Yes, No); a liquibase changeset migrates the saved obs. TESTED below.
-//   V2 Medium (fixed in PR #363, SL-1467; not on kgh-demo yet) :107-116 each reason checkbox carries a <when> on #other-visit-reason: ticking another reason while "Other" is
+//   V2 Medium (fixed: SL-1467, PR #378) :107-116 each reason checkbox carries a <when> on #other-visit-reason: ticking another reason while "Other" is
 //                      ticked hides the box and its text is dropped on save. Fixed: the box is shown from a standalone "Other" checkbox (#vr-other) after the repeat. TESTED below.
 //   V3 Medium :251-252 #implant-date shows for Jadelle and CIEL:5275 (IUD, not offered here), never for Implanon (CIEL:76022)
 //                      or "Other implant". Fix: <when> on CIEL:76022. TESTED below (test.fixme).
@@ -115,15 +115,13 @@ test.describe('ayfsFollowup', () => {
     await expect(target).toBeHidden();
   });
 
-  // V2 (Medium, fixed in PR #363, not on kgh-demo yet): ticking Family planning while Other was ticked hid the box and the typed text was lost.
+  // V2 (Medium, fixed: SL-1467, PR #378): ticking Family planning while Other was ticked hid the box and the typed text was lost.
   // The box stays while Other is ticked and its text is saved.
-  // Skipped: the form fix (SL-1467, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('the other-reason box stays visible while another reason is ticked too, and its text saves (V2)', async ({
     page,
     api,
     createEntryContext,
   }) => {
-    test.fixme();
     const context = await open(page, createEntryContext);
     await answerGbvNo(page);
     await checkboxOf(page, 'vr-other').check();
@@ -168,15 +166,13 @@ test.describe('ayfsFollowup', () => {
     await expect(page.getByText('Other contraceptive methods', { exact: true })).toHaveCount(0);
   });
 
-  // V1 (High, SL-1458, not on kgh-demo yet): the genitalia question is labelled yes/no and its answers used to be Normal/Abnormal in that order, so "Yes" saved Normal.
+  // V1 (High, fixed: SL-1458, PR #376): the genitalia question is labelled yes/no and its answers used to be Normal/Abnormal in that order, so "Yes" saved Normal.
   // "Yes" (symptoms present) saves Yes (CIEL:1065) and "No" saves No (CIEL:1066).
   for (const [radio, label, saved] of [
     [0, 'Yes', 'Yes'],
     [1, 'No', 'No'],
   ] as const) {
-    // Skipped: the form fix (SL-1458) is not on kgh-demo yet. Remove test.fixme() once it is released.
     test(`answering ${label} to genital symptoms saves ${saved} (V1)`, async ({ page, api, createEntryContext }) => {
-      test.fixme();
       const context = await open(page, createEntryContext);
       await answerGbvNo(page);
       await radioOf(page, 'Symptoms/problems around the genitalia').nth(radio).check(); // answerCodes yes,no
@@ -279,13 +275,11 @@ test.describe('ayfsFollowup', () => {
   });
 
   // EDIT round-trip (SL-1458, SL-1467): the genitalia answer and the "Other" reason text come back as saved, and a second save replaces them.
-  // Skipped: the form fixes (SL-1458; SL-1467, PR #363) is not on kgh-demo yet. Remove test.fixme() once it is released.
   test('EDIT: reopening shows the saved genitalia answer and other-reason text, and a second save replaces them', async ({
     page,
     api,
     createEntryContext,
   }) => {
-    test.fixme();
     const context = await open(page, createEntryContext);
     await answerGbvNo(page);
     await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Yes (CIEL:1065)
