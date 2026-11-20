@@ -89,19 +89,6 @@
         </span>
     </subform>
 
-    <!-- Family planning client type (SL-1518): PIH:14321 "Family planning service status", as on the OB/GYN initial form:
-         PIH:13958 "Accepted" = first time user (new acceptor), CIEL:965 "Currently using birth control" = continuing user -->
-    <section id="fp-client-type" sectionTag="fieldset" headerTag="legend" headerStyle="title"
-             headerCode="Family planning client type">
-        <div class="section-container">
-            <p class="list-inline-wide">
-                <obs conceptId="PIH:14321" style="radio"
-                     answerConceptIds="PIH:13958,CIEL:965"
-                     answerCodes="First time family planning user,Continuing family planning user"/>
-            </p>
-        </div>
-    </section>
-
     <section id="disability" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Disability">
         <div class="section-container">
