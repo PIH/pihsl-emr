@@ -30,10 +30,9 @@ import type { Page } from '@playwright/test';
 // Not covered here: the Next / other-section buttons (navigation, _shared); date pickers (referral, surgery).
 //
 // Findings:
-//   V1 High   :115-118 answerConceptIds PIH:20167 (concept "Other rheumatic heart disease") and PIH:20168 ("Unknown rheumatic
-//                      heart disease") carry the labels "Unspecified ..." and "Other ..." in swapped order: choosing "Other
-//                      rheumatic heart disease" saves "Unknown rheumatic heart disease" and vice versa.
-//                      Fix: swap the two answerCodes. TESTED below (test.fixme).
+//   V1 Fixed  :115-118 (SL-1459) answerConceptIds PIH:20167 ("Other rheumatic heart disease") and PIH:20168 ("Unknown rheumatic
+//                      heart disease") were paired with the labels "Unspecified ..." and "Other ..." in swapped order, so each radio
+//                      saved the other's concept. The ids are now in label order; a Liquibase changeset swaps the saved obs. TESTED below.
 //   V2 High   :101-102,:122-123 two obs of concept PIH:14754 ("if other cardiomyopathy / rheumatic, specify"): HFE binds a saved
 //                      value to the first widget, which sits in #cardiomyopathy (hidden unless Cardiomyopathy is ticked and
 //                      cleared when hidden), so the text entered under Rheumatic heart disease is not shown when the form is
@@ -200,21 +199,24 @@ test.describe('section-heart-failure: NCD initial', () => {
     await expect(view.page.locator('#cardiomyopathy .value, #degenHeart .value, #arrythmia .value')).toHaveCount(0);
   });
 
-  // V1 (High): the answerCodes of PIH:20167 / PIH:20168 are swapped, so the "Other rheumatic heart disease" radio
-  // saves the concept "Unknown rheumatic heart disease". Intended: the saved diagnosis is the one that was chosen.
-  // Remove test.fixme() when the labels are fixed.
-  test('choosing "Other rheumatic heart disease" saves that diagnosis (V1)', async ({ page, api }) => {
-    test.fixme();
-    const form = await SectionFormPage.openEdit(page, FORM, section);
-    await page.locator('#hf-main-dx').getByLabel(/^Rheumatic heart disease$/).check();
-    await page.locator('#rheumaticHeart').getByLabel('Other rheumatic heart disease').check();
-    await page.getByLabel('II (Comfortable with moderate exercise)').check();
-    await form.save();
-    await form.expectSaved();
+  // V1 (fixed, SL-1459): the "Other" / "Unspecified rheumatic heart disease" radios saved each other's concept.
+  // Each radio now saves the diagnosis it names ("Unspecified" is the concept "Unknown rheumatic heart disease").
+  for (const [label, saved] of [
+    ['Other rheumatic heart disease', 'Other rheumatic heart disease'],
+    ['Unspecified rheumatic heart disease', 'Unknown rheumatic heart disease'],
+  ]) {
+    test(`choosing "${label}" saves "${saved}" (V1)`, async ({ page, api }) => {
+      const form = await SectionFormPage.openEdit(page, FORM, section);
+      await page.locator('#hf-main-dx').getByLabel(/^Rheumatic heart disease$/).check();
+      await page.locator('#rheumaticHeart').getByLabel(label, { exact: true }).check();
+      await page.getByLabel('II (Comfortable with moderate exercise)').check();
+      await form.save();
+      await form.expectSaved();
 
-    const displays = await displaysOf(api, section);
-    expect(displays).toContain('Diagnosis: Other rheumatic heart disease');
-  });
+      const displays = await displaysOf(api, section);
+      expect(displays).toContain(`Diagnosis: ${saved}`);
+    });
+  }
 
   // V2 (High): the free text under Rheumatic heart disease and the one under Cardiomyopathy are both concept
   // PIH:14754; a saved value is bound to the first widget (hidden), so the rheumatic field is empty on reopening.

@@ -521,4 +521,18 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/void_empty_maternal_death_groups.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20261120-SL-1459-swap-ncd-rheumatic-other-unknown-obs" author="cioan">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from obs where void_reason = 'SL-1459: swapped Other/Unknown rheumatic heart disease diagnosis';
+            </sqlCheck>
+        </preConditions>
+        <comment>
+            SL-1459: in the NCD heart failure section, the "Other rheumatic heart disease" radio saved PIH:20168 (Unknown
+            rheumatic heart disease) and the "Unspecified rheumatic heart disease" radio saved PIH:20167 (Other rheumatic heart
+            disease). Swap those saved diagnoses (void and re-create with previous_version set) on the NCD encounter types
+            that include the section. Diagnosis groups with a certainty obs (the encounter diagnosis widget) are left alone.
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/swap_ncd_rheumatic_other_unknown_obs.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>

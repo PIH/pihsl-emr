@@ -112,7 +112,7 @@
                                 <br/>
                                 <obsgroup groupingConceptId="PIH:Visit Diagnoses" showIfEmpty="false">
                                     <obs conceptId="PIH:DIAGNOSIS" style="radio"
-                                         answerConceptIds="CIEL:127437,CIEL:127438,CIEL:127436,PIH:20166,PIH:14750,PIH:20167,PIH:20168"
+                                         answerConceptIds="CIEL:127437,CIEL:127438,CIEL:127436,PIH:20166,PIH:14750,PIH:20168,PIH:20167"
                                          answerCodes="Pure mitral stenosis,Pure mitral regurgitation,Mixed mitral valve disease (MS+MR),Isolated aortic valve disease (AVD),
                                          Mixed mitral and aortic valve disease (MMAVD),
                                          Unspecified rheumatic heart disease, Other rheumatic heart disease"
