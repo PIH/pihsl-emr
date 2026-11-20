@@ -18,6 +18,7 @@
           formVersion="1.0">
 
     <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.ReopenVisitAction"/>
+    <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.CleanDiagnosisConstructAction" />
 
     <style type="text/css">
         /* View mode: "Other: specified text" (Method switch and Social support) */
@@ -191,6 +192,40 @@
                     <render acID="CIEL:1489" dID="1489" csName="Vasectomy" />
                 </repeat>
             </table>
+        </div>
+    </section>
+
+    <section id="lab-tests" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Laboratory tests">
+        <div class="section-container">
+            <subform path="configuration/pih/subforms/rapid-tests-widget.css"/>
+            <!-- Pregnancy (urine) test (SL-1518), the same as on the AYFS forms. "Not done" shows the reasons. -->
+            <div id="pregnancy-test" class="bordered-section">
+                <p class="list-inline">
+                    <label>
+                        <uimessage code="Pregnancy (urine)"/>
+                    </label>
+                    <obs id="urine-pregnancy-test" conceptId="CIEL:45" style="radio"
+                         answerConceptIds="CIEL:703,CIEL:664,CIEL:1138,CIEL:160737"
+                         answerLabels="Positive,Negative,Indeterminate,Not done">
+                        <controls>
+                            <when value="CIEL:160737" thenDisplay="#preg-reason-not-done" />
+                        </controls>
+                    </obs>
+                </p>
+
+                <div id="preg-reason-not-done" class="indented">
+                    <p class="list-inline">
+                        <label>
+                            <uimessage code="Reason not performed"/>
+                        </label>
+                        <obs style="radio"
+                             conceptId="CIEL:165182"
+                             answerConceptIds="CIEL:165183,CIEL:167156,CIEL:159524,CIEL:5622"
+                             answerCodes="No test kit,Patient refused,Not sexually active,other"/>
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -546,6 +581,25 @@
                     <obs conceptId="PIH:2996" style="text" />
                 </p>
             </div>
+        </div>
+    </section>
+
+    <section id="diagnosis" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Diagnosis">
+        <div class="section-container">
+            <div id="data-collection">
+                <encounterDiagnosesByObs selectedDiagnosesTarget="#encounter-diagnoses-target"/>
+            </div>
+
+            <div id="encounter-diagnoses-target">
+            </div>
+        </div>
+    </section>
+
+    <section id="drug-orders" sectionTag="fieldset"
+             headerTag="legend" headerStyle="title" headerCode="pihcore.visitNote.orders.medications">
+        <div class="section-container">
+            <subform path="configuration/pih/subforms/drug-order-widget.xml"/>
         </div>
     </section>
 
