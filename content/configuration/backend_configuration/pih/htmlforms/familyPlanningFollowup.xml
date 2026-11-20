@@ -18,6 +18,7 @@
           formVersion="1.1">
 
     <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.ReopenVisitAction"/>
+    <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.CleanDiagnosisConstructAction" />
 
     <style type="text/css">
         /* View mode: "Other: specified text" (Method switch and Social support) */
@@ -88,19 +89,6 @@
         </span>
     </subform>
 
-    <!-- Family planning client type (SL-1518): PIH:14321 "Family planning service status", as on the OB/GYN initial form:
-         PIH:13958 "Accepted" = first time user (new acceptor), CIEL:965 "Currently using birth control" = continuing user -->
-    <section id="fp-client-type" sectionTag="fieldset" headerTag="legend" headerStyle="title"
-             headerCode="Family planning client type">
-        <div class="section-container">
-            <p class="list-inline-wide">
-                <obs conceptId="PIH:14321" style="radio"
-                     answerConceptIds="PIH:13958,CIEL:965"
-                     answerCodes="First time family planning user,Continuing family planning user"/>
-            </p>
-        </div>
-    </section>
-
     <section id="disability" sectionTag="fieldset" headerTag="legend" headerStyle="title"
              headerCode="Disability">
         <div class="section-container">
@@ -125,6 +113,40 @@
             <subform path="configuration/pih/subforms/prior-vital-signs-widget.xml"/>
             <br/>
             <subform path="configuration/pih/subforms/vital-signs-wt-ht-bp-widget.xml"/>
+        </div>
+    </section>
+
+    <section id="lab-tests" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Laboratory tests">
+        <div class="section-container">
+            <subform path="configuration/pih/subforms/rapid-tests-widget.css"/>
+            <!-- Pregnancy (urine) test (SL-1518), the same as on the AYFS forms. "Not done" shows the reasons. -->
+            <div id="pregnancy-test" class="bordered-section">
+                <p class="list-inline">
+                    <label>
+                        <uimessage code="Pregnancy (urine)"/>
+                    </label>
+                    <obs id="urine-pregnancy-test" conceptId="CIEL:45" style="radio"
+                         answerConceptIds="CIEL:703,CIEL:664,CIEL:1138,CIEL:160737"
+                         answerLabels="Positive,Negative,Indeterminate,Not done">
+                        <controls>
+                            <when value="CIEL:160737" thenDisplay="#preg-reason-not-done" />
+                        </controls>
+                    </obs>
+                </p>
+
+                <div id="preg-reason-not-done" class="indented">
+                    <p class="list-inline">
+                        <label>
+                            <uimessage code="Reason not performed"/>
+                        </label>
+                        <obs style="radio"
+                             conceptId="CIEL:165182"
+                             answerConceptIds="CIEL:165183,CIEL:167156,CIEL:159524,CIEL:5622"
+                             answerCodes="No test kit,Patient refused,Not sexually active,other"/>
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -214,6 +236,27 @@
                             specify.next('.emptyValue').hide();  // nothing specified: drop the blank placeholder
                         }
                     });
+
+                    // Show each "Please specify" box only while its "Other" is selected, and clear it otherwise
+                    var toggleSpecify = function(fieldId, other, triggers) {
+                        if (!other.length) {
+                            return;  // view mode
+                        }
+                        var field = jq(fieldId);
+                        var toggle = function() {
+                            var on = other.is(':checked');
+                            field.find('.ms-specify, input[type=text]').toggle(on);
+                            if (!on) {
+                                field.find('input[type=text]').val('');
+                            }
+                        };
+                        triggers.change(toggle);
+                        toggle();
+                    };
+                    var sideEffectOther = jq('#ms-side-effect-other input[type=checkbox]');
+                    toggleSpecify('#ms-side-effect-other', sideEffectOther, sideEffectOther);
+                    var removalReasons = jq('#ms-removal-reason input[type=radio]');
+                    toggleSpecify('#ms-removal-reason', removalReasons.last(), removalReasons);  // "Other" is the last answer
                 });
             </script>
 
@@ -461,6 +504,25 @@
                     <obs conceptId="PIH:2996" style="text" />
                 </p>
             </div>
+        </div>
+    </section>
+
+    <section id="diagnosis" sectionTag="fieldset" headerTag="legend" headerStyle="title"
+             headerCode="Diagnosis">
+        <div class="section-container">
+            <div id="data-collection">
+                <encounterDiagnosesByObs selectedDiagnosesTarget="#encounter-diagnoses-target"/>
+            </div>
+
+            <div id="encounter-diagnoses-target">
+            </div>
+        </div>
+    </section>
+
+    <section id="drug-orders" sectionTag="fieldset"
+             headerTag="legend" headerStyle="title" headerCode="pihcore.visitNote.orders.medications">
+        <div class="section-container">
+            <subform path="configuration/pih/subforms/drug-order-widget.xml"/>
         </div>
     </section>
 
