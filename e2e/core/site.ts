@@ -30,7 +30,7 @@ export const getSite = (): SiteSettings => ({
   sessionLocationUuid: MCH_OPD_LOCATION_UUID,
   defaultProviderName: process.env.E2E_DEFAULT_PROVIDER_NAME,
   // What the shared specs that depend on the site's encounter types need (see SiteSpecFacts in @pih/pihemr-e2e). Not given: section-prescriptions-print, which this site
-  // leaves out (specs/shared/shared.spec.ts): its plan section has its own form and print flow, tested by its own spec.
+  // leaves out (specs/shared/pihemr.spec.ts): its plan section has its own form and print flow, tested by its own spec.
   specs: {
     'section-chief-complaint': {
       parents: [{ name: 'outpatient followup', encounterTypeUuid: OUTPATIENT_FOLLOWUP_ENCOUNTER_TYPE_UUID }],
