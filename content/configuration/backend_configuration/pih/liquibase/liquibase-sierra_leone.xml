@@ -535,4 +535,18 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/swap_ncd_rheumatic_other_unknown_obs.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20261123-SL-1460-move-ncd-rheumatic-specify-text" author="cioan">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from obs where void_reason = 'SL-1460: moved rheumatic heart disease specify text to PIH:20167';
+            </sqlCheck>
+        </preConditions>
+        <comment>
+            SL-1460: in the NCD heart failure section, the "if other rheumatic heart disease, specify" text saved
+            PIH:14754 (Other cardiomyopathy (text)), the cardiomyopathy concept, and was voided by the next edit. On
+            "rheumatic only" NCD encounters, copy the current 14754 text to PIH:20167 and void it, or restore the latest
+            14754 text voided by htmlformentry as PIH:20167 (new obs with previous_version set).
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/move_ncd_rheumatic_specify_text_obs.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>

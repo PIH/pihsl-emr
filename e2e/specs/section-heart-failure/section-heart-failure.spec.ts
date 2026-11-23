@@ -33,12 +33,11 @@ import type { Page } from '@playwright/test';
 //   V1 Fixed  :115-118 (SL-1459) answerConceptIds PIH:20167 ("Other rheumatic heart disease") and PIH:20168 ("Unknown rheumatic
 //                      heart disease") were paired with the labels "Unspecified ..." and "Other ..." in swapped order, so each radio
 //                      saved the other's concept. The ids are now in label order; a Liquibase changeset swaps the saved obs. TESTED below.
-//   V2 High   :101-102,:122-123 two obs of concept PIH:14754 ("if other cardiomyopathy / rheumatic, specify"): HFE binds a saved
-//                      value to the first widget, which sits in #cardiomyopathy (hidden unless Cardiomyopathy is ticked and
-//                      cleared when hidden), so the text entered under Rheumatic heart disease is not shown when the form is
-//                      reopened and is dropped by the next save. Fix: use a different concept for the rheumatic text.
-//                      TESTED below (test.fixme; reopen only, no second save), and in VIEW (the VIEW prints the rheumatic text in the
-//                      Cardiomyopathy block and leaves the Rheumatic "specify" blank).
+//   V2 Fixed  :101-102,:122-123 (SL-1460) the "if other cardiomyopathy / rheumatic, specify" texts were both concept PIH:14754:
+//                      HFE bound a saved value to the first widget, in #cardiomyopathy (hidden unless Cardiomyopathy is ticked
+//                      and cleared when hidden), so the rheumatic text was not shown on reopening and was dropped by the next
+//                      save. The rheumatic text is now PIH:20167 ("Other rheumatic heart disease", Text); a Liquibase changeset
+//                      moves the saved text, or restores it when a re-save voided it. TESTED below (reopen + second save, VIEW).
 //   V3 Low    :232-239 #unknownHeart ("Unknown suspected, specify", concept "Congenital heart disease comment") is toggled by
 //                      PIH:12231 "Other heart valve disease or congenital heart disease", not by PIH:20004 "Unknown heart failure
 //                      without echocardiogram" (#hfNoEcho, no target): label and trigger do not match (unconfirmed intent).
@@ -218,11 +217,12 @@ test.describe('section-heart-failure: NCD initial', () => {
     });
   }
 
-  // V2 (High): the free text under Rheumatic heart disease and the one under Cardiomyopathy are both concept
-  // PIH:14754; a saved value is bound to the first widget (hidden), so the rheumatic field is empty on reopening.
-  // Intended: the text comes back where it was entered. Remove test.fixme() when the concepts differ.
-  test('the "other rheumatic heart disease" text is shown again when the form is reopened (V2)', async ({ page }) => {
-    test.fixme();
+  // V2 (fixed, SL-1460): the free text under Rheumatic heart disease was saved as the Cardiomyopathy concept PIH:14754,
+  // bound to the hidden Cardiomyopathy widget on reopening, and dropped by the next save. It is now PIH:20167.
+  test('the "other rheumatic heart disease" text is shown again and kept when the form is reopened and saved (V2)', async ({
+    page,
+    api,
+  }) => {
     const form = await SectionFormPage.openEdit(page, FORM, section);
     await page.locator('#hf-main-dx').getByLabel(/^Rheumatic heart disease$/).check();
     await page.locator('#rheumaticHeart input[type=text]').fill('rheumatic other text');
@@ -230,16 +230,20 @@ test.describe('section-heart-failure: NCD initial', () => {
     await form.save();
     await form.expectSaved();
 
-    await SectionFormPage.openEdit(page, FORM, section);
+    const reopened = await SectionFormPage.openEdit(page, FORM, section);
     await expect(page.locator('#rheumaticHeart')).toBeVisible();
     await expect(page.locator('#rheumaticHeart input[type=text]')).toHaveValue('rheumatic other text');
+    await reopened.save();
+    await reopened.expectSaved();
+
+    const displays = await displaysOf(api, section);
+    expect(displays).toContain('Other rheumatic heart disease: rheumatic other text');
+    expect(displays.filter((d) => d.startsWith('Other cardiomyopathy (text)'))).toEqual([]);
   });
 
-  // V2 in VIEW: the rheumatic text is saved under the Cardiomyopathy concept, so the VIEW prints it in the Cardiomyopathy block
-  // (observed: "Cardiomyopathy if other cardiomyopathy, specify: rheumatic other text", Cardiomyopathy not ticked) and leaves the
-  // Rheumatic block's "specify" blank. Same root cause as V2. Intended: the text is shown under Rheumatic heart disease.
+  // V2 in VIEW (fixed, SL-1460): the VIEW printed the rheumatic text in the Cardiomyopathy block and left the Rheumatic
+  // block's "specify" blank. The text is now shown under Rheumatic heart disease only.
   test('VIEW shows the "other rheumatic heart disease" text under Rheumatic heart disease (V2)', async ({ page }) => {
-    test.fixme();
     const form = await SectionFormPage.openEdit(page, FORM, section);
     await page.locator('#hf-main-dx').getByLabel(/^Rheumatic heart disease$/).check();
     await page.locator('#rheumaticHeart input[type=text]').fill('rheumatic other text');
