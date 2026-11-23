@@ -17,11 +17,11 @@ import { EntryFormPage, VisitPage, selectDefaultProvider, VISIT_PAGE_URL } from 
 // Scripts: none.
 // Side effects on save: none (no postSubmissionAction, no enrolment, no disposition). The encounter type is also what the Maternal
 // Death form looks up in the visit to show where/when the patient was admitted (see maternalDeath.spec.ts).
-// Visit-page display: the visit page does NOT show this form's VIEW. The form saves an Admission encounter (260566e1-...), whose entry in
-// encounterTypeConfig.js (// admission) has `shortTemplate: defaultEncounterShort.page`, `longTemplate: admissionLong.page` and no templateModelUrl:
-// the collapsed card shows the type, date, "by <provider>" and, when it differs from the visit's, the location; the long view lists the
-// encounter's diagnoses (primary first, as "<diagnosis>, <order>, <certainty>") and nothing else. The VIEW test (end of the save test) asserts
-// that; the form's own VIEW is therefore not tested. The free-text summary is not shown by that template, a field it never shows (not a finding).
+// Visit-page display: the visit page shows the form's saved VIEW (pihemr SL-1502, PR #782: the "sierra_leone" entry of the admission encounter type in
+// encounterTypeConfig.js has `longTemplate: viewEncounterWithHtmlFormLong.page` and a templateModelUrl; before it the long view, admissionLong.page, listed only
+// the diagnoses as "<diagnosis>, <order>, <certainty>"). The collapsed card shows the type, date, "by <provider>" and, when it differs from the visit's, the
+// location; the long view shows the diagnosis as "Primary Diagnosis(Presumed) Malaria [B54]" and the other answers, the notes among them. The VIEW test (end of the
+// save test) asserts the diagnosis and a note; the form's own VIEW is not tested otherwise.
 // Not covered here: EDIT, the diagnosis certainty/order controls, app-loader availability.
 
 const FORM = 'maternalAdmission.xml';
@@ -82,14 +82,15 @@ test.describe('maternalAdmission', () => {
     const enrollments = (await (await api.get(`programenrollment?patient=${ctx.patient.uuid}&v=custom:(uuid)`)).json()).results;
     expect(enrollments).toHaveLength(0);
 
-    // what the visit page shows for the encounter: the card, and the diagnoses in the long view (admissionLong.page); not the summary
+    // what the visit page shows for the encounter: the card, and the form's own VIEW in the long view (the diagnosis as "Primary Diagnosis(Presumed) Malaria [B54]"
+    // and the other answers, such as the notes; it used to list only the diagnoses, as "<diagnosis>, <order>, <certainty>")
     const visit = await VisitPage.open(page, ctx.visitUuid);
     const entry = visit.encounterOfType(ADMISSION_ENCOUNTER_TYPE);
     await expect(entry).toHaveCount(1);
     await expect(entry.locator('.encounter-name').first()).toContainText('Admission');
     await visit.expand(entry);
-    const long = entry.locator(':scope > .visit-element .content'); // admissionLong.page has no .encounter-summary-long
-    await expect(long).toContainText('Malaria, Primary, Presumed');
-    await expect(long).not.toContainText('Admitted in active labour');
+    const long = entry.locator(':scope > .visit-element .content');
+    await expect(long).toContainText(/Primary Diagnosis\s*\(Presumed\)\s*Malaria/);
+    await expect(long).toContainText('Admitted in active labour');
   });
 });

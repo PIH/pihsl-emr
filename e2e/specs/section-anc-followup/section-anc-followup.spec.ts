@@ -85,7 +85,7 @@ test.describe('section-anc-followup', () => {
     expect(before.length).toBe(0);
 
     await page.getByLabel('Fever', { exact: true }).first().check(); // danger sign (Visit Diagnoses group)
-    await page.getByLabel('Eclampsia', { exact: true }).check(); // risk factor
+    await page.getByRole('checkbox', { name: 'Eclampsia', exact: true }).check(); // risk factor
     await page.locator('#malariaRDT input[type=radio]').nth(1).check(); // Malaria RDT: Negative
     await page.locator('#fefol input[type=radio]').first().check(); // FeFol: yes
     await page.locator('#bednet input[type=radio]').first().check(); // Received LLIN: yes
@@ -119,7 +119,7 @@ test.describe('section-anc-followup', () => {
 
     await page.getByLabel('Fever', { exact: true }).first().check(); // danger signs
     await page.getByLabel('Seizure', { exact: true }).check();
-    await page.getByLabel('Eclampsia', { exact: true }).check(); // risk factors
+    await page.getByRole('checkbox', { name: 'Eclampsia', exact: true }).check(); // risk factors
     await page.getByLabel('Syphilis', { exact: true }).check();
     await page.locator('#estimatedGestationalAge input').fill('28'); // the page script derives the EDD from the gestational age
     await page.locator('#weight input').fill('62.5');
