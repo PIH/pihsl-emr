@@ -4,6 +4,8 @@
 // its fixtures.
 
 export const KGH_EMR_ID_IDENTIFIER_TYPE_UUID = 'c09a1d24-7162-11eb-8aa6-0242ac110002';
+// "KGH Primary Identifier Source": the idgen source that issues a "KGH<number>" EMR ID. A test patient's identifier comes from it.
+export const KGH_EMR_ID_IDENTIFIER_SOURCE_UUID = '809b23e3-7162-11eb-8aa6-0242ac110002';
 
 // "KGH": has the Visit Location tag, so visits are created here.
 export const KGH_VISIT_LOCATION_UUID = '074b2ab0-716a-11eb-8aa6-0242ac110002';

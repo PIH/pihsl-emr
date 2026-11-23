@@ -1,6 +1,6 @@
 # End-to-end tests
 
-Playwright tests for the Sierra Leone HTML forms. The layout follows `pihmalawi-emr/e2e` (`core/`, `fixtures/`, `commands/`, `pages/`, `specs/`); some fixtures and commands are duplicated for now and can move to a shared package later.
+Playwright tests for the Sierra Leone HTML forms. The layout follows `pihmalawi-emr/e2e` (`core/`, `fixtures/`, `commands/`, `pages/`, `specs/`); the fixtures (`test`, patient and visit creation, cleanup) come from `@pih/pihemr-e2e` (pihemr `e2e/`), configured for this site in `core/test.ts`; the page objects (`pages/`) and the REST reads (`commands/`) are there too, and `pages/index.ts` and `commands/index.ts` here only re-export them.
 
 ## Running locally
 
@@ -135,7 +135,7 @@ The conditions each spec covers are listed in a comment at the top, taken from t
 
 ### VIEW mode
 
-Every spec that saves also checks what users see afterwards, **on the visit page** (`/openmrs/pihcore/visit/visit.page?visit=<uuid>`, `pages/visit-page.ts` and `pages/view-form-page.ts`). What the page shows for an encounter or section comes from its entry in `encounterTypeConfig.js` (read the one the server runs):
+Every spec that saves also checks what users see afterwards, **on the visit page** (`/openmrs/pihcore/visit/visit.page?visit=<uuid>`, `visit-page.ts` and `view-form-page.ts` in pihemr's `e2e/src/pages/`). What the page shows for an encounter or section comes from its entry in `encounterTypeConfig.js` (read the one the server runs):
 
 - **The form's VIEW** (the entry has a `templateModelUrl` with `getAsHtml.action`, naming the form in `definitionUiResource` or, for the Vitals, OB Triage, Post-operative note and SL maternal/newborn entries, leaving it out so that the encounter's own form is shown): `expectViewShowsSavedObs(page, api, form, encounterUuid, labels?)` opens the visit page, expands that entry like a user and checks that every saved text, number and coded obs appears in a `span.value`; the specs add targeted assertions on top (obs groups, custom answer labels, dates, what was left empty must not show). The form's own scripts (vitals colouring, BMI, the Aldrete total, `when`/`toggle`) run as they do for a user; the visit page does not load `htmlFormEntry.js`, so a form script that needs it throws there and the test fails with the error.
 - **Not the form's VIEW** (the entry only has `shortTemplate`/`longTemplate`, `templateModelUrl` is `encounter.json`, the long template is the section's own such as `dxLong.page`, or the form is a shell whose content is in its sections): `ViewFormPage.open` throws "The visit page shows no VIEW of <form>". Those specs test what the page shows instead with `VisitPage` (the collapsed card, the long template, the list of sections) and say so in a `// Visit-page display:` header line: `checkin`, `checkinMaternal`, `maternalAdmission` and `newbornAdmissionNote` (the Admission encounter), `section-dx`, and the shell forms of the ANC, delivery, postnatal, NCD and outpatient encounters.
