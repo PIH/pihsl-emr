@@ -774,7 +774,7 @@ and o.concept_id in (
 	concept_from_mapping('PIH', '14752'),
 	concept_from_mapping('PIH', '14752'),
 	concept_from_mapping('PIH', '14754'),
-	concept_from_mapping('PIH', '14754'),
+	concept_from_mapping('PIH', '20167'),
 	concept_from_mapping('PIH', '14756'),
 	concept_from_mapping('PIH', '20164'),
 	concept_from_mapping('PIH', 'NYHA CLASS')));

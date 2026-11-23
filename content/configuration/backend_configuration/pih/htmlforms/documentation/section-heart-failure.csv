@@ -3,7 +3,7 @@ Main diagnosis,Coded,Cardiomyopathy | Hypertensive cardiomyopathy | Hypertensive
 Cardiomyopathy,Coded,Ischemic cardiomyopathy | Alcohol-related cardiomyopathy | Peripartum cardiomyopathy | Arrhythmia-induced cardiomyopathy | HIV associated with cardiomyopathy | Chemotherapy-induced cardiomyopathy | Viral cardiomyopathy | Restrictive cardiomyopathy | Cardiomyopathy due to unknown factors,checkbox,No,no,PIH:DIAGNOSIS,CIEL:139529|CIEL:142317|CIEL:113918|CIEL:113096|CIEL:163712|CIEL:168128|CIEL:168182|CIEL:169981|PIH:14753,Cardiomyopathy,PIH:Visit Diagnoses
 "if other cardiomyopathy, specify:",Text,N/A,text,No,no,PIH:14754,,,
 Rheumatic heart disease,Coded,Pure mitral stenosis | Pure mitral regurgitation | Mixed mitral valve disease (MS+MR) | Isolated aortic valve disease (AVD) | Mixed mitral and aortic valve disease (MMAVD) | Unspecified rheumatic heart disease | Other rheumatic heart disease,radio,No,no,PIH:DIAGNOSIS,CIEL:127437|CIEL:127438|CIEL:127436|PIH:20166|PIH:14750|PIH:20168|PIH:20167,Rheumatic heart disease,PIH:Visit Diagnoses
-"if other rheumatic heart disease, specify:",Text,N/A,text,No,no,PIH:14754,,,
+"if other rheumatic heart disease, specify:",Text,N/A,text,No,no,PIH:20167,,,
 Degenerative valve disease,Coded,Mitral valve stenosis | Mitral valve regurgitation | Aortic valve stenosis | Aortic valve regurgitation | Mitral and aortic valve disease,radio,No,no,PIH:DIAGNOSIS,CIEL:134082|CIEL:115735|CIEL:121532|CIEL:148546|CIEL:134088,Degenerative valve disease,PIH:Visit Diagnoses
 Right heart failure,Coded,Cor pulmonale | Schistosomiasis,radio,No,no,PIH:DIAGNOSIS,PIH:COR PULMONALE|CIEL:117152,Right heart failure,PIH:Visit Diagnoses
 Right heart failure,Coded,Unknown,checkbox,No,no,PIH:14752,PIH:14755,,
