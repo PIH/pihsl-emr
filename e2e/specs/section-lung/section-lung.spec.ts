@@ -17,13 +17,11 @@
 // Not covered here: Next / section-jump buttons, the other COPD/asthma radios (plain obs, no logic).
 //
 // Findings:
-//   V1 High :331 vs :287  "If exacerbation, hospitalization needed?" uses PIH:14626 ("Night waking with dyspnea
-//                      (coded)"), the same concept as "Night waking due to dyspnea", inside the same obsgroup PIH:14620:
-//                      answering the hospitalization question saves a second Night-waking obs, so the record shows two
-//                      contradictory night-waking answers and the hospitalization answer is lost. Fix: a hospitalization
-//                      concept (e.g. CIEL:1788 as at :472). TESTED below (test.fixme). The VIEW is affected too: with the two obs saved
-//                      (night waking No, "hospitalization" Yes) it sometimes shows them swapped (night waking "yes", hospitalization
-//                      "no": 2 of 6 runs) and sometimes correctly, depending on the obs order, so it is not asserted.
+//   V1 Fixed :331 (SL-1461) "If exacerbation, hospitalization needed?" used PIH:14626 ("Night waking with dyspnea
+//                      (coded)"), the same concept as "Night waking due to dyspnea" (:287), inside the same obsgroup
+//                      PIH:14620, so it saved a second Night-waking obs and the VIEW sometimes showed the two swapped. It
+//                      now uses PIH:21865 "COPD exacerbation requires hospitalization". Existing data is not migrated: the
+//                      two PIH:14626 obs of an encounter saved before the fix can't be told apart. TESTED below.
 //   V2 Low  :432, 457  <when> targets #lung-fui-understands-details, -titrate-, -adher-, -aware- and
 //                      #lung-dc-fui-improved-details do not exist: answering Yes shows nothing. Fix: drop the five <when>s.
 //   V3 Low  :296       <sl> is not an HTML element (should be <ul>); the exacerbation definition list loses its bullets.
@@ -36,6 +34,8 @@ import { getEncounterObs } from '../../commands';
 import { SectionFormPage, expectViewShowsSavedObs, VISIT_PAGE_URL } from '../../pages';
 
 const FORM = 'section-lung.xml';
+// PIH:21865 "COPD exacerbation requires hospitalization" (SL-1461)
+const COPD_EXACERBATION_REQUIRES_HOSPITALIZATION_UUID = 'b80e89f1-1a48-46f4-a8b8-152018e8e145';
 
 type Create = (opts: { encounterTypeUuid: string; patient?: { givenName?: string; familyName?: string } }) => Promise<SectionEncounter>;
 
@@ -199,15 +199,13 @@ test.describe('section-lung, NCD followup encounter', () => {
     await expect(view.page.getByText('Interstitial lung disease')).toHaveCount(0);
   });
 
-  // V1 (High): "If exacerbation, hospitalization needed?" (:331) uses PIH:14626, the same concept as
-  // "Night waking due to dyspnea" (:287), inside the same obsgroup. Intended behaviour: the night-waking answer is
-  // stored once, unaffected by the hospitalization answer. Remove test.fixme() when the concept is fixed.
-  test('the hospitalization answer does not overwrite night waking (V1)', async ({
+  // V1 (fixed, SL-1461): "If exacerbation, hospitalization needed?" (:331) saves PIH:21865 "COPD exacerbation requires
+  // hospitalization", so the night-waking answer (:287, PIH:14626) is stored once, unaffected by the hospitalization answer.
+  test('the hospitalization answer is saved as its own concept and does not overwrite night waking (V1)', async ({
     page,
     createSectionEncounter,
     api,
   }) => {
-    test.fixme();
     const section = await openForm(page, createSectionEncounter, NCD_FOLLOWUP_ENCOUNTER_TYPE_UUID);
     await pick(page, /^\s*Missed doses in past week/, 'no').check();
     await pick(page, /^\s*Night waking due to dyspnea/, 'no').check();
@@ -215,9 +213,22 @@ test.describe('section-lung, NCD followup encounter', () => {
     await pick(page, /^\s*If exacerbation, hospitalization needed/, 'yes').check();
     await save(page);
 
-    const nightWaking = (await getEncounterObs(api, section.encounter.uuid)).filter(
+    const obs = await getEncounterObs(api, section.encounter.uuid);
+    const nightWaking = obs.filter(
       (o) => o.concept.display.toLowerCase().includes('night waking') && o.value !== null && typeof o.value === 'object',
     );
     expect(nightWaking.map((o) => (o.value as { display: string }).display)).toEqual(['No']);
+    const hospitalization = obs.filter((o) => o.concept.uuid === COPD_EXACERBATION_REQUIRES_HOSPITALIZATION_UUID);
+    expect(hospitalization.map((o) => (o.value as { display: string }).display)).toEqual(['Yes']);
+
+    // EDIT restores each answer to its own question
+    await SectionFormPage.openEdit(page, FORM, section);
+    await expect(pick(page, /^\s*Night waking due to dyspnea/, 'no')).toBeChecked();
+    await expect(pick(page, /^\s*If exacerbation, hospitalization needed/, 'yes')).toBeChecked();
+
+    // VIEW: each answer on its own row
+    const view = await expectViewShowsSavedObs(page, api, FORM, section.encounter.uuid);
+    await expect(row(view.page, /^\s*Night waking due to dyspnea/).locator('.value')).toHaveText('[X] no');
+    await expect(row(view.page, /^\s*If exacerbation, hospitalization needed/).locator('.value')).toHaveText('[X] yes');
   });
 });

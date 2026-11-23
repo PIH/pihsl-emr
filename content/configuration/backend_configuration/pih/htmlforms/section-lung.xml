@@ -328,7 +328,7 @@
                             <uimessage code="If exacerbation, hospitalization needed?" />
                         </label>
 
-                        <obs conceptId="PIH:14626" style="radio"
+                        <obs conceptId="PIH:21865" style="radio"
                              answerConceptIds="CIEL:1065,CIEL:1066,CIEL:1067"
                              answerCodes="yes,no,unknown" />
                     </p>

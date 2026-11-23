@@ -12,7 +12,7 @@ Activity limitation,Coded,Yes | No | Unknown,radio,No,no,PIH:11925,CIEL:1065|CIE
 Night waking due to dyspnea,Coded,Yes | No | Unknown,radio,No,no,PIH:14626,CIEL:1065|CIEL:1066|CIEL:1067,,PIH:14620
 COPD exacerbation,Coded,Yes | No | Unknown,radio,No,Yes → show #details-exar-copd,CIEL:166093,CIEL:1065|CIEL:1066|CIEL:1067,COPD evaluation,PIH:14620
 Number of COPD exacerbations since last visit,Coded,N/A,radio,No,no,CIEL:167821,,COPD evaluation,PIH:14620
-"If exacerbation, hospitalization needed?",Coded,Yes | No | Unknown,radio,No,no,PIH:14626,CIEL:1065|CIEL:1066|CIEL:1067,COPD evaluation,PIH:14620
+"If exacerbation, hospitalization needed?",Coded,Yes | No | Unknown,radio,No,no,PIH:21865,CIEL:1065|CIEL:1066|CIEL:1067,COPD evaluation,PIH:14620
 Exacerbations (more than or equal to 1),Coded,Yes | No,radio,No,no,PIH:14618,PIH:YES|PIH:NO,,PIH:14587
 Datetime symptoms more than twice a week,Coded,Yes | No,radio,No,no,PIH:11803,PIH:YES|PIH:NO,,PIH:14587
 Inhaler for symptoms more than twice a week,Coded,Yes | No,radio,No,no,PIH:11991,PIH:YES|PIH:NO,,PIH:14587
