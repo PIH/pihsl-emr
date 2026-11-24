@@ -324,6 +324,21 @@ test.describe('vitalsWithGlucose', () => {
     await expect(page.locator('#delivered-6-weeks input[type=radio]:checked')).toHaveCount(0); // hiding clears the answer
   });
 
+  test('Simple UI: the pregnancy status questions and answers are not red, only their "*" is', async ({ page, createEntryContext }) => {
+    // htmlFormEntry.css ".required { color: red }" also matched the <field class="required"> around them; the form's style resets it
+    const context = await newPatient(createEntryContext, 'F', 30);
+    await openSimple(page, context);
+    await selectDefaultProvider(page);
+    await goToQuestion(page, 'Pregnancy status');
+    await page.locator('#pregnant').getByLabel('no', { exact: true }).check();
+    const red = 'rgb(255, 0, 0)';
+    for (const id of ['pregnant', 'delivered-6-weeks']) {
+      await expect(page.locator(`#${id}`)).not.toHaveCSS('color', red);
+      await expect(page.locator(`#${id} label`).first()).not.toHaveCSS('color', red);
+      await expect(page.locator(`#${id} span.required`)).toHaveCSS('color', red);
+    }
+  });
+
   // includeIf :861: only female, 10 or older, at MCH OPD
   const notAsked = [
     { name: 'a man', gender: 'M', age: 30 },
