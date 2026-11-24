@@ -549,4 +549,17 @@
         </comment>
         <sqlFile endDelimiter=";" path="sql/move_ncd_rheumatic_specify_text_obs.sql" relativeToChangelogFile="true" stripComments="true" />
     </changeSet>
+    <changeSet id="20261124-SL-1465-void-ld-hidden-infant-obs" author="cioan">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                select count(*) from obs where void_reason = 'SL-1465: value of a Labour and Delivery infant field hidden by the outcome';
+            </sqlCheck>
+        </preConditions>
+        <comment>
+            SL-1465: on the Labour and Delivery Summary, an infant outcome hides some fields (MSB: birth measures, pre-delivery
+            FHR, APGARs; FSB: APGARs; Alive: pre-delivery FHR), but values typed in them before were saved. Void those obs on
+            encounters created since the hiding reached production (1.54.1-SNAPSHOT, 2026-05-01).
+        </comment>
+        <sqlFile endDelimiter=";" path="sql/void_ld_hidden_infant_obs.sql" relativeToChangelogFile="true" stripComments="true" />
+    </changeSet>
 </databaseChangeLog>

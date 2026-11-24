@@ -218,6 +218,14 @@
                   updateFetusEntries(jq(this));
                 });
 
+                // SL-1465: empty the fields an outcome hides, so what was typed in them before is not saved
+                // ("Is baby registered in EMR?" is set by the outcome, so it is never cleared)
+                let clearInfantFields = function(container) {
+                    jq(container).find("input[type='text']").val('');
+                    jq(container).find("input[type='radio'], input[type='checkbox']").prop('checked', false);
+                    jq(container).find('.field-error').text('').hide();
+                };
+
                 jq("span .fetusOutcome input[type='radio']").change(function() {
                     let outcomeVal = jq(this).val();
                     let fetusElem = jq(this).closest("span.fetus");
@@ -231,10 +239,13 @@
                                 // Macerated stillbirth
                                 //hide all birth-related fields
                                 jq(fetusElem).find("#inputFieldsDiv").hide();
+                                clearInfantFields(jq(fetusElem).find("#birthFieldsDiv, #preFhrDiv, #apgarDiv"));
                             } else if ( outcomeVal === fsbConceptId ) {
                                 jq(fetusElem).find("#apgarDiv").hide();
+                                clearInfantFields(jq(fetusElem).find("#apgarDiv"));
                             } else if ( outcomeVal === aliveConceptId ) {
                                 jq(fetusElem).find("#preFhrDiv").hide();
+                                clearInfantFields(jq(fetusElem).find("#preFhrDiv"));
                             }
                         }
                     }
