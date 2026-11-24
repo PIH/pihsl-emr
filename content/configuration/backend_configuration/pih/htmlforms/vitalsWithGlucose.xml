@@ -25,6 +25,12 @@
             font-size: 1em;
             font-weight: normal;
         }
+
+        /* htmlFormEntry.css colours every .required red, meant for the "*" (span.required); the field.required wrapper that the
+           Simple UI needs around the pregnancy status questions would make their labels and answers red too */
+        #pregnancy-status field.required {
+            color: inherit;
+        }
     </style>
 
     <ifMode mode="VIEW" include="false">
