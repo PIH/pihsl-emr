@@ -83,3 +83,12 @@ input.legalValue {
 .small-input input {
     min-width: 5em;
 }
+
+/* SL-1520: the calculated, read-only MAP field */
+#map input[readonly] {
+    cursor: not-allowed;
+}
+
+#map input.legalValue {
+    background-color: #eeeeee;
+}

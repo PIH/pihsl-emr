@@ -258,6 +258,7 @@ test.describe('postpartumDailyProgress', () => {
     await openForm(page, ctx);
     await page.locator('#bp_systolic input').fill('118');
     await page.locator('#bp_diastolic input').fill('76');
+    await expect(page.locator('#map')).toHaveCount(0); // SL-1520: MAP is only on the inpatient vitals form
     await page.getByLabel('Lochia rubra', { exact: true }).check();
     await page.locator('p', { hasText: 'Lochia quantity' }).getByLabel('++', { exact: true }).check();
     await page.locator('p', { hasText: 'Number of pads used' }).locator('input[type=text]').fill('4');
