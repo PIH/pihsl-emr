@@ -6,12 +6,13 @@
 --   Alive (CIEL:151849):                     pre-delivery FHR
 -- The form now empties those fields. This voids the obs saved in them: members of a non-voided Newborn details group
 -- (PIH:13555) whose non-voided outcome (CIEL:159917) hides them, on Labour and Delivery Summary encounters created on or
--- after @hidingReleased (before that the fields were visible, so their values were entered on purpose).
+-- after @hidingReleased (before that the fields were visible in production, so their values were entered on purpose).
 -- Obs voided by an earlier run are recognised by their void_reason (see the changeset precondition).
 
--- 1.54.0, the first release that hid the fields; servers that deployed it later only void more recent encounters' data
--- when this is set to their deployment date.
-set @hidingReleased = '2026-04-27';
+-- When the hiding reached production: KGH and Wellbody went from 1.53.0 to 1.54.1-SNAPSHOT in mirebalais-puppet commit
+-- 3f3a9d26 ("sl prod update", 2026-05-01 12:01 EDT = 16:01 UTC, Sierra Leone time). No encounter created before it can
+-- have had a hidden field. (1.54.0, tagged 2026-04-27, only went to the test servers.)
+set @hidingReleased = '2026-05-01 16:01:19';
 -- Use daemon for voided_by
 set @daemonUser = (select user_id from users where username = 'daemon');
 
