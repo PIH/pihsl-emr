@@ -140,6 +140,53 @@
         return retValue;
     }
 
+    // SL-1520: Mean arterial pressure, calculated from BP (only on forms that pass the #map field, eg. inpatientVitals.xml)
+    function evaluateMap(value) {
+        if (value != null &amp;&amp; value !== '' &amp;&amp; !(Number.isNaN(Number(value))) &amp;&amp; Number(value) &lt; 65) {
+            return priorities.RED;
+        }
+        return priorities.GREEN;
+    }
+
+    // MAP = DBP + (SBP - DBP) / 3, rounded to a whole number (PIH:20662 allows no decimals); empty unless both BP values are numbers
+    function calculateMap() {
+        const systolic = jq('#bp_systolic input').val();
+        const diastolic = jq('#bp_diastolic input').val();
+        if (!systolic || !diastolic || Number.isNaN(Number(systolic)) || Number.isNaN(Number(diastolic))) {
+            return '';
+        }
+        return String(Math.round(Number(diastolic) + (Number(systolic) - Number(diastolic)) / 3));
+    }
+
+    // Sets the read-only MAP field, colors it and recalculates the priority. Not via trigger('blur'): that would also run
+    // the HFE checkNumber() onblur, which resets the input's classes.
+    function updateMap() {
+        const mapInput = jq('#map input');
+        if (mapInput.length) {
+            mapInput.val(calculateMap());
+            colorVitalInput(mapInput);
+            calculatePriority();
+        }
+    }
+
+    // Stores the input's value in vitalsInfo and colors it by its priority (white legalValue when empty). The class is set
+    // after a short delay, so that it is applied after the HFE checkNumber() onblur; the delayed call removes every
+    // priority class first, so when an input is evaluated several times in a row (eg. MAP on each BP change) only the
+    // latest evaluation's color stays.
+    function colorVitalInput(inputElement) {
+        const vitalsId = jq(inputElement).closest("span").attr('id');
+        jq(inputElement).removeClass('legalValue').removeClass(classNames);
+        if (!vitalsId || !vitalsInfo[vitalsId]) {
+            return;
+        }
+        const vitalValue = jq(inputElement).val();
+        vitalsInfo[vitalsId].value = vitalValue ? vitalValue : null;
+        const className = vitalValue ? vitalsInfo[vitalsId].evaluate(vitalValue).className : 'legalValue';
+        setTimeout(() => {
+            jq(inputElement).removeClass('legalValue').removeClass(classNames).addClass(className);
+        }, 100);
+    }
+
     let vitalsInfo = {
         bp_systolic: {
             evaluate: evaluateBpSystolic,
@@ -148,6 +195,12 @@
         bp_diastolic: {
             evaluate: evaluateBpDiastolic,
             value: null
+        },
+        // not part of the summed score: a red MAP only requires the "contact doctor" confirmation (see contactDrRequired)
+        map: {
+            evaluate: evaluateMap,
+            value: null,
+            scored: false
         },
         heart_rate: {
             evaluate: evaluateHeartRate,
@@ -179,6 +232,9 @@
         let priority = priorities.GREEN;
         let priorityValue = 0;
         for (const obj in vitalsInfo) {
+            if (vitalsInfo[obj].scored === false) {
+                continue;
+            }
             let vitalValue = vitalsInfo[obj].value;
             let evalPriority = vitalsInfo[obj].evaluate(vitalValue);
             priorityValue = priorityValue + evalPriority.value;
@@ -202,8 +258,14 @@
 
     // Exposed globally so that form-level validation (eg. the document-wide validateForm() in triage.xml)
     // can honour this guard instead of racing with it and re-enabling the submit button.
-    function drContactRequiredAndMissing() {
+    // The doctor must be contacted when the summed score is 2 or more, or when MAP is below 65 (SL-1520)
+    function contactDrRequired() {
         return evaluateVitals().value &gt;= 2
+            || evaluateMap(vitalsInfo.map.value) === priorities.RED;
+    }
+
+    function drContactRequiredAndMissing() {
+        return contactDrRequired()
             &amp;&amp; !jq('#contactDr input[type="checkbox"]').is(':checked');
     }
     window.drContactRequiredAndMissing = drContactRequiredAndMissing;
@@ -223,7 +285,7 @@
 
     function calculatePriority() {
         let globalPriority = evaluateVitals();
-        if (globalPriority.value &gt;= 2) {
+        if (contactDrRequired()) {
             setSubmitButtonEnabled(!drContactRequiredAndMissing());
             jq("#confirmMsg").show();
         } else {
@@ -281,29 +343,13 @@ jq(document).ready( function() {
     });
 
     jq(".vitals-values").find('input').on("blur", function() {
-        const vitalsId = jq(this).closest("span").attr('id');
-        const vitalValue = jq(this).val();
-        let inputElement = jq(this);
-        jq(inputElement).removeClass('legalValue');
-        jq(inputElement).removeClass(classNames);
-        if (vitalsId  &amp;&amp; vitalsInfo[vitalsId]) {
-            if (vitalValue) {
-                vitalsInfo[vitalsId].value = vitalValue;
-                let vitalsPriority = vitalsInfo[vitalsId].evaluate(vitalsInfo[vitalsId].value);
-                if (vitalsPriority) {
-                    setTimeout(() => {
-                        jq(inputElement).removeClass('legalValue').addClass(vitalsPriority.className);
-                    }, 100);
-                }
-            } else {
-                vitalsInfo[vitalsId].value = null;
-                setTimeout(() => {
-                    jq(inputElement).addClass('legalValue');
-                }, 100);
-            }
-        }
+        colorVitalInput(jq(this));
         calculatePriority();
     });
+
+    // MAP is calculated, never typed: read-only (still submitted, unlike disabled) and skipped when tabbing
+    jq('#map input').attr('readonly', 'readonly').attr('tabindex', '-1');
+    jq('#bp_systolic input, #bp_diastolic input').on('blur', updateMap);
 
     jq(".vitals-values").find('input').attr('autocomplete', 'off');
     jq(".vitals-values").find('input').trigger("blur");

@@ -24,6 +24,10 @@
             </div>
         </div>
 
+        <!-- Optional cell after BP: a form passes its own element with subform-parameter="vitals-map" to fill it
+             (inpatientVitals.xml passes the calculated MAP, SL-1520). Hidden, so it adds no column on the other forms. -->
+        <span subform-parameter="vitals-map" style="display:none"></span>
+
         <div>
             <div class="colorCodingValue">
                 <label>
@@ -118,6 +122,6 @@
     </div>
 
     <div id="confirmMsg">
-        <obs id="contactDr" style="checkbox" conceptId="PIH:20925" answerConceptId="CIEL:1065" answerLabel="" labelText="Contact doctor about early intervention due to 1 red, 1 orange, or 2 yellow vital score(s)."></obs>
+        <obs id="contactDr" style="checkbox" conceptId="PIH:20925" answerConceptId="CIEL:1065" answerLabel="" labelText="Contact doctor about early intervention due to 1 red, 1 orange, or 2 yellow vital score(s), or MAP below 65."></obs>
     </div>
 </div>

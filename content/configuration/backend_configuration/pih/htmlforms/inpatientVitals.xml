@@ -135,7 +135,20 @@
 
     <span id="most-recent-encounter-title" style="display:none"><!--The Most Recent Encounter app in Core Apps replaces this with the "most recent" label--></span>
 
-    <subform path="configuration/pih/subforms/vital-signs-widget.xml"/>
+    <subform path="configuration/pih/subforms/vital-signs-widget.xml">
+        <!-- SL-1520: Mean arterial pressure, next to BP. Calculated from BP and read-only (vital-signs-widget.js), red below 65 -->
+        <div subform-parameter="vitals-map" class="vitals-cell">
+            <div class="colorCodingValue">
+                <label>
+                    <uimessage code="MAP"/>
+                </label>
+                <span class="small">
+                    <obs conceptId="PIH:20662" id="map" class="vitals-values"
+                         showUnits="true" unitsCssClass="append-to-value"/>
+                </span>
+            </div>
+        </div>
+    </subform>
 
     <ifMode mode="VIEW" include="false">
         <br/>
