@@ -23,4 +23,6 @@ Main complaint,Coded,Heart decompensation | Respiratory distress | Seizure | Ble
 Other complaints:,Coded,back/musculo-skeletal pain | Nausea/vomiting | Other,radio,No,Other → show #other-complain,CIEL:1119,CIEL:133632|CIEL:133473|PIH:OTHER,,
 Other complaints:,Text,N/A,text,No,no,PIH:14679,,,
 Subform: lab-results-section.xml,Other,Subform — configuration/pih/subforms/lab-results-section.xml,subform,No,no,,,,
+Is patient pregnant?,Coded,yes | no,radio,Yes,no → show #delivered-last-6-weeks,CIEL:5272,CIEL:1065|CIEL:1066,,
+Has patient delivered in the last 6 weeks?,Coded,yes | no,radio,Yes (only when shown),no,PIH:21869,CIEL:1065|CIEL:1066,,
 Disposition,Other,Disposition widget,disposition widget,Yes,no,,,,
