@@ -12,22 +12,22 @@ import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultP
 // #buttons input.submitButton) and a successful save redirects to pihcore/children/children.page, not to the returnUrl.
 //
 // Conditions in the form, from documentation inventory (laborDeliverySummary.inv.md):
-//   ifMode VIEW include=false :27,:81,:292,:455,:463,:505,:537,:680,:1226  CSS, scripts, "last labour progress" box, heading, buttons: ENTER/EDIT only
+//   ifMode VIEW include=false :27,:81,:303,:466,:474,:516,:548,:691,:1237  CSS, scripts, "last labour progress" box, heading, buttons: ENTER/EDIT only
 //   ifMode ENTER :51                 script that auto-answers "registered in EMR" per outcome
-//   includeIf $fn.getObs($encounter,'CIEL:151750') :326  inside the :293 script: EDIT with an own induced obs skips the prefill (tested, EDIT)
-//   when induced = Yes :648          show #induced-details          when placenta abnormality = Yes :1017  show #placentaAbDesc
-//   when breastfeeding = Yes :1051   show #breastDate               when uterotonic = Yes :1084            show #uteroDate
-//   when HCW cadre = Other :1146     show #other-ba (CIEL:5622 and the answer PIH:5622 are the same concept, id 6)
-//   when presentation = Other :904   show #other-presentation: no such id (V1)
+//   includeIf $fn.getObs($encounter,'CIEL:151750') :337  inside the :304 script: EDIT with an own induced obs skips the prefill (tested, EDIT)
+//   when induced = Yes :659          show #induced-details          when placenta abnormality = Yes :1028  show #placentaAbDesc
+//   when breastfeeding = Yes :1062   show #breastDate               when uterotonic = Yes :1095            show #uteroDate
+//   when HCW cadre = Other :1157     show #other-ba (CIEL:5622 and the answer PIH:5622 are the same concept, id 6)
+//   when presentation = Other :915   show #other-presentation: no such id (V1)
 // Scripts:
 //   :44-48   concept ids (via <lookup>) used by the other scripts.
 //   :52-79   ENTER: outcome Alive -> "registered in EMR" = No; FSB/MSB -> "Do not register" (the radios are disabled, :207; beforeSubmit enables them).
-//   :83-290  per-infant validation (getBeforeValidation :194): once an infant has date, sex, outcome, method or all inputs, all five
+//   :83-301  per-infant validation (getBeforeValidation :194): once an infant has date, sex, outcome, method or all inputs, all five
 //            are required ("*Required"); outcome toggles #preFhrDiv (alive hides), #apgarDiv (FSB hides), #inputFieldsDiv (MSB hides);
-//            totals of the stage durations (.labor_stage_hours/.labor_stage_minutes -> #totalDuration_*, :255); setUpNextAndSubmitButtons.
-//   :293-450 prefill: REST Labour Progress encounter of the same visit -> #lastOnset box (start, induced, method), hides #enter_labour_progress.
-//   :465-490 placenta abnormality = Yes with an empty description blocks the save; #placentaAbDesc shows "Required" on click.
-//   :681-733 twins/triplets: #fetus-2/#fetus-3 hidden unless filled or #twins ticked; show more/less buttons.
+//            totals of the stage durations (.labor_stage_hours/.labor_stage_minutes -> #totalDuration_*, :266); setUpNextAndSubmitButtons.
+//   :304-461 prefill: REST Labour Progress encounter of the same visit -> #lastOnset box (start, induced, method), hides #enter_labour_progress.
+//   :476-501 placenta abnormality = Yes with an empty description blocks the save; #placentaAbDesc shows "Required" on click.
+//   :692-744 twins/triplets: #fetus-2/#fetus-3 hidden unless filled or #twins ticked; show more/less buttons.
 // Side effects on save: CleanDiagnosisConstructAction, RegisterBabyAction (:22), PregnancyProgramPostpartumTransitionAction (:23): tested.
 // VIEW is covered by the save test (the delivery with a stillbirth: labels, the date/time pair, totals, empty infants and sections) and by a
 // twins test (two stillbirths: each infant keeps its own values).
@@ -35,18 +35,18 @@ import { EntryFormPage, SectionFormPage, expectViewShowsSavedObs, selectDefaultP
 // saved, EDIT mode, the pregnancy-group, lab-results (rapid tests) and PHQ-2 sub-forms (_shared.e2e.md), the partogram upload.
 //
 // Findings:
-//   V1 Medium :904,:908   <when value=Other thenDisplay="#other-presentation"> but the divs are id="other-presentation-{0}": the "if other,
+//   V1 Medium :915,:919   <when value=Other thenDisplay="#other-presentation"> but the divs are id="other-presentation-{0}": the "if other,
 //                         specify" field is always visible. Fix: thenDisplay="#other-presentation-{0}" and hide it initially. TESTED (test.fixme).
 //   V2 Medium :145-165,:182-192  hasInputFields() is true only when ALL visible inputs are filled, yet it is the "has anything been entered?"
 //                         test: an infant with just a birth weight skips the required date/sex/outcome/method check and saves a Newborn details group.
 //                         Fix: use "any input filled". TESTED (test.fixme).
-//   V3 Medium :226-235    MSB hides #inputFieldsDiv but the values already typed stay in the form and are saved (birth weight on a macerated
-//                         stillbirth). Fix: clear the hidden inputs when hiding. TESTED (test.fixme).
-//   V4 Low    :255-274    minutes carry into hours only when total hours is non-zero: 0 h + 90 min stays "0 h 90 min".
-//   V5 Low    :486        "Required" on #placentaAbDesc is shown on every Yes click and never cleared when the description is typed.
-//   V6 Low    :807,:808,:834,:848  id="inputFieldsDiv", "birthFieldsDiv", "preFhrDiv", "apgarDiv" repeated for each infant (not templated with {0}).
+//   V3 Fixed (SL-1465) :221-253  an outcome now empties what it hides: MSB the birth measures, pre-delivery FHR and APGARs, FSB the APGARs,
+//                         Alive the pre-delivery FHR (they used to be saved). Saved data: changeset in liquibase-sierra_leone.xml. TESTED.
+//   V4 Low    :266-285    minutes carry into hours only when total hours is non-zero: 0 h + 90 min stays "0 h 90 min".
+//   V5 Low    :497        "Required" on #placentaAbDesc is shown on every Yes click and never cleared when the description is typed.
+//   V6 Low    :818,:819,:845,:859  id="inputFieldsDiv", "birthFieldsDiv", "preFhrDiv", "apgarDiv" repeated for each infant (not templated with {0}).
 //   V7 Info   :22         a successful save redirects to /pihcore/children/children.page?patientId=..., ignoring the returnUrl.
-//   VW1 Info :648,:904,:1017,:1051,:1084,:1146  VIEW does not run the <when>/thenDisplay controls (the generated script is ENTER/EDIT only), so the conditional blocks
+//   VW1 Info :659,:915,:1028,:1062,:1095,:1157  VIEW does not run the <when>/thenDisplay controls (the generated script is ENTER/EDIT only), so the conditional blocks
 //                   (#induced-details, #other-presentation-N, #placentaAbDesc, #breastDate, #uteroDate, #other-ba) are always rendered in VIEW, blank when not applicable (same as gainNewbornRegister VW1; not tested).
 
 const FORM = 'laborDeliverySummary.xml';
@@ -177,8 +177,8 @@ test.describe('laborDeliverySummary', () => {
     });
   }
 
-  // V1 (Medium): <when value=Other thenDisplay="#other-presentation"> (:904) matches nothing: the divs are other-presentation-{0}.
-  // Intended: hidden until "Other" is chosen. Remove test.fixme() when :904 targets #other-presentation-{0}.
+  // V1 (Medium): <when value=Other thenDisplay="#other-presentation"> (:915) matches nothing: the divs are other-presentation-{0}.
+  // Intended: hidden until "Other" is chosen. Remove test.fixme() when :915 targets #other-presentation-{0}.
   test('the other-presentation field is hidden until "Other" is chosen (V1)', async ({ page }) => {
     test.fixme();
     await openForm(page, ctx);
@@ -188,7 +188,7 @@ test.describe('laborDeliverySummary', () => {
   });
 
   test('ENTER shows the Save/Cancel buttons and the labour-progress entry, not the last-labour box', async ({ page }) => {
-    // ifMode VIEW include=false :455,:1226 (both present outside VIEW); :293 box stays hidden without a labour progress encounter
+    // ifMode VIEW include=false :466,:1237 (both present outside VIEW); :304 box stays hidden without a labour progress encounter
     await openForm(page, ctx);
     await expect(page.locator('#buttons .cancel')).toBeVisible();
     await expect(page.locator('#enter_labour_progress')).toBeVisible();
@@ -205,7 +205,7 @@ test.describe('laborDeliverySummary', () => {
 
   for (const [outcome, index, registerIndex, preFhr, apgar, inputs] of outcomes) {
     test(`outcome ${outcome} sets the registered-in-EMR answer and the visible infant fields`, async ({ page }) => {
-      // script :52 (ENTER) and :217-235
+      // script :52 (ENTER) and :217-244
       await openForm(page, ctx);
       await page.locator('#dead-or-alive-1 input').nth(index).check();
       await expect(page.locator('#register-baby-1 input').nth(registerIndex)).toBeChecked(); // No / Do not register
@@ -226,7 +226,7 @@ test.describe('laborDeliverySummary', () => {
   });
 
   test('infants 2 and 3 are hidden until "show more" or the twins/triplets box', async ({ page }) => {
-    // script :681-733
+    // script :692-744
     await openForm(page, ctx);
     await expect(page.locator('#fetus-1')).toBeVisible();
     for (const hidden of ['#fetus-2', '#fetus-3', '#show-less-fetus-button']) {
@@ -248,7 +248,7 @@ test.describe('laborDeliverySummary', () => {
   });
 
   test('the total duration of labour adds the three stages and carries minutes into hours', async ({ page }) => {
-    // script :255-282: stage 1, 2, 3 hours/minutes -> #totalDuration_hours / _minutes
+    // script :266-293: stage 1, 2, 3 hours/minutes -> #totalDuration_hours / _minutes
     await openForm(page, ctx);
     const hours = page.locator('.labor_stage_hours input');
     const minutes = page.locator('.labor_stage_minutes input');
@@ -269,7 +269,7 @@ test.describe('laborDeliverySummary', () => {
 
   for (const [name, hasPrior] of priorLabour) {
     test(`the last labour progress box ${hasPrior ? 'shows' : 'stays hidden'} ${name}`, async ({ page, api }) => {
-      // script :293-450 (ENTER): REST lookup of the visit's Labour Progress encounter
+      // script :304-461 (ENTER): REST lookup of the visit's Labour Progress encounter
       if (hasPrior) {
         await createLabourProgress(api, ctx.patient.uuid, ctx.visitUuid);
       }
@@ -286,7 +286,7 @@ test.describe('laborDeliverySummary', () => {
 
   // ---- validation ----
   test('saving with the required placenta answers blank shows "Required" and saves nothing', async ({ page, api }) => {
-    // HFE required="true" on placenta completeness (:989) and placenta abnormality (:1015)
+    // HFE required="true" on placenta completeness (:1000) and placenta abnormality (:1026)
     await openForm(page, ctx);
     expect(await trySave(page)).toBe(false);
     await expect(page.locator('#placentaAbQ .field-error')).toHaveText('Required');
@@ -295,7 +295,7 @@ test.describe('laborDeliverySummary', () => {
   });
 
   test('placenta abnormality "Yes" with an empty description blocks the save', async ({ page, api }) => {
-    // script :465-490
+    // script :476-501
     await openForm(page, ctx);
     await answerPlacenta(page);
     await page.locator('#placentaAbQ input').nth(0).check();
@@ -325,10 +325,43 @@ test.describe('laborDeliverySummary', () => {
     expect(await getPatientEncounters(api, ctx.patient.uuid)).toHaveLength(0);
   });
 
-  // V3 (Medium): MSB only hides #inputFieldsDiv (:233); the typed birth weight is still submitted.
-  // Intended: no birth weight on a macerated stillbirth. Remove test.fixme() when the hidden inputs are cleared.
+  // V3 (SL-1465): each outcome empties the fields it hides (:221-253), whatever was typed in them before.
+  const hiddenFields = [
+    // [outcome, index, the inputs emptied (fetus 1), the radios unchecked]
+    ['MSB', 2, ['#birthFieldsDiv input[type=text]', '#apgarDiv input[type=text]'], '#preFhrDiv input[type=radio]'],
+    ['FSB', 1, ['#apgarDiv input[type=text]'], null],
+    ['alive', 0, [], '#preFhrDiv input[type=radio]'],
+  ] as const;
+  for (const [outcome, index, emptied, unchecked] of hiddenFields) {
+    test(`outcome ${outcome} empties the fields it hides (V3, SL-1465)`, async ({ page }) => {
+      await openForm(page, ctx);
+      const fetus = page.locator('#fetus-1');
+      for (const input of await fetus.locator('#inputFieldsDiv .inputField input[type=text]').all()) {
+        await input.fill('3');
+      }
+      await fetus.locator('#preFhrDiv input[type=radio]').first().check();
+      await page.locator('#dead-or-alive-1 input').nth(index).check();
+      for (const selector of emptied) {
+        const inputs = fetus.locator(selector);
+        expect(await inputs.count()).toBeGreaterThan(0);
+        for (const input of await inputs.all()) {
+          await expect(input).toHaveValue('');
+        }
+      }
+      if (unchecked) {
+        await expect(fetus.locator(`${unchecked}:checked`)).toHaveCount(0);
+      } else {
+        await expect(fetus.locator('#preFhrDiv input[type=radio]').first()).toBeChecked(); // still shown: kept
+      }
+      if (outcome !== 'MSB') {
+        await expect(fetus.locator('#birthFieldsDiv input[type=text]').first()).toHaveValue('3'); // still shown: kept
+      }
+      await expect(page.locator('#register-baby-1 input:checked')).toHaveCount(1); // set by the outcome, not cleared
+    });
+  }
+
+  // MSB, saved: the birth weight typed before is gone from the encounter
   test('a birth weight typed before choosing MSB is not saved (V3)', async ({ page, api }) => {
-    test.fixme();
     await openForm(page, ctx);
     await answerPlacenta(page);
     await fillText(page, '#fetus-1 .inputField >> nth=0 >> input', '3');
@@ -449,7 +482,7 @@ test.describe('laborDeliverySummary', () => {
     await expect(view.page.locator('#fetus-2 .value, #fetus-3 .value')).toHaveCount(0);
     await expect(view.page.locator('#uterotonic .value, #breastDate .value, #uteroDate .value')).toHaveCount(0);
     await expect(view.page.locator('#rapid-tests-widget .value, #mh-phq2 .value, #perineum .value, #labourStartDateTime .value')).toHaveCount(0);
-    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :1226
+    await expect(view.page.locator('#buttons')).toHaveCount(0); // ifMode VIEW include=false :1237
   });
 
   // Twins, both fresh stillbirths (an Alive infant would register a baby patient): infant 1 is a girl with 2 in every measurement, infant 2 a boy with 3.
