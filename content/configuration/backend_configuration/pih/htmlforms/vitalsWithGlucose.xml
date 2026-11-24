@@ -16,6 +16,10 @@
           formName="Vitals with glucose" formEncounterType="2fd151a2-fbef-43e3-b82d-c3f70f1d7333"
           formVersion="1.0">
 
+    <!-- SL-1527: enroll in the Pregnancy program from "Is patient pregnant?" / "Delivered within the last 6 weeks" (if not already
+         enrolled); the questions are only on the form at MCH OPD, elsewhere the action does nothing -->
+    <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.PregnancyStatusProgramEnrollmentAction"/>
+
     <style>
         .encounter-summary-container {
             font-size: 1em;
@@ -855,6 +859,51 @@
                 #set( $pregGroupLocation = $sessionContext.sessionLocation )
             #end"/>
         <includeIf velocityTest="$pregGroupLocation and $pregGroupLocation.uuid == '${location.mchOpd.uuid}' and $patient.gender == 'F' and $patient.getAge($encounter.getEncounterDatetime()) >= 10">
+            <!-- SL-1527: pregnancy status; "delivered in the last 6 weeks" is asked (and required) only when not pregnant.
+                 The answers enroll the patient in the Pregnancy program (PregnancyStatusProgramEnrollmentAction, at the top) -->
+            <fieldset id="pregnancy-status">
+                <legend>
+                    <uimessage code="Pregnancy status"/>
+                </legend>
+                <h3>
+                    <uimessage code="Pregnancy status"/>
+                </h3>
+                <field class="required">
+                    <obs id="pregnant" conceptId="CIEL:5272" style="radio" required="true"
+                         labelText="Is patient pregnant?"
+                         answerConceptIds="CIEL:1065,CIEL:1066"
+                         answerCodes="yes,no">
+                        <controls>
+                            <when value="CIEL:1066" thenDisplay="#delivered-last-6-weeks"/>
+                        </controls>
+                    </obs>
+                </field>
+                <div id="delivered-last-6-weeks">
+                    <field class="required">
+                        <obs id="delivered-6-weeks" conceptId="PIH:21869" style="radio" required="true"
+                             labelText="Has patient delivered in the last 6 weeks?"
+                             answerConceptIds="CIEL:1065,CIEL:1066"
+                             answerCodes="yes,no"/>
+                    </field>
+                </div>
+                <ifMode mode="VIEW" include="false">
+                    <script type="text/javascript">
+                        // The Simple UI navigator enforces class="required" on every field that is not disabled, hidden or not:
+                        // disable "delivered" unless "pregnant" is no, so it is required only when it is shown.
+                        jq(function () {
+                            const delivered = jq('#delivered-6-weeks input[type=radio]');
+                            const notPregnant = '<lookup expression="fn.getConcept('CIEL:1066').id"/>';
+                            const update = function () {
+                                const answer = jq('#pregnant input[type=radio]:checked').val();
+                                delivered.prop('disabled', answer !== notPregnant);
+                            };
+                            jq('#pregnant input[type=radio]').change(update);
+                            update();
+                        });
+                    </script>
+                </ifMode>
+            </fieldset>
+
             <fieldset>
                 <legend>
                     <uimessage code="pihcore.pregnancyProgramCohortGroup"/>

@@ -8,6 +8,9 @@
         <macro key="mcoeTriageLocation" value="f85feffc-fe54-4648-aa14-01ed6d30b943"/>
     </macros>
 
+    <!-- SL-1527: enroll in the Pregnancy program from "Is patient pregnant?" / "Delivered within the last 6 weeks" (if not already enrolled) -->
+    <postSubmissionAction class="org.openmrs.module.pihcore.htmlformentry.action.PregnancyStatusProgramEnrollmentAction"/>
+
     <translations defaultLocale="en">
         <code name="o2Sat">
             <variant locale="en" value="O&lt;sub&gt;2&lt;/sub&gt; Sat"/>
@@ -581,6 +584,26 @@
 
     <div>
         <subform path="configuration/pih/subforms/lab-results-section.xml"/>
+    </div>
+
+    <!-- SL-1527: pregnancy status; "delivered in the last 6 weeks" is asked (and required) only when not pregnant -->
+    <div id="pregnancy-status">
+        <p class="side-by-side">
+            <obs id="pregnant" conceptId="CIEL:5272" style="radio" required="true"
+                 labelText="Is patient pregnant?"
+                 answerConceptIds="CIEL:1065,CIEL:1066"
+                 answerCodes="yes,no">
+                <controls>
+                    <when value="CIEL:1066" thenDisplay="#delivered-last-6-weeks"/>
+                </controls>
+            </obs>
+        </p>
+        <p id="delivered-last-6-weeks" class="side-by-side">
+            <obs id="delivered-6-weeks" conceptId="PIH:21869" style="radio" required="true"
+                 labelText="Has patient delivered in the last 6 weeks?"
+                 answerConceptIds="CIEL:1065,CIEL:1066"
+                 answerCodes="yes,no"/>
+        </p>
     </div>
 
     <div>
