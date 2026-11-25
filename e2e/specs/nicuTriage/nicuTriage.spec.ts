@@ -181,7 +181,7 @@ test.describe('nicuTriage', () => {
     await page.locator('#d-location').getByLabel('KGH/MCOE', { exact: true }).check();
     await page.locator('#avpu').getByLabel('Awake').check();
     await page.locator('#hemoglobin input').fill('14');
-    await page.getByLabel('Low birth weight', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Low birth weight', exact: true }).check();
     await save(page);
     await new EntryFormPage(page, FORM).expectSaved();
 
@@ -213,7 +213,7 @@ test.describe('nicuTriage', () => {
     await page.locator('#d-location').getByLabel('other', { exact: true }).check();
     await page.locator('#delivery-location-other input[type=text]').fill('Roadside');
     await page.locator('.two-columns').filter({ hasText: 'Emergency signs' }).last().locator('input[type=checkbox]').first().check(); // Hypoglycemia
-    await page.getByLabel('Low birth weight', { exact: true }).check(); // priority sign
+    await page.getByRole('checkbox', { name: 'Low birth weight', exact: true }).check(); // priority sign
     await page.locator('#tox-t input[type=checkbox]').check();
     await page.locator('#tox input[type=text]').fill('Lead');
     await page.locator('#resuscitation').getByLabel('Yes').check();

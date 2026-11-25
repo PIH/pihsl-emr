@@ -259,14 +259,14 @@ test.describe('familyPlanningIntake', () => {
     });
     expect(await view.valueTexts()).toEqual([
       '[X] Visual impairment',
-      '[X] Method switch',
-      '[X] 48 hours to 6 weeks',
       '120',
       '80',
       '60',
       '160',
       '[X] Microgynon', // history row, with its start date and an empty end date
       '15 Jan 2024',
+      '[X] Method switch', // visit type and time since delivery: after the history since SL-1518
+      '[X] 48 hours to 6 weeks',
       '[X] yes', // counselling
       '[X] yes', // accepts post-partum family planning
       '[X] Depo-provera',

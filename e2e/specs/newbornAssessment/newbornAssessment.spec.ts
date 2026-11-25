@@ -168,7 +168,7 @@ test.describe('newbornAssessment', () => {
     await alive.nth(0).fill('2.9');
     await alive.nth(3).fill('8');
     await alive.nth(4).fill('9');
-    await page.getByLabel('Premature birth', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Premature birth', exact: true }).check();
     await page.locator('#resuscitation').getByLabel('Yes').check();
     await page.getByLabel('Supplemental oxygen therapy').check();
     await page.locator('#outcome-condition').getByLabel('Satisfactory').check();
@@ -236,8 +236,8 @@ test.describe('newbornAssessment', () => {
     await page.locator('#resuscitation').getByLabel('Yes').check();
     await page.locator('#type-resuscitation input[type=checkbox]').nth(1).check(); // Ventilation bag
     await page.locator('#type-resuscitation input[type=checkbox]').nth(3).check(); // Heart massage
-    await page.getByLabel('Premature birth', { exact: true }).check();
-    await page.getByLabel('Low birth weight', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Premature birth', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Low birth weight', exact: true }).check();
     await page.locator('#malformation-q input[type=checkbox]').check();
     await page.locator('#malformation-details input[type=text]').fill('Cleft palate');
     await page.locator('#birthInjury').getByLabel('Yes').check();

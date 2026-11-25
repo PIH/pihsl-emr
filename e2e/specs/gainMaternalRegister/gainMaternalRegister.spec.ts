@@ -114,8 +114,11 @@ test.describe('gainMaternalRegister @unreachable', () => {
       'Type of delivery: Spontaneous vaginal delivery': 'Normal',
     });
     // (the labels are short: check them as whole selected options too; the date is the encounter date under "Maternal outcome")
-    const now = new Date();
-    const today = `${String(now.getDate()).padStart(2, '0')} ${now.toLocaleString('en', { month: 'short' })} ${now.getFullYear()}`;
+    // The encounter date is the server's today (its clock and time zone, not this machine's: in the evening here it is already tomorrow in Sierra Leone's
+    // GMT), so take its day from the encounter datetime the server gives, which carries the server's offset.
+    const saved = (await (await api.get(`encounter/${encounters[0].uuid}?v=custom:(encounterDatetime)`)).json()).encounterDatetime as string;
+    const [year, month, day] = saved.slice(0, 10).split('-').map(Number);
+    const today = `${String(day).padStart(2, '0')} ${new Date(year, month - 1, 1).toLocaleString('en', { month: 'short' })} ${year}`;
     expect(await view.valueTexts()).toEqual(['[X] Normal', '[X] F', '3.2', today, 'Auto Midwife', '[X] Midwife']);
   });
 

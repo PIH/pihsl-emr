@@ -1,0 +1,1650 @@
+{
+  "schema": 1,
+  "site": "pihsl-emr",
+  "defaultProfile": "KGH",
+  "profiles": {
+    "KGH": "Sierra Leone, KGH: stacks sierraLeone,sierraLeone-kgh and its -ci overlay (kgh-ci is the server the specs run on)",
+    "Wellbody": "Sierra Leone, Wellbody: stacks sierraLeone,sierraLeone-wellbody and its -ci overlay. No specs run on it; its flags are read from the config",
+    "Demo": "sierraLeone-wellbody-demo: in no env file, so how it is deployed is unverified. No specs run on it"
+  },
+  "forms": {
+    "admissionNote": {
+      "formUuid": "43acf930-eb1b-11e2-91e2-0800200c9a66",
+      "path": "admissionNote.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`adt`: `enableADT` :919 (visit action :956, awaiting-admission link :940), dispatcher :271; no SL profile lists `adt` (KGH has `adtO3`, which offers only the newborn admission note)"
+    },
+    "ancFollowup": {
+      "formUuid": "0ad6338a-086d-4fb8-9926-332753b0cf19",
+      "path": "ancFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "ancIntake": {
+      "formUuid": "a3b04938-1da7-4582-8b66-c9575790b63b",
+      "path": "ancIntake.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "ancProgress": {
+      "formUuid": "abec7eeb-3db4-450e-a254-3d6c01515976",
+      "path": "ancProgress.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Antenatal Progress Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "ayfsFollowup": {
+      "formUuid": "2db3e8df-f950-493f-85b2-90a9477cd02f",
+      "path": "ayfsFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "ageYears": 17
+        }
+      }
+    },
+    "ayfsIntake": {
+      "formUuid": "c225bf8c-40ff-4911-83e0-44c876bc3865",
+      "path": "ayfsIntake.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "ageYears": 17
+        }
+      }
+    },
+    "ballardScore": {
+      "formUuid": "ca499bac-1a8d-4d92-8b36-8b30ab771f12",
+      "path": "ballardScore.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NICU Location",
+        "patient": {
+          "ageDays": 15
+        }
+      }
+    },
+    "cancelAdmission": {
+      "formUuid": "912c7800-df82-11e3-8b68-0800200c9a66",
+      "path": "cancelAdmission.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`adt` (`enableADT`, link :948)"
+    },
+    "cervicalCancerScreening": {
+      "formUuid": "6a25ba50-cba6-44c2-a132-9fad31e01f17",
+      "path": "cervicalCancerScreening.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "checkin": {
+      "formUuid": "c233ca6a-ebe2-4d5a-8f79-466c3aced2a0",
+      "path": "checkin.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Check-In Location"
+      }
+    },
+    "checkinMaternal": {
+      "formUuid": "9a5a5d5b-4e99-43a0-8b66-8c9b97963354",
+      "path": "checkinMaternal.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Check-In Maternal Location"
+      }
+    },
+    "chemotherapyTreatment": {
+      "formUuid": "2fce4b79-a0c8-41ac-81d7-3bbfd85988fd",
+      "path": "chemotherapyTreatment.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`oncology`: `enableOncology` :1985 (visit action :2031, tag Chemotherapy Location), called from `enablePrograms` :4268; no SL profile lists `oncology`"
+    },
+    "comment": {
+      "formUuid": "9f1e1614-6b7f-423d-a28a-f174042524e2",
+      "path": "comment.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`commentForm`: `enableCommentForm` :4572, dispatcher :494; not listed"
+    },
+    "covid19Discharge": {
+      "formUuid": "9d05907a-2678-46c8-a447-1517b1cb6cac",
+      "path": "covid19Discharge.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`covid19`: `enableCovid19` :3530 (action :3548), dispatcher :474; not listed"
+    },
+    "covid19Followup": {
+      "formUuid": "2bf00b0c-c411-4738-898d-9fac03a60099",
+      "path": "covid19Followup.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`covid19` (`enableCovid19`, action :3539)"
+    },
+    "covid19Intake": {
+      "formUuid": "82be8c44-cc17-4704-ae10-1179ae9702db",
+      "path": "covid19Intake.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`covid19IntakeForm`: `enableCovid19IntakeForm` :3555, dispatcher :478; not listed"
+    },
+    "delivery": {
+      "formUuid": "4d90fcbb-0b2e-4667-bd57-7571d44ac086",
+      "path": "delivery.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "dischargeNote": {
+      "formUuid": "e0a26c20-fba6-11e2-b778-0800200c9a66",
+      "path": "dischargeNote.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "no `getFormResource`, no `encounterTypeConfig.js` form entry, no include in pihcore (api, omod), pihemr content or pihsl-emr content; the only hits are message codes (`mirebalais.dischargeNote.*`). Its encounter type (Exit from Inpatient Care) has a visit-page entry; a launch from the O2 ADT module is unverified"
+    },
+    "dispensing": {
+      "formUuid": "ba22eda5-148d-456e-8adc-f36247d1f7c3",
+      "path": "dispensing.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`dispensing` (`enableDispensing` :1096, dispatcher :287) or `dispensingForm` (`enableDispensingForm` :1137, :291); neither is listed. SL uses the SPA `medicationDispensing` (:295)"
+    },
+    "drugOrder": {
+      "formUuid": "d2adf684-34f7-42fc-a979-43178bca8e72",
+      "path": "drugOrder.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`medicationOrder`: `enableMedicationOrder` :1189, dispatcher :299; not listed"
+    },
+    "drugRehab": {
+      "formUuid": "94372e53-2143-43a6-97ef-70c615c6446e",
+      "path": "drugRehab.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`drugRehab`: `enableDrugRehab` :3625, dispatcher :506; not listed"
+    },
+    "echocardiogram": {
+      "formUuid": "fdee5220-78ba-11e9-8f9e-2a86e4085a59",
+      "path": "echocardiogram.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": true
+      },
+      "notCovered": "needs profile `wellbody-demo` (`echocardiogram`, nested in `ncd`, `enableEcho` :2249); no location carries `Echocardiogram Location` either",
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Echocardiogram Location"
+      }
+    },
+    "edNote": {
+      "formUuid": "793915d6-f8d9-11e2-8ff2-fd54ab5fdb2a",
+      "path": "edNote.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": true
+      },
+      "notCovered": "needs profile `wellbody-demo` (`edConsult`, `enableEDConsult` :905); no profile used by an env file offers it. Also, no location of either SL tag map carries `ED Note Location`, so even there the visit action needs a tagged location (unverified how demo is deployed). Not `non-production profile only` by decision (see `## Not reachable`)",
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "ED Note Location"
+      }
+    },
+    "familyPlanningFollowup": {
+      "formUuid": "ec502050-c987-4aad-8ca5-628fd7871233",
+      "path": "familyPlanningFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "familyPlanningIntake": {
+      "formUuid": "dffa9543-2cf0-4b9e-9306-0aebeb7a1835",
+      "path": "familyPlanningIntake.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "gainMaternalRegister": {
+      "formUuid": "e8bdd24e-0fba-4fe9-969f-316f70722c39",
+      "path": "gainMaternalRegister.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`mchGAINMaternal`: `enableMCHGainMaternal` :2485 (SL branch only), dispatcher :462; **no SL profile lists it**. **Has a spec** (direct URL)"
+    },
+    "gainNewbornRegister": {
+      "formUuid": "a165541e-9745-4891-b6d7-b8374575e63e",
+      "path": "gainNewbornRegister.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`mchGAINNewborn`: `enableMCHGainNewborn` :2499, dispatcher :466; no profile lists it. **Has a spec**"
+    },
+    "gynecologyFollowup": {
+      "formUuid": "c1303824-0fba-4e08-932a-c10990956d00",
+      "path": "gynecologyFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "gynecologyIntake": {
+      "formUuid": "b456c65f-4d3b-4d1d-b1f5-952e78fa0121",
+      "path": "gynecologyIntake.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "infantDocumentation": {
+      "formUuid": "529A6347-47F0-4F2B-ACD3-4D8E85D4A76E",
+      "path": "infantDocumentation.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "no hit in pihcore, pihemr or pihsl-emr; encounter type \"HIV Infant Documentation\" is not an SL type"
+    },
+    "inpatientNewbornVitals": {
+      "formUuid": "e1e64fc8-ccf2-40ee-8ebb-7cb659d1d236",
+      "path": "inpatientNewbornVitals.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Vitals Inpatient Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "inpatientVitals": {
+      "formUuid": "ce487212-2263-4a5d-a1c1-3879a3e9a141",
+      "path": "inpatientVitals.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Vitals Inpatient Location"
+      }
+    },
+    "labResults": {
+      "formUuid": "5e1b0c3a-3acf-4e50-aab1-738a3a282dea",
+      "path": "labResults.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "other",
+        "note": "an overall action of the patient dashboard, not a visit action"
+      }
+    },
+    "laborDeliverySummary": {
+      "formUuid": "51f7451f-1d27-4907-aafb-a20ba3894048",
+      "path": "laborDeliverySummary.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Delivery Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "laborProgress": {
+      "formUuid": "837fec21-38f2-4deb-aa3a-d93a79a5a7ab",
+      "path": "laborProgress.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Antenatal Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "maternalAdmission": {
+      "formUuid": "2eceee55-4308-41b5-8d76-d5197cf57818",
+      "path": "maternalAdmission.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal Admission Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "maternalDeath": {
+      "formUuid": "25485cdd-5cb3-4d91-abc4-029718254954",
+      "path": "maternalDeath.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "other",
+        "note": "needs a patient with earlier data (patient.person.dead; no-visit-dup): the reachability spec builds a fresh patient"
+      }
+    },
+    "maternalDischarge-print": {
+      "formUuid": "a5377e3a-228e-4186-b6f5-a86d0ba0d136",
+      "path": "maternalDischarge-print.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "other",
+        "note": "not an entry form: see the md row"
+      }
+    },
+    "maternalDischarge": {
+      "formUuid": "ccd256b4-a861-4ec2-88f8-6d56927a09b2",
+      "path": "maternalDischarge.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal Discharge Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "mentalHealth": {
+      "formUuid": "55399407-F739-4647-B940-A68CC45483F4",
+      "path": "mentalHealth.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Mental Health Location"
+      }
+    },
+    "mentalHealthFollowup": {
+      "formUuid": "55DA9EF7-DCBE-4B9F-9A77-C905862BD565",
+      "path": "mentalHealthFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Mental Health Location"
+      }
+    },
+    "ncd-followup-part-1": {
+      "formUuid": "ab30cec8-b1f9-4383-90a7-03411337ebfb",
+      "path": "ncd-followup-part-1.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "ncd-followup-part-2": {
+      "formUuid": "4daeb7ca-6ba5-48fc-8a92-478a67f75ad5",
+      "path": "ncd-followup-part-2.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "ncd-followup": {
+      "formUuid": "4969ab47-6212-46dd-ac49-11c75b2e04d9",
+      "path": "ncd-followup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "ncd-initial-part-1": {
+      "formUuid": "94371e9b-69dc-4c34-a2f0-290cd5070187",
+      "path": "ncd-initial-part-1.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "ncd-initial-part-2": {
+      "formUuid": "7179edaf-9006-49cd-8f12-862ec494f75b",
+      "path": "ncd-initial-part-2.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "ncd-initial": {
+      "formUuid": "c5ccc0dd-a15c-408c-98dd-97b696a6465a",
+      "path": "ncd-initial.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NCD Consult Location"
+      }
+    },
+    "newbornAdmissionNote": {
+      "formUuid": "AA165115-CAB7-46DA-9B49-917091EE5540",
+      "path": "newbornAdmissionNote.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Newborn Admission Note Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "newbornAssessment": {
+      "formUuid": "17e93a76-32d1-4435-a5e3-3068e305c2d7",
+      "path": "newbornAssessment.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Newborn Assessment Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "newbornDailyProgress": {
+      "formUuid": "3eddc127-3417-4878-9210-88c55040535f",
+      "path": "newbornDailyProgress.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Newborn Daily Progress Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "newbornDischarge": {
+      "formUuid": "edb9d20b-6537-4593-9002-152bd3b61605",
+      "path": "newbornDischarge.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Newborn Discharge Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "newbornInitial": {
+      "formUuid": "18e9f245-c4c5-4af7-8a72-4bd8b67dcd86",
+      "path": "newbornInitial.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "NICU Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "nicuTriage": {
+      "formUuid": "83acacb4-eba6-4573-83e7-5d2e468deb50",
+      "path": "nicuTriage.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "MCH Triage Location",
+        "patient": {
+          "ageDays": 21
+        }
+      }
+    },
+    "obGyn": {
+      "formUuid": "ef29d697-97d3-11f0-aa57-82198ff46031",
+      "path": "obGyn.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`obgyn`, a flag inside `enableMCHForms` :2471 (needs `mchForms` and `obgyn`; SL lists only the first). Its encounter type still has a visit-page view for encounters from elsewhere"
+    },
+    "obGyn_1.0": {
+      "formUuid": "97ba85df-83b6-49ed-b34f-30b33436e599",
+      "path": "obGyn_1.0.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "older copy of `obGyn.xml`, named `_1.0` so the guard does not skip it as a `_v*` copy; no entry of its own"
+    },
+    "oncologyConsult": {
+      "formUuid": "28b76a20-105d-11e5-b939-0800200c9a66",
+      "path": "oncologyConsult.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "retired",
+      "detail": "its visit action is commented out in `enableOncology` (:1989-:2002, \"Removed Feb 2023 per Lormil. This form is no longer used\"); `oncology` is off anyway"
+    },
+    "oncologyIntakeConsult": {
+      "formUuid": "251a6a9f-f797-4573-b2da-04bbbe56a7b7",
+      "path": "oncologyIntakeConsult.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`oncology` (`enableOncology`, action :2042)"
+    },
+    "oncologyTreatment": {
+      "formUuid": "f55d57d3-aecb-4825-b45e-4220ceadf93f",
+      "path": "oncologyTreatment.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`oncology` (`enableOncology`, action :2013)"
+    },
+    "outpatient-followup": {
+      "formUuid": "4CE4BA22-16B2-4C85-9B07-5E3696490BC8",
+      "path": "outpatient-followup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Consult Note Location"
+      }
+    },
+    "outpatient-initial": {
+      "formUuid": "C5B788D4-223D-430A-9A90-ADBE63C4A3E8",
+      "path": "outpatient-initial.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Consult Note Location"
+      }
+    },
+    "outpatientConsult": {
+      "formUuid": "a3fc5c38-eb32-11e2-981f-96c0fcb18276",
+      "path": "outpatientConsult.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`consult`: `enableConsult` :852, dispatcher :255; not listed. Same encounter type as `edNote.xml`"
+    },
+    "ovcFollowup": {
+      "formUuid": "5f486bc6-b017-4932-8037-6d667f8c3162",
+      "path": "ovcFollowup.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`ovc`: `enableOvc` :3576 (action :3593), inside `enablePrograms` :4257; not listed"
+    },
+    "ovcIntake": {
+      "formUuid": "a2f4e400-df59-4456-935f-cd0697ff28a4",
+      "path": "ovcIntake.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`ovc` (`enableOvc`, action :3583)"
+    },
+    "pacuFollowup": {
+      "formUuid": "43b275f0-6e20-4538-ba94-19df332d4f76",
+      "path": "pacuFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "PACU Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "patientRegistration-contact": {
+      "formUuid": "9EE91561-42A0-4E1C-9469-ABA6726056BE",
+      "path": "patientRegistration-contact.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "other",
+        "note": "needs a patient with earlier data (an existing registration encounter): the reachability spec builds a fresh patient"
+      }
+    },
+    "patientRegistration-localAddress": {
+      "formUuid": "10D81F65-CBAD-4F5B-B7D0-B3C660C569CE",
+      "path": "patientRegistration-localAddress.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "other",
+        "note": "needs a patient with earlier data (an existing registration encounter): the reachability spec builds a fresh patient"
+      }
+    },
+    "patientRegistration-rs": {
+      "formUuid": "6F6E6FA0-1E99-41A3-9391-E5CB8A127C11",
+      "path": "patientRegistration-rs.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "other",
+        "note": "needs a patient with earlier data (an existing registration encounter (edit) or none (create via the widget)): the reachability spec builds a fresh patient"
+      }
+    },
+    "patientRegistration-social": {
+      "formUuid": "26087dc0-7429-11e5-a837-0800200c9a66",
+      "path": "patientRegistration-social.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "other",
+        "note": "needs a patient with earlier data (an existing registration encounter): the reachability spec builds a fresh patient"
+      }
+    },
+    "patientRegistration": {
+      "formUuid": "43bcbb00-8790-11e4-b4a9-0800200c9a66",
+      "path": "patientRegistration.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "no `getFormResource` or other reference; the file says \"TODO are we still using this??\". Same encounter type as the widget forms"
+    },
+    "postnatalFollowup": {
+      "formUuid": "929df787-1236-4cb8-a3a2-5aa7a7600d8c",
+      "path": "postnatalFollowup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Maternal and Child Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "postpartumDailyProgress": {
+      "formUuid": "569f6534-fb05-4d8d-aa2e-1b832223e1b8",
+      "path": "postpartumDailyProgress.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Postnatal Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "primary-care-adult-followup": {
+      "formUuid": "25cc7418-4dde-4b28-a3e9-fedb87243bcb",
+      "path": "primary-care-adult-followup.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "`enablePrimaryCare` :2907, Haiti branch :2909 (action :2959); SL gets `outpatient-*` from the SL branch :2987. `primaryCare` is on in all SL profiles"
+    },
+    "primary-care-adult-initial": {
+      "formUuid": "d1ae1222-014e-496f-899a-d749e1adbe59",
+      "path": "primary-care-adult-initial.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "same Haiti branch (action :2944)"
+    },
+    "primary-care-peds-followup": {
+      "formUuid": "dbc8b72d-89a0-4650-807a-e5170c995700",
+      "path": "primary-care-peds-followup.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "same Haiti branch (action :2930)"
+    },
+    "primary-care-peds-initial": {
+      "formUuid": "ec186d0f-0429-4ab3-9f52-547faa3a8eea",
+      "path": "primary-care-peds-initial.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "same Haiti branch (action :2915)"
+    },
+    "section-anc-followup": {
+      "formUuid": "d7ed025a-7d8f-46ae-abc6-03de835ef903",
+      "path": "section-anc-followup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-anc-intake": {
+      "formUuid": "e046d2df-1b46-4a7c-94ad-9d3bdeabac86",
+      "path": "section-anc-intake.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-c-section": {
+      "formUuid": "7e7f7dfb-92b8-45a9-841e-304474e0fcfe",
+      "path": "section-c-section.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "`cSection` section of MCH Delivery in the non-SL `DEFAULT` config only (`encounterTypeConfig.js` :514, :2280); SL resolves its own `sierra_leone` key, whose list has no c-section"
+    },
+    "section-chief-complaint": {
+      "formUuid": "71ee5c0c-d8ae-4777-af9f-bb57f563503a",
+      "path": "section-chief-complaint.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-comments": {
+      "formUuid": "12d6922a-1dea-452d-ae2c-bb09366de400",
+      "path": "section-comments.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "section of the home-assessment encounter types (prenatal, pediatric, postpartum, follow-up home assessment; `encounterTypeConfig.js` :750-:810); no form of the merged directory creates those types and none is in the SL encounter type CSVs"
+    },
+    "section-delivery": {
+      "formUuid": "adf7fa6e-6302-4cdf-bdae-fe3426e1eea2",
+      "path": "section-delivery.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-diabetes": {
+      "formUuid": "d26b1ddf-d410-4a9f-be0f-b516e7c26c40",
+      "path": "section-diabetes.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-dx-obgyn": {
+      "formUuid": "2065460f-adeb-4895-837c-1fa516b6c280",
+      "path": "section-dx-obgyn.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "`pihcore-diagnosis-obgyn` section of the OB/GYN encounter type; parent `obGyn.xml` is `component off`"
+    },
+    "section-dx": {
+      "formUuid": "3498f204-a6fa-4df0-b7fd-a94eb03a43c9",
+      "path": "section-dx.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-education-subjects": {
+      "formUuid": "fdf32eae-f020-4075-993d-971b5633aa6d",
+      "path": "section-education-subjects.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types, as `section-comments.xml`"
+    },
+    "section-exam": {
+      "formUuid": "b34b71f4-03f1-11e5-8418-1697f925ec7b",
+      "path": "section-exam.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-family-planning-simple": {
+      "formUuid": "3e9c3181-884d-43a4-a5c7-920bc5dd5d59",
+      "path": "section-family-planning-simple.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "`maternal-family-planning` section of the home-assessment types"
+    },
+    "section-family-planning": {
+      "formUuid": "d32b2d60-5cf1-11e7-907b-a6006ad3dba0",
+      "path": "section-family-planning.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "`encounterTypeConfig.js` defines the section (`familyPlanningHistory`, :413) but no encounter type lists it"
+    },
+    "section-heart-failure": {
+      "formUuid": "8301277b-1062-4c15-8701-9771ac95e599",
+      "path": "section-heart-failure.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-history": {
+      "formUuid": "162091b1-0060-4e56-8c17-7015aeddf608",
+      "path": "section-history.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-hospital": {
+      "formUuid": "0b98d2c7-716d-44c1-b343-6a8b41b09580",
+      "path": "section-hospital.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-hypertension": {
+      "formUuid": "3a1d79fe-9aa0-4289-bcea-c70aae516234",
+      "path": "section-hypertension.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-kidney": {
+      "formUuid": "1a66029d-0e0c-410b-9fa6-8ea26f697cb8",
+      "path": "section-kidney.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-lab-order": {
+      "formUuid": "178f9aa8-550a-11e7-b114-b2f933d5fe66",
+      "path": "section-lab-order.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "defined as `labRadOrder` (:390) and listed by no encounter type; a comment in `section-plan_v1.0` calls it a duplicate"
+    },
+    "section-liver": {
+      "formUuid": "4357b34b-ab3a-4404-ab33-a73104b26fdb",
+      "path": "section-liver.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-lung": {
+      "formUuid": "add648f7-7d24-47ce-9456-8006021e074e",
+      "path": "section-lung.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-maternal-danger-signs": {
+      "formUuid": "7a2002bf-eeb2-4d71-b951-7e0b5a80f931",
+      "path": "section-maternal-danger-signs.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types"
+    },
+    "section-maternal-vital-signs": {
+      "formUuid": "8dba188c-d170-4755-9895-4c8324f67e33",
+      "path": "section-maternal-vital-signs.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types"
+    },
+    "section-mch-referral": {
+      "formUuid": "544d566e-a4c6-4f18-b5a7-5cea32d09301",
+      "path": "section-mch-referral.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types"
+    },
+    "section-ncd-followup": {
+      "formUuid": "1d764c06-ebdc-42fa-b75a-d5b789e3f630",
+      "path": "section-ncd-followup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-ncd-history": {
+      "formUuid": "a29c13c8-1d46-4f58-bb09-c9b71e6bc5bf",
+      "path": "section-ncd-history.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-ncd-notes": {
+      "formUuid": "9f84ab34-73ef-46d3-951c-af29c589abc4",
+      "path": "section-ncd-notes.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-ncd-plan": {
+      "formUuid": "aa8d9374-f343-4818-8433-66f4e6145a7f",
+      "path": "section-ncd-plan.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-ncd": {
+      "formUuid": "47de1db8-bebc-4861-82bc-e4f0ee8c04aa",
+      "path": "section-ncd.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "other country",
+      "detail": "`ncd` section (:167) of NCD Initial/Followup in the `DEFAULT` and Haiti configs; SL resolves its own section list (`pihsl-emr` also keeps a copy under `retired/`)"
+    },
+    "section-obgyn-initial": {
+      "formUuid": "fd19a3d0-4aa4-415c-a25a-dc1159098796",
+      "path": "section-obgyn-initial.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "OB/GYN encounter type; parent `obGyn.xml` is `component off`"
+    },
+    "section-obgyn-plan": {
+      "formUuid": "84bed1ec-97c4-11f0-aa57-82198ff46031",
+      "path": "section-obgyn-plan.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "same"
+    },
+    "section-oncology-history": {
+      "formUuid": "f76d683d-8b30-47fd-8c80-1730a2ab57cf",
+      "path": "section-oncology-history.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "Oncology Initial Consult; parent `oncologyIntakeConsult.xml` is `component off`"
+    },
+    "section-oncology-plan": {
+      "formUuid": "cd0fd93e-234a-4cb0-bcb3-a0fecd3af1bd",
+      "path": "section-oncology-plan.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "same"
+    },
+    "section-other-ncd": {
+      "formUuid": "2cfad355-c6e9-4466-8c11-860f10c8a270",
+      "path": "section-other-ncd.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-palliative": {
+      "formUuid": "226796bc-24b0-4af7-98b3-f07b26e390cf",
+      "path": "section-palliative.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-peds-feeding": {
+      "formUuid": "7FC98698-C733-4CCE-B082-A3BDBC8D6EC4",
+      "path": "section-peds-feeding.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "no reference anywhere (searched htmlforms, subforms, scripts, pihcore)"
+    },
+    "section-peds-supplements": {
+      "formUuid": "CF281FB4-8A40-445A-84ED-05101240F5E8",
+      "path": "section-peds-supplements.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "same"
+    },
+    "section-peds": {
+      "formUuid": "c278f802-57be-11e9-8647-d663bd873d93",
+      "path": "section-peds.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-plan-medication": {
+      "formUuid": "8DF0DB24-B0F2-4786-9585-00F730516F02",
+      "path": "section-plan-medication.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-plan": {
+      "formUuid": "589508A0-BD24-484B-B8FE-E81E28ED982D",
+      "path": "section-plan.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-postnatal-followup": {
+      "formUuid": "6f7fcbfb-6e42-400a-9f9c-cbc7f26c07c6",
+      "path": "section-postnatal-followup.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-postpartum-counsel": {
+      "formUuid": "d2ac7d33-cb7b-440e-93b9-45a75859109f",
+      "path": "section-postpartum-counsel.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types (`section-postpartum-training`)"
+    },
+    "section-prescriptions-print": {
+      "formUuid": "CA8D072A-2681-4E06-B83C-AD3B0FC3D49D",
+      "path": "section-prescriptions-print.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "section-return-visit-date": {
+      "formUuid": "674b13aa-9dcd-4c3e-979b-121b6b681bf4",
+      "path": "section-return-visit-date.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "home-assessment types"
+    },
+    "section-review-of-systems": {
+      "formUuid": "1c57f8d3-65eb-4619-a375-7612b79a7b13",
+      "path": "section-review-of-systems.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "section or subform",
+      "detail": "`pihcore-review-of-systems` section (`encounterTypeConfig.js` :1143, :1161) of the Liberia Family Medicine Intake and Followup encounter types (`1d1faf4f`, `84d5e978`) and (:1191, :1208) of the Lesotho MDR-TB intake and followup (`f48a79ff`, `131e3b40`); no form of the merged directory creates those types and none is in the SL encounter type CSVs (searched `content/` of this repo). The form and `subforms/review-of-systems.xml` are in the merged directory since the `pihemr-content` 3.7.0-SNAPSHOT of 2026-11-16 (pihemr `b7c51652`, LSO-243/279); the 3.6.0-SNAPSHOT this file was first written against did not have them. The shared spec of this name (`@pih/pihemr-e2e`) is skipped here by `_availability.e2e.json`"
+    },
+    "section-sickle-cell": {
+      "formUuid": "23afe1ed-76c4-4642-b37b-44944a9dbed9",
+      "path": "section-sickle-cell.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "section"
+      }
+    },
+    "socio-econ": {
+      "formUuid": "de845312-11e1-11e8-b642-0ed5f89f718b",
+      "path": "socio-econ.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`socioEconomics`: `enableSocioEconomics` :2828, dispatcher :438; not listed"
+    },
+    "surgicalPostOpNote": {
+      "formUuid": "3fd75be3-2c5b-40be-8b6e-f00cb0ecda22",
+      "path": "surgicalPostOpNote.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Surgery Note Location"
+      }
+    },
+    "transferNote": {
+      "formUuid": "d068bc80-fb95-11e2-b778-0800200c9a66",
+      "path": "transferNote.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "unreferenced",
+      "detail": "same searches as `dischargeNote.xml`; encounter type Transfer has a visit-page entry; a launch from the O2 ADT module is unverified"
+    },
+    "triage": {
+      "formUuid": "ae39663d-c248-4cee-b48e-5eb226f74e47",
+      "path": "triage.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "MCH Triage Location",
+        "patient": {
+          "gender": "F",
+          "ageYears": 30
+        }
+      }
+    },
+    "vaccination-only": {
+      "formUuid": "1e2a4e26-7c9f-11e9-8f9e-2a86e4085a59",
+      "path": "vaccination-only.xml",
+      "offered": {
+        "KGH": false,
+        "Wellbody": false,
+        "Demo": false
+      },
+      "reason": "component off",
+      "detail": "`vaccination`: `enableVaccinationOnly` :2680, inside `enablePrograms` :4262; not listed"
+    },
+    "vitals": {
+      "formUuid": "68728aa6-4985-11e2-8815-657001b58a90",
+      "path": "vitals.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Vitals Location"
+      }
+    },
+    "vitalsWithGlucose": {
+      "formUuid": "e867a9a5-e5d4-4e9f-b6ab-2abcd152d35d",
+      "path": "vitalsWithGlucose.xml",
+      "offered": {
+        "KGH": true,
+        "Wellbody": true,
+        "Demo": true
+      },
+      "entry": {
+        "kind": "visit-action",
+        "sessionTag": "Vitals Glucose Location"
+      }
+    }
+  }
+}

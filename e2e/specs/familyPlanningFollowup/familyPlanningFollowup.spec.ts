@@ -221,11 +221,11 @@ test.describe('familyPlanningFollowup', () => {
     });
     expect(await view.valueTexts()).toEqual([
       '[X] Hearing disorder',
-      '[X] Post abortion',
       '110',
       '70',
       '58',
       '158',
+      '[X] Post abortion', // visit type: after the vitals since SL-1518
       '[X] no', // family planning counselling
       '[X] Sayana press',
       '[X] Emergency contraceptive pills', // saved as "Method of contraception failure" (V4), still shown in its own checkbox

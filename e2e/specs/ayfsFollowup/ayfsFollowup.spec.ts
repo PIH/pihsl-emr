@@ -49,9 +49,9 @@ const SAVE = '#buttons input.submitButton';
 const radioOf = (page: Page, rowText: string) => page.locator('p', { hasText: rowText }).locator('input[type=radio]');
 const checkboxOf = (page: Page, wrapperId: string) => page.locator(`#${wrapperId} input[type=checkbox]`);
 
-// Answers the four required GBV questions with No.
-const answerGbvNo = async (page: Page) => {
-  for (const q of GBV_QUESTIONS) {
+// Answers the five required radios with No: the four GBV questions and, since SL-1519, Social support (the answers are Yes, No).
+const answerRequiredNo = async (page: Page) => {
+  for (const q of [...GBV_QUESTIONS, 'Social support']) {
     await radioOf(page, q).nth(1).check();
   }
 };
@@ -94,12 +94,12 @@ test.describe('ayfsFollowup', () => {
     return context;
   };
 
-  test('saving without the four GBV questions does not save', async ({ page, api, createEntryContext }) => {
-    // required="true" on the four GBV radios (:69, :78, :87, :95)
+  test('saving without the required radios (four GBV questions, Social support) does not save', async ({ page, api, createEntryContext }) => {
+    // required="true" on the four GBV radios (:69, :78, :87, :95) and on Social support (SL-1519)
     const context = await open(page, createEntryContext);
     await selectDefaultProvider(page);
     await page.locator(SAVE).click();
-    await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(4);
+    await expect(page.locator('span.field-error', { hasText: 'Required' })).toHaveCount(5); // the four GBV radios and Social support (SL-1519)
     await expect(page).not.toHaveURL(VISIT_PAGE_URL);
     expect(await getPatientEncounters(api, context.patient.uuid)).toHaveLength(0);
   });
@@ -123,7 +123,7 @@ test.describe('ayfsFollowup', () => {
     createEntryContext,
   }) => {
     const context = await open(page, createEntryContext);
-    await answerGbvNo(page);
+    await answerRequiredNo(page);
     await checkboxOf(page, 'vr-other').check();
     await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
     await checkboxOf(page, 'vr-fp').check();
@@ -174,7 +174,7 @@ test.describe('ayfsFollowup', () => {
   ] as const) {
     test(`answering ${label} to genital symptoms saves ${saved} (V1)`, async ({ page, api, createEntryContext }) => {
       const context = await open(page, createEntryContext);
-      await answerGbvNo(page);
+      await answerRequiredNo(page);
       await radioOf(page, 'Symptoms/problems around the genitalia').nth(radio).check(); // answerCodes yes,no
       await selectDefaultProvider(page);
       await page.locator(SAVE).click();
@@ -191,7 +191,7 @@ test.describe('ayfsFollowup', () => {
     createEntryContext,
   }) => {
     const context = await open(page, createEntryContext);
-    await answerGbvNo(page);
+    await answerRequiredNo(page);
     await checkboxOf(page, 'vr-other').check();
     await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');
     await checkboxOf(page, 'fp-meth-1873').check(); // Jadelle
@@ -222,7 +222,7 @@ test.describe('ayfsFollowup', () => {
   // VIEW: every saved value is shown under the form's own label, the "Other" specify box appears, and what was not filled is not shown.
   test('VIEW: shows the saved answers by their form labels, the implant date and the diagnoses', async ({ page, api, createEntryContext }) => {
     const context = await open(page, createEntryContext);
-    await answerGbvNo(page);
+    await answerRequiredNo(page);
     await radioOf(page, 'Has anyone hit').nth(0).check(); // yes: overrides the No above
     await checkboxOf(page, 'vr-fp').check();
     await checkboxOf(page, 'vr-other').check();
@@ -281,7 +281,7 @@ test.describe('ayfsFollowup', () => {
     createEntryContext,
   }) => {
     const context = await open(page, createEntryContext);
-    await answerGbvNo(page);
+    await answerRequiredNo(page);
     await radioOf(page, 'Symptoms/problems around the genitalia').nth(0).check(); // yes -> Yes (CIEL:1065)
     await checkboxOf(page, 'vr-other').check();
     await page.locator('#other-visit-reason textarea').fill('Walk-in for advice');

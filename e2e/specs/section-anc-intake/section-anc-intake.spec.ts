@@ -76,7 +76,7 @@ test.describe('section-anc-intake', () => {
   });
 
   test('saves the intake with the required counts and a high-risk factor', async ({ page, api }) => {
-    await page.getByLabel('Eclampsia', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Eclampsia', exact: true }).check();
     await page.locator('#w22').fill('0'); // prior neonatal deaths
     await page.locator('#w24').fill('0'); // prior stillbirths
     await page.locator('#w73').fill('0'); // abortus (A)
@@ -106,7 +106,7 @@ test.describe('section-anc-intake', () => {
     await page.getByLabel('Previous c-section').check();
     await page.locator('#c-section-details input').nth(0).fill('2');
     await page.locator('#c-section-details input').nth(1).fill('3');
-    await page.getByLabel('Eclampsia', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Eclampsia', exact: true }).check();
     await page.getByLabel('Syphilis', { exact: true }).check();
     await page.locator('#w22').fill('0'); // prior neonatal deaths: a saved 0 must show as 0
     await page.locator('#w24').fill('1'); // prior stillbirths

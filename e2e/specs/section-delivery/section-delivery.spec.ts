@@ -151,9 +151,9 @@ test.describe('section-delivery', () => {
     await infant2.locator('#presentation').getByLabel('Other', { exact: true }).check();
     await infant2.locator('#other-presentation input').fill('Oblique lie');
     await page.getByLabel('2nd degree').check();
-    await page.getByLabel('Eclampsia', { exact: true }).check();
-    await page.getByLabel('Prolonged labour', { exact: true }).check();
-    await page.getByLabel('Birth asphyxia', { exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Eclampsia', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Prolonged labour', exact: true }).check();
+    await page.getByRole('checkbox', { name: 'Birth asphyxia', exact: true }).check();
     await page.locator('#hcw input[type=text]').first().fill('Nurse Kamara');
     await page.locator('#hcw').getByLabel('SECHN Midwife').check();
     await page.locator('#encounter-disposition select').selectOption({ label: 'Discharge' });
